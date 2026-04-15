@@ -1,5 +1,5 @@
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useFonts } from 'expo-font';
 import { supabase } from './backend/supabase';
@@ -7,10 +7,13 @@ import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
 import MainAppScreen from './src/screens/MainAppScreen';
 import { APP_FONTS } from './src/constants/fonts';
+import { AppThemeProvider, useAppTheme } from './src/theme/ThemeProvider';
 
-export default function App() {
+function AppContent() {
   const [screen, setScreen] = useState('login');
   const [isBootstrapping, setIsBootstrapping] = useState(true);
+  const theme = useAppTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const [fontsLoaded] = useFonts({
     [APP_FONTS.sign]: require('./assets/fonts/LenguaDeSenasChilenaHef-Regular.ttf'),
   });
@@ -44,7 +47,7 @@ export default function App() {
     return (
       <SafeAreaProvider>
         <View style={styles.loaderContainer}>
-          <ActivityIndicator size="large" color="#7E57C2" />
+          <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
       </SafeAreaProvider>
     );
@@ -70,11 +73,21 @@ export default function App() {
   );
 }
 
-const styles = StyleSheet.create({
-  loaderContainer: {
-    flex: 1,
-    backgroundColor: '#EDE7F6',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+export default function App() {
+  return (
+    <AppThemeProvider>
+      <AppContent />
+    </AppThemeProvider>
+  );
+}
+
+function createStyles(theme) {
+  return StyleSheet.create({
+    loaderContainer: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+  });
+}

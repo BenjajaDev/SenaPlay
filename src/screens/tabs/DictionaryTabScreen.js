@@ -4,6 +4,7 @@ import FilterChip from '../../components/ui/FilterChip';
 import SectionHeader from '../../components/ui/SectionHeader';
 import SurfaceCard from '../../components/ui/SurfaceCard';
 import { APP_FONTS } from '../../constants/fonts';
+import { useAppTheme } from '../../theme/ThemeProvider';
 
 const LETTERS = [
   { letter: 'A', sign: 'a', description: 'Puno cerrado con pulgar al lado', category: 'A-M', difficulty: 'Facil' },
@@ -44,6 +45,8 @@ function getBadgeColor(difficulty) {
 }
 
 export default function DictionaryTabScreen() {
+  const theme = useAppTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const [filter, setFilter] = useState('Todos');
 
   const items = useMemo(() => {
@@ -95,71 +98,73 @@ export default function DictionaryTabScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    gap: 12,
-  },
-  filtersRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    rowGap: 10,
-  },
-  card: {
-    width: '48.5%',
-    padding: 10,
-  },
-  cardTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  letter: {
-    fontSize: 20,
-    color: '#0F172A',
-    fontWeight: '900',
-  },
-  sign: {
-    marginTop: 6,
-    fontSize: 12,
-    color: '#64748B',
-    fontWeight: '700',
-  },
-  signRow: {
-    marginTop: 6,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  signLabel: {
-    fontSize: 12,
-    color: '#64748B',
-    fontWeight: '700',
-  },
-  signGlyph: {
-    fontSize: 24,
-    color: '#7E57C2',
-    fontFamily: APP_FONTS.sign,
-    fontWeight: '400',
-  },
-  description: {
-    marginTop: 6,
-    fontSize: 12,
-    color: '#334155',
-    lineHeight: 16,
-  },
-  badge: {
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  badgeText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: '800',
-  },
-});
+function createStyles(theme) {
+  return StyleSheet.create({
+    container: {
+      gap: 12,
+    },
+    filtersRow: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    grid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+      rowGap: 10,
+    },
+    card: {
+      width: '48.5%',
+      padding: 10,
+    },
+    cardTopRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    letter: {
+      fontSize: 20,
+      color: theme.colors.textPrimary,
+      fontWeight: '900',
+    },
+    sign: {
+      marginTop: 6,
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+      fontWeight: '700',
+    },
+    signRow: {
+      marginTop: 6,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    signLabel: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+      fontWeight: '700',
+    },
+    signGlyph: {
+      fontSize: 24,
+      color: theme.colors.primary,
+      fontFamily: APP_FONTS.sign,
+      fontWeight: '400',
+    },
+    description: {
+      marginTop: 6,
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+      lineHeight: 16,
+    },
+    badge: {
+      borderRadius: 999,
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+    },
+    badgeText: {
+      color: '#FFFFFF',
+      fontSize: 10,
+      fontWeight: '800',
+    },
+  });
+}

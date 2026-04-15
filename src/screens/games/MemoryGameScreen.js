@@ -12,6 +12,7 @@ import ActionButton from '../../components/ui/ActionButton';
 import GameScreenHeader from '../../components/ui/GameScreenHeader';
 import SurfaceCard from '../../components/ui/SurfaceCard';
 import { APP_FONTS } from '../../constants/fonts';
+import { useAppTheme } from '../../theme/ThemeProvider';
 
 const BASE_PAIRS = [
   ['A', 'a'],
@@ -43,6 +44,9 @@ function createCards() {
 }
 
 export default function MemoryGameScreen({ onBack }) {
+  const theme = useAppTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
   const [cards, setCards] = useState(createCards);
   const [flipped, setFlipped] = useState([]);
   const [matchedIds, setMatchedIds] = useState([]);
@@ -128,10 +132,10 @@ export default function MemoryGameScreen({ onBack }) {
         {isFaceUp ? (
           <>
             <Text style={[styles.cardValue, isSign && styles.signCardText]}>{displayValue}</Text>
-            <Text style={styles.cardType}>{item.type === 'sign' ? 'SEÑA' : 'LETRA'}</Text>
+            <Text style={styles.cardType}>{item.type === 'sign' ? 'SEÃ‘A' : 'LETRA'}</Text>
           </>
         ) : (
-          <Ionicons name="help" size={26} color="#FFFFFF" />
+          <Ionicons name="help" size={26} color={theme.colors.primaryContrast} />
         )}
       </Pressable>
     );
@@ -140,11 +144,11 @@ export default function MemoryGameScreen({ onBack }) {
   return (
     <View style={styles.screen}>
       <GameScreenHeader
-        title="Memoria de SEÑAS"
+        title="Memoria de SEÃ‘AS"
         onBack={onBack}
         rightNode={(
           <Pressable onPress={resetGame} hitSlop={8}>
-            <Ionicons name="refresh" size={24} color="#0F172A" />
+            <Ionicons name="refresh" size={24} color={theme.colors.textPrimary} />
           </Pressable>
         )}
       />
@@ -192,76 +196,84 @@ export default function MemoryGameScreen({ onBack }) {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-  },
-  statsCard: {
-    paddingVertical: 12,
-    paddingHorizontal: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 12,
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: 19,
-    fontWeight: '900',
-    color: '#1E293B',
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#64748B',
-  },
-  grid: {
-    gap: 10,
-  },
-  card: {
-    flex: 1,
-    minHeight: 96,
-    margin: 5,
-    borderRadius: 14,
-    backgroundColor: '#7E57C2',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cardFaceUp: {
-    backgroundColor: '#F8FAFC',
-    borderWidth: 2,
-    borderColor: '#60A5FA',
-  },
-  cardMatched: {
-    backgroundColor: '#58CC02',
-    borderColor: '#58CC02',
-  },
-  cardValue: {
-    color: '#0F172A',
-    fontSize: 28,
-    fontWeight: '800',
-  },
-  signCardText: {
-    fontFamily: APP_FONTS.sign,
-    fontWeight: '400',
-  },
-  cardType: {
-    marginTop: 4,
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#334155',
-  },
-  footer: {
-    marginTop: 8,
-    flexDirection: 'row',
-    gap: 10,
-  },
-  actionBtn: {
-    flex: 1,
-    borderColor: '#0EA5E9',
-  },
-  exitBtn: {
-    backgroundColor: '#22C55E',
-    borderColor: '#22C55E',
-  },
-});
+function createStyles(theme) {
+  const isDark = theme.mode === 'dark';
+
+  return StyleSheet.create({
+    screen: {
+      flex: 1,
+    },
+    statsCard: {
+      paddingVertical: 12,
+      paddingHorizontal: 10,
+      flexDirection: 'row',
+      justifyContent: 'space-around',
+      marginBottom: 12,
+      backgroundColor: isDark ? '#231D37' : theme.colors.surface,
+      borderColor: isDark ? '#4B3B73' : theme.colors.border,
+    },
+    statItem: {
+      alignItems: 'center',
+    },
+    statValue: {
+      fontSize: 19,
+      fontWeight: '900',
+      color: theme.colors.textPrimary,
+    },
+    statLabel: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+    },
+    grid: {
+      gap: 10,
+    },
+    card: {
+      flex: 1,
+      minHeight: 96,
+      margin: 5,
+      borderRadius: 14,
+      backgroundColor: isDark ? '#3B2F58' : '#7E57C2',
+      borderWidth: 1,
+      borderColor: isDark ? '#5D4A85' : '#7E57C2',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    cardFaceUp: {
+      backgroundColor: isDark ? '#2B2341' : '#F8FAFC',
+      borderWidth: 2,
+      borderColor: isDark ? '#F2C94C' : '#60A5FA',
+    },
+    cardMatched: {
+      backgroundColor: isDark ? '#2D5A31' : '#58CC02',
+      borderColor: isDark ? '#7EDB43' : '#58CC02',
+    },
+    cardValue: {
+      color: isDark ? '#FFF8E6' : '#0F172A',
+      fontSize: 28,
+      fontWeight: '800',
+    },
+    signCardText: {
+      fontFamily: APP_FONTS.sign,
+      fontWeight: '400',
+    },
+    cardType: {
+      marginTop: 4,
+      fontSize: 10,
+      fontWeight: '700',
+      color: isDark ? '#E6DDBB' : '#334155',
+    },
+    footer: {
+      marginTop: 8,
+      flexDirection: 'row',
+      gap: 10,
+    },
+    actionBtn: {
+      flex: 1,
+      borderColor: theme.colors.primary,
+    },
+    exitBtn: {
+      backgroundColor: theme.colors.success,
+      borderColor: theme.colors.success,
+    },
+  });
+}

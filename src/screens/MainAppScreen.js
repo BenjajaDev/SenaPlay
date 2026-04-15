@@ -26,6 +26,7 @@ import QuickQuizGameScreen from './games/QuickQuizGameScreen';
 import Hand3DGameScreen from './games/Hand3DGameScreen';
 import LevelSessionScreen from './levels/LevelSessionScreen';
 import { getLevelById } from '../data/levelsConfig';
+import { useAppTheme } from '../theme/ThemeProvider';
 
 const LEVEL_PROGRESS_KEY = 'oratiolingo.level.progress.v1';
 
@@ -36,6 +37,8 @@ const DEFAULT_LEVEL_PROGRESS = {
 
 export default function MainAppScreen({ onLogout }) {
   const insets = useSafeAreaInsets();
+  const theme = useAppTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const [activeTab, setActiveTab] = useState('levels');
   const [activeLevelId, setActiveLevelId] = useState(null);
   const [activeGame, setActiveGame] = useState(null);
@@ -220,9 +223,11 @@ export default function MainAppScreen({ onLogout }) {
     return <LevelsTabScreen levelProgress={levelProgress} onOpenLevel={openLevel} />;
   };
 
+  const usesVirtualizedList = activeGame === 'memory';
+
   return (
     <SafeAreaView style={styles.screen}>
-      <StatusBar style="dark" />
+      <StatusBar style={theme.mode === 'dark' ? 'light' : 'dark'} />
       {!activeGame && !activeLevelId ? (
         <View style={[styles.header, { paddingTop: insets.top + 8 }]}> 
           <View>
@@ -235,26 +240,41 @@ export default function MainAppScreen({ onLogout }) {
             onPress={() => setIsProfileModalVisible((prev) => !prev)}
             hitSlop={10}
           >
-            <Ionicons name="person-circle-outline" size={34} color="#334155" />
+            <Ionicons name="person-circle-outline" size={34} color={theme.colors.textSecondary} />
           </Pressable>
         </View>
       ) : null}
 
-      <ScrollView
-        contentContainerStyle={[
-          styles.contentContainer,
-          activeGame || activeLevelId
-            ? {
-                flexGrow: 1,
-                paddingTop: insets.top + 12,
-                paddingBottom: insets.bottom + 12,
-              }
-            : null,
-        ]}
-        showsVerticalScrollIndicator={false}
-      >
-        {renderContent()}
-      </ScrollView>
+      {usesVirtualizedList ? (
+        <View
+          style={[
+            styles.contentContainer,
+            {
+              flex: 1,
+              paddingTop: insets.top + 12,
+              paddingBottom: insets.bottom + 12,
+            },
+          ]}
+        >
+          {renderContent()}
+        </View>
+      ) : (
+        <ScrollView
+          contentContainerStyle={[
+            styles.contentContainer,
+            activeGame || activeLevelId
+              ? {
+                  flexGrow: 1,
+                  paddingTop: insets.top + 12,
+                  paddingBottom: insets.bottom + 12,
+                }
+              : null,
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
+          {renderContent()}
+        </ScrollView>
+      )}
 
       {!activeGame && !activeLevelId ? <AppBottomNav activeTab={activeTab} onChangeTab={setActiveTab} /> : null}
 
@@ -280,40 +300,42 @@ export default function MainAppScreen({ onLogout }) {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: '#EEF2FF',
-  },
-  header: {
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 18,
-    paddingBottom: 14,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#0F172A',
-  },
-  headerSubtitle: {
-    fontSize: 13,
-    color: '#64748B',
-    marginTop: 2,
-  },
-  profileTrigger: {
-    width: 38,
-    height: 38,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  contentContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 24,
-  },
-});
+function createStyles(theme) {
+  return StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+    },
+    header: {
+      backgroundColor: theme.colors.surface,
+      paddingHorizontal: 18,
+      paddingBottom: 14,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border,
+    },
+    headerTitle: {
+      fontSize: 22,
+      fontWeight: '800',
+      color: theme.colors.textPrimary,
+    },
+    headerSubtitle: {
+      fontSize: 13,
+      color: theme.colors.textSecondary,
+      marginTop: 2,
+    },
+    profileTrigger: {
+      width: 38,
+      height: 38,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    contentContainer: {
+      paddingHorizontal: 16,
+      paddingTop: 14,
+      paddingBottom: 24,
+    },
+  });
+}

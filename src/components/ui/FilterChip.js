@@ -1,6 +1,11 @@
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
+import { useAppTheme } from '../../theme/ThemeProvider';
 
 export default function FilterChip({ label, selected, onPress }) {
+  const theme = useAppTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
   return (
     <Pressable style={[styles.chip, selected && styles.chipActive]} onPress={onPress}>
       <Text style={[styles.text, selected && styles.textActive]}>{label}</Text>
@@ -8,25 +13,27 @@ export default function FilterChip({ label, selected, onPress }) {
   );
 }
 
-const styles = StyleSheet.create({
-  chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
-    backgroundColor: '#FFFFFF',
-  },
-  chipActive: {
-    backgroundColor: '#7E57C2',
-    borderColor: '#7E57C2',
-  },
-  text: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#475569',
-  },
-  textActive: {
-    color: '#FFFFFF',
-  },
-});
+function createStyles(theme) {
+  return StyleSheet.create({
+    chip: {
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      backgroundColor: theme.colors.surface,
+    },
+    chipActive: {
+      backgroundColor: theme.colors.primary,
+      borderColor: theme.colors.primary,
+    },
+    text: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: theme.colors.textSecondary,
+    },
+    textActive: {
+      color: theme.colors.primaryContrast,
+    },
+  });
+}

@@ -5,6 +5,7 @@ import AdaptiveModal from '../../components/AdaptiveModal';
 import ActionButton from '../../components/ui/ActionButton';
 import GameScreenHeader from '../../components/ui/GameScreenHeader';
 import { APP_FONTS } from '../../constants/fonts';
+import { useAppTheme } from '../../theme/ThemeProvider';
 
 const QUESTIONS = [
   { sign: 'a', options: ['A', 'B', 'C'], correct: 'A' },
@@ -18,6 +19,9 @@ const QUESTIONS = [
 const MAX_TIME = 10;
 
 export default function QuickQuizGameScreen({ onBack }) {
+  const theme = useAppTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
   const [started, setStarted] = useState(false);
   const [index, setIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(MAX_TIME);
@@ -97,8 +101,8 @@ export default function QuickQuizGameScreen({ onBack }) {
 
       {!started ? (
         <View style={styles.centerBox}>
-          <Ionicons name="flash" size={66} color="#F59E0B" />
-          <Text style={styles.welcomeTitle}>Ronda rapida de SEÑAS</Text>
+          <Ionicons name="flash" size={66} color={theme.colors.gold} />
+          <Text style={styles.welcomeTitle}>Ronda rapida de SEÃ‘AS</Text>
           <Text style={styles.welcomeText}>6 preguntas. 10 segundos por cada una.</Text>
           <ActionButton label="Comenzar" onPress={startGame} style={styles.startBtn} />
         </View>
@@ -114,7 +118,7 @@ export default function QuickQuizGameScreen({ onBack }) {
           </View>
 
           <View style={styles.questionCard}>
-            <Text style={styles.questionText}>Que letra representa esta SEÑA?</Text>
+            <Text style={styles.questionText}>Que letra representa esta SEÃ‘A?</Text>
             <Text style={styles.signText}>{question.sign}</Text>
           </View>
 
@@ -148,101 +152,105 @@ export default function QuickQuizGameScreen({ onBack }) {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-  },
-  scoreLabel: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#F59E0B',
-  },
-  centerBox: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-  },
-  welcomeTitle: {
-    fontSize: 24,
-    fontWeight: '900',
-    color: '#1E293B',
-    textAlign: 'center',
-  },
-  welcomeText: {
-    color: '#64748B',
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  startBtn: {
-    marginTop: 14,
-    backgroundColor: '#F59E0B',
-    borderColor: '#F59E0B',
-    paddingHorizontal: 24,
-  },
-  gameBox: {
-    flex: 1,
-  },
-  progressTrack: {
-    height: 10,
-    borderRadius: 999,
-    backgroundColor: '#E2E8F0',
-    overflow: 'hidden',
-    marginBottom: 10,
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#7E57C2',
-  },
-  metaRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  metaText: {
-    color: '#334155',
-    fontWeight: '700',
-  },
-  timerDanger: {
-    color: '#EF4444',
-  },
-  questionCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    alignItems: 'center',
-    paddingVertical: 20,
-    marginBottom: 12,
-  },
-  questionText: {
-    color: '#334155',
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  signText: {
-    fontSize: 56,
-    color: '#7E57C2',
-    fontFamily: APP_FONTS.sign,
-    fontWeight: '400',
-  },
-  optionsList: {
-    gap: 8,
-  },
-  optionBtn: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  optionBtnPressed: {
-    backgroundColor: '#F8FAFC',
-  },
-  optionText: {
-    fontSize: 20,
-    fontWeight: '900',
-    color: '#0F172A',
-  },
-});
+function createStyles(theme) {
+  const isDark = theme.mode === 'dark';
+
+  return StyleSheet.create({
+    screen: {
+      flex: 1,
+    },
+    scoreLabel: {
+      fontSize: 14,
+      fontWeight: '800',
+      color: theme.colors.gold,
+    },
+    centerBox: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 10,
+    },
+    welcomeTitle: {
+      fontSize: 24,
+      fontWeight: '900',
+      color: theme.colors.textPrimary,
+      textAlign: 'center',
+    },
+    welcomeText: {
+      color: theme.colors.textSecondary,
+      fontSize: 14,
+      textAlign: 'center',
+    },
+    startBtn: {
+      marginTop: 14,
+      backgroundColor: theme.colors.gold,
+      borderColor: theme.colors.gold,
+      paddingHorizontal: 24,
+    },
+    gameBox: {
+      flex: 1,
+    },
+    progressTrack: {
+      height: 10,
+      borderRadius: 999,
+      backgroundColor: isDark ? '#3A3350' : '#E2E8F0',
+      overflow: 'hidden',
+      marginBottom: 10,
+    },
+    progressFill: {
+      height: '100%',
+      backgroundColor: theme.colors.primary,
+    },
+    metaRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 12,
+    },
+    metaText: {
+      color: theme.colors.textSecondary,
+      fontWeight: '700',
+    },
+    timerDanger: {
+      color: theme.colors.danger,
+    },
+    questionCard: {
+      backgroundColor: isDark ? '#261F3B' : '#FFFFFF',
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: isDark ? '#4B3B73' : '#E2E8F0',
+      alignItems: 'center',
+      paddingVertical: 20,
+      marginBottom: 12,
+    },
+    questionText: {
+      color: isDark ? '#E6DDBB' : '#334155',
+      fontWeight: '700',
+      marginBottom: 8,
+    },
+    signText: {
+      fontSize: 56,
+      color: theme.colors.primary,
+      fontFamily: APP_FONTS.sign,
+      fontWeight: '400',
+    },
+    optionsList: {
+      gap: 8,
+    },
+    optionBtn: {
+      backgroundColor: isDark ? '#221C35' : '#FFFFFF',
+      borderWidth: 1,
+      borderColor: isDark ? '#4B3B73' : '#CBD5E1',
+      borderRadius: 12,
+      paddingVertical: 14,
+      alignItems: 'center',
+    },
+    optionBtnPressed: {
+      backgroundColor: isDark ? '#2A2341' : '#F8FAFC',
+    },
+    optionText: {
+      fontSize: 20,
+      fontWeight: '900',
+      color: theme.colors.textPrimary,
+    },
+  });
+}

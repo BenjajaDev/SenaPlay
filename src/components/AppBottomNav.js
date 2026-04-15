@@ -1,6 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAppTheme } from '../theme/ThemeProvider';
 
 const TABS = [
   { key: 'levels', label: 'Niveles', icon: 'layers-outline', activeIcon: 'layers' },
@@ -12,6 +14,8 @@ const TABS = [
 
 export default function AppBottomNav({ activeTab, onChangeTab }) {
   const insets = useSafeAreaInsets();
+  const theme = useAppTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   return (
     <View style={[styles.container, { paddingBottom: 12 + insets.bottom }]}>
@@ -27,9 +31,16 @@ export default function AppBottomNav({ activeTab, onChangeTab }) {
             <Ionicons
               name={isActive ? tab.activeIcon : tab.icon}
               size={22}
-              color={isActive ? '#7E57C2' : '#7D8597'}
+              color={isActive ? theme.colors.primary : theme.colors.navInactive}
             />
-            <Text style={[styles.label, isActive && styles.labelActive]}>{tab.label}</Text>
+            <Text
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.72}
+              style={[styles.label, isActive && styles.labelActive]}
+            >
+              {tab.label}
+            </Text>
           </Pressable>
         );
       })}
@@ -37,27 +48,32 @@ export default function AppBottomNav({ activeTab, onChangeTab }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    borderTopWidth: 1,
-    borderTopColor: '#E3E8F3',
-    backgroundColor: '#FFFFFF',
-    paddingTop: 8,
-    paddingHorizontal: 6,
-  },
-  item: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 4,
-    paddingVertical: 4,
-  },
-  label: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#7D8597',
-  },
-  labelActive: {
-    color: '#7E57C2',
-  },
-});
+function createStyles(theme) {
+  return StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.border,
+      backgroundColor: theme.colors.surface,
+      paddingTop: 8,
+      paddingHorizontal: 6,
+    },
+    item: {
+      flex: 1,
+      minWidth: 0,
+      alignItems: 'center',
+      gap: 4,
+      paddingVertical: 4,
+    },
+    label: {
+      fontSize: 11,
+      fontWeight: '600',
+      color: theme.colors.navInactive,
+      maxWidth: '100%',
+      textAlign: 'center',
+    },
+    labelActive: {
+      color: theme.colors.primary,
+    },
+  });
+}

@@ -1,9 +1,14 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import SectionHeader from '../../components/ui/SectionHeader';
 import StatCard from '../../components/ui/StatCard';
 import SurfaceCard from '../../components/ui/SurfaceCard';
+import { useAppTheme } from '../../theme/ThemeProvider';
 
 export default function ProgressTabScreen() {
+  const theme = useAppTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
   return (
     <View style={styles.container}>
       <SectionHeader
@@ -28,32 +33,34 @@ export default function ProgressTabScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    gap: 12,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    rowGap: 8,
-  },
-  statCard: {
-    width: '48.5%',
-  },
-  panel: {
-    marginTop: 6,
-    padding: 12,
-    gap: 6,
-  },
-  panelTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#1E293B',
-    marginBottom: 2,
-  },
-  panelItem: {
-    color: '#475569',
-    fontSize: 13,
-  },
-});
+function createStyles(theme) {
+  return StyleSheet.create({
+    container: {
+      gap: 12,
+    },
+    statsGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+      rowGap: 8,
+    },
+    statCard: {
+      width: '48.5%',
+    },
+    panel: {
+      marginTop: 6,
+      padding: 12,
+      gap: 6,
+    },
+    panelTitle: {
+      fontSize: 15,
+      fontWeight: '800',
+      color: theme.colors.textPrimary,
+      marginBottom: 2,
+    },
+    panelItem: {
+      color: theme.colors.textSecondary,
+      fontSize: 13,
+    },
+  });
+}

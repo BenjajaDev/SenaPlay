@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useAppTheme } from '../theme/ThemeProvider';
 
 const CONTEXT_PRESETS = {
   'login-success': {
@@ -93,6 +94,9 @@ export default function AdaptiveModal({
   onSecondaryPress,
   onRequestClose,
 }) {
+  const theme = useAppTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
   const preset = CONTEXT_PRESETS[context] || {};
   const resolvedVariant = variant || preset.variant || 'info';
   const palette = VARIANT_STYLES[resolvedVariant] || VARIANT_STYLES.info;
@@ -155,86 +159,92 @@ export default function AdaptiveModal({
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.45)',
-    justifyContent: 'center',
-    paddingHorizontal: 22,
-  },
-  container: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    paddingHorizontal: 22,
-    paddingTop: 22,
-    paddingBottom: 18,
-    overflow: 'hidden',
-  },
-  topAccent: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 5,
-  },
-  badge: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    alignItems: 'center',
-    justifyContent: 'center',
-    alignSelf: 'center',
-    marginBottom: 12,
-  },
-  badgeText: {
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  title: {
-    textAlign: 'center',
-    color: '#111827',
-    fontSize: 21,
-    fontWeight: '800',
-    marginBottom: 8,
-  },
-  message: {
-    textAlign: 'center',
-    color: '#4B5563',
-    fontSize: 14,
-    lineHeight: 21,
-    marginBottom: 20,
-  },
-  actions: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  primaryButton: {
-    flex: 1,
-    minHeight: 46,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 14,
-  },
-  primaryButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '800',
-  },
-  secondaryButton: {
-    flex: 1,
-    minHeight: 46,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 14,
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    backgroundColor: '#F9FAFB',
-  },
-  secondaryButtonText: {
-    color: '#111827',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-});
+function createStyles(theme) {
+  const isDark = theme.mode === 'dark';
+
+  return StyleSheet.create({
+    backdrop: {
+      flex: 1,
+      backgroundColor: theme.colors.overlay,
+      justifyContent: 'center',
+      paddingHorizontal: 22,
+    },
+    container: {
+      backgroundColor: isDark ? '#221C35' : '#FFFFFF',
+      borderColor: isDark ? '#4B3B73' : theme.colors.border,
+      borderWidth: 1,
+      borderRadius: 24,
+      paddingHorizontal: 22,
+      paddingTop: 22,
+      paddingBottom: 18,
+      overflow: 'hidden',
+    },
+    topAccent: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      height: 5,
+    },
+    badge: {
+      width: 52,
+      height: 52,
+      borderRadius: 26,
+      alignItems: 'center',
+      justifyContent: 'center',
+      alignSelf: 'center',
+      marginBottom: 12,
+    },
+    badgeText: {
+      fontSize: 15,
+      fontWeight: '800',
+    },
+    title: {
+      textAlign: 'center',
+      color: theme.colors.textPrimary,
+      fontSize: 21,
+      fontWeight: '800',
+      marginBottom: 8,
+    },
+    message: {
+      textAlign: 'center',
+      color: theme.colors.textSecondary,
+      fontSize: 14,
+      lineHeight: 21,
+      marginBottom: 20,
+    },
+    actions: {
+      flexDirection: 'row',
+      gap: 10,
+    },
+    primaryButton: {
+      flex: 1,
+      minHeight: 46,
+      borderRadius: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 14,
+    },
+    primaryButtonText: {
+      color: '#FFFFFF',
+      fontSize: 14,
+      fontWeight: '800',
+    },
+    secondaryButton: {
+      flex: 1,
+      minHeight: 46,
+      borderRadius: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 14,
+      borderWidth: 1,
+      borderColor: isDark ? '#4B3B73' : '#D1D5DB',
+      backgroundColor: isDark ? '#2A2341' : '#F9FAFB',
+    },
+    secondaryButtonText: {
+      color: theme.colors.textPrimary,
+      fontSize: 14,
+      fontWeight: '700',
+    },
+  });
+}

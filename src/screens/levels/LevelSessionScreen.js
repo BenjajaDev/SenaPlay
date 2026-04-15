@@ -11,6 +11,7 @@ import ActionButton from '../../components/ui/ActionButton';
 import GameScreenHeader from '../../components/ui/GameScreenHeader';
 import SurfaceCard from '../../components/ui/SurfaceCard';
 import { APP_FONTS } from '../../constants/fonts';
+import { useAppTheme } from '../../theme/ThemeProvider';
 
 function shuffle(items) {
   const clone = [...items];
@@ -41,7 +42,7 @@ function displayLetter(value) {
   return String(value || '').toUpperCase();
 }
 
-function LifeCounter({ lives }) {
+function LifeCounter({ lives, styles }) {
   return (
     <View style={styles.livesRow}>
       {Array.from({ length: 3 }).map((_, index) => (
@@ -54,6 +55,9 @@ function LifeCounter({ lives }) {
 }
 
 export default function LevelSessionScreen({ level, onBack, onComplete }) {
+  const theme = useAppTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
   const [current, setCurrent] = useState(0);
   const [lives, setLives] = useState(3);
   const [hits, setHits] = useState(0);
@@ -217,7 +221,7 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
     if (exercise.type === 'recognition') {
       const a = [...recognitionSelected].sort().join('|');
       const b = [...exercise.correct].sort().join('|');
-      handleAnswer(a === b, 'La seleccion de letras no coincide con las SEÑAS.');
+      handleAnswer(a === b, 'La seleccion de letras no coincide con las SEÃ‘AS.');
       return;
     }
 
@@ -322,7 +326,7 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
     if (exercise.type === 'matching') {
       return (
         <View style={styles.exerciseBlock}>
-          <Text style={styles.exerciseHint}>Toca una SEÑA y luego su letra correspondiente.</Text>
+          <Text style={styles.exerciseHint}>Toca una SEÃ‘A y luego su letra correspondiente.</Text>
           <View style={styles.matchGrid}>
             {matchingCards.map((card) => {
               const active = matchingSelected?.id === card.id;
@@ -339,7 +343,7 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
                   ]}
                   onLongPress={() => {
                     if (card.type === 'sign') {
-                      setHintText(`Pista de SEÑA: ${card.value}`);
+                      setHintText(`Pista de SEÃ‘A: ${card.value}`);
                     }
                   }}
                   onPress={() => handleMatchingCard(card)}
@@ -354,7 +358,7 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
                     {displayValue}
                   </Text>
                   <Text style={[styles.matchType, matched && styles.matchTextDone]}>
-                    {card.type === 'sign' ? 'SEÑA' : 'LETRA'}
+                    {card.type === 'sign' ? 'SEÃ‘A' : 'LETRA'}
                   </Text>
                 </Pressable>
               );
@@ -369,7 +373,7 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
         <View style={styles.exerciseBlock}>
           <SurfaceCard style={styles.signCard}>
             <Text style={[styles.signLarge, styles.signText]}>{exercise.sign}</Text>
-            <Text style={styles.signLabel}>SEÑA mostrada</Text>
+            <Text style={styles.signLabel}>SEÃ‘A mostrada</Text>
           </SurfaceCard>
           <View style={styles.optionList}>
             {exercise.options.map((option) => (
@@ -432,7 +436,7 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
     if (exercise.type === 'recognition') {
       return (
         <View style={styles.exerciseBlock}>
-          <Text style={styles.exerciseHint}>Selecciona las letras que representan estas SEÑAS.</Text>
+          <Text style={styles.exerciseHint}>Selecciona las letras que representan estas SEÃ‘AS.</Text>
           <SurfaceCard style={styles.signStrip}>
             {exercise.signs.map((sign) => (
               <Text key={sign} style={[styles.signStripText, styles.signText]}>{sign}</Text>
@@ -461,7 +465,7 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
         <View style={styles.exerciseBlock}>
           {exercise.type === 'interpret-signs' ? (
             <>
-              <Text style={styles.exerciseHint}>Interpreta las SEÑAS y forma la palabra correcta.</Text>
+              <Text style={styles.exerciseHint}>Interpreta las SEÃ‘AS y forma la palabra correcta.</Text>
               <SurfaceCard style={styles.signStrip}>
                 {exercise.signs.map((sign) => (
                   <Text key={sign} style={[styles.signStripText, styles.signText]}>{sign}</Text>
@@ -503,7 +507,7 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
           <Text style={styles.levelTitle}>{level.title}</Text>
           <Text style={styles.levelSubtitle}>Ejercicio {current + 1} de {level.exercises.length}</Text>
         </View>
-        <LifeCounter lives={lives} />
+        <LifeCounter lives={lives} styles={styles} />
       </View>
 
       <View style={styles.progressTrack}>
@@ -579,7 +583,10 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(theme) {
+  const isDark = theme.mode === 'dark';
+
+  return StyleSheet.create({
   screen: {
     flex: 1,
     gap: 10,
@@ -592,10 +599,10 @@ const styles = StyleSheet.create({
   levelTitle: {
     fontSize: 20,
     fontWeight: '900',
-    color: '#0F172A',
+    color: theme.colors.textPrimary,
   },
   levelSubtitle: {
-    color: '#64748B',
+    color: theme.colors.textSecondary,
     fontSize: 12,
   },
   livesRow: {
@@ -603,18 +610,18 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   lifeIcon: {
-    color: '#EF4444',
+    color: theme.colors.danger,
     fontSize: 18,
   },
   progressTrack: {
     height: 10,
     borderRadius: 999,
-    backgroundColor: '#E2E8F0',
+    backgroundColor: isDark ? '#3A3350' : '#E2E8F0',
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#7E57C2',
+    backgroundColor: theme.colors.primary,
   },
   exerciseCard: {
     flex: 1,
@@ -623,19 +630,19 @@ const styles = StyleSheet.create({
   },
   exerciseTitle: {
     fontSize: 16,
-    color: '#1E293B',
+    color: theme.colors.textPrimary,
     fontWeight: '800',
   },
   hintText: {
     fontSize: 12,
-    color: '#0369A1',
-    backgroundColor: '#E0F2FE',
+    color: isDark ? '#F5E7B2' : '#0369A1',
+    backgroundColor: isDark ? '#3A2E12' : '#E0F2FE',
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 5,
   },
   showHintText: {
-    color: '#7E57C2',
+    color: theme.colors.primary,
     fontSize: 12,
     fontWeight: '700',
   },
@@ -644,7 +651,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   exerciseHint: {
-    color: '#64748B',
+    color: theme.colors.textSecondary,
     fontSize: 13,
   },
   matchGrid: {
@@ -657,33 +664,33 @@ const styles = StyleSheet.create({
     width: '31%',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#CBD5E1',
-    backgroundColor: '#FFFFFF',
+    borderColor: isDark ? '#4B3B73' : '#CBD5E1',
+    backgroundColor: isDark ? '#221C35' : '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 10,
     minHeight: 80,
   },
   matchCardActive: {
-    borderColor: '#60A5FA',
-    backgroundColor: '#EFF6FF',
+    borderColor: isDark ? '#F2C94C' : '#60A5FA',
+    backgroundColor: isDark ? '#2A2341' : '#EFF6FF',
   },
   matchCardDone: {
-    borderColor: '#22C55E',
-    backgroundColor: '#DCFCE7',
+    borderColor: isDark ? '#7EDB43' : '#22C55E',
+    backgroundColor: isDark ? '#2D5A31' : '#DCFCE7',
   },
   matchText: {
     fontSize: 24,
     fontWeight: '900',
-    color: '#0F172A',
+    color: theme.colors.textPrimary,
   },
   matchTextDone: {
-    color: '#166534',
+    color: isDark ? '#D9F9C6' : '#166534',
   },
   matchType: {
     marginTop: 4,
     fontSize: 10,
-    color: '#64748B',
+    color: theme.colors.textSecondary,
     fontWeight: '700',
   },
   signCard: {
@@ -693,7 +700,7 @@ const styles = StyleSheet.create({
   },
   signLarge: {
     fontSize: 56,
-    color: '#7E57C2',
+    color: theme.colors.primary,
     fontWeight: '900',
   },
   signText: {
@@ -702,7 +709,7 @@ const styles = StyleSheet.create({
   },
   signLabel: {
     fontSize: 12,
-    color: '#64748B',
+    color: theme.colors.textSecondary,
   },
   signStrip: {
     flexDirection: 'row',
@@ -713,7 +720,7 @@ const styles = StyleSheet.create({
   },
   signStripText: {
     fontSize: 28,
-    color: '#7E57C2',
+    color: theme.colors.primary,
   },
   optionList: {
     gap: 8,
@@ -721,22 +728,22 @@ const styles = StyleSheet.create({
   optionBtn: {
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#CBD5E1',
-    backgroundColor: '#FFFFFF',
+    borderColor: isDark ? '#4B3B73' : '#CBD5E1',
+    backgroundColor: isDark ? '#221C35' : '#FFFFFF',
     paddingVertical: 12,
     alignItems: 'center',
   },
   optionBtnActive: {
-    borderColor: '#7E57C2',
-    backgroundColor: '#F5F3FF',
+    borderColor: theme.colors.primary,
+    backgroundColor: isDark ? '#2A2341' : '#F5F3FF',
   },
   optionText: {
     fontSize: 18,
     fontWeight: '900',
-    color: '#334155',
+    color: theme.colors.textPrimary,
   },
   optionTextActive: {
-    color: '#6D28D9',
+    color: theme.colors.primary,
   },
   slotRow: {
     flexDirection: 'row',
@@ -747,8 +754,8 @@ const styles = StyleSheet.create({
     minWidth: 38,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#CBD5E1',
-    backgroundColor: '#FFFFFF',
+    borderColor: isDark ? '#4B3B73' : '#CBD5E1',
+    backgroundColor: isDark ? '#221C35' : '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 10,
@@ -756,7 +763,7 @@ const styles = StyleSheet.create({
   },
   slotText: {
     fontWeight: '800',
-    color: '#0F172A',
+    color: theme.colors.textPrimary,
   },
   poolRow: {
     flexDirection: 'row',
@@ -766,28 +773,28 @@ const styles = StyleSheet.create({
   poolChip: {
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: '#CBD5E1',
-    backgroundColor: '#FFFFFF',
+    borderColor: isDark ? '#4B3B73' : '#CBD5E1',
+    backgroundColor: isDark ? '#221C35' : '#FFFFFF',
     paddingHorizontal: 11,
     paddingVertical: 7,
   },
   poolChipActive: {
-    borderColor: '#7E57C2',
-    backgroundColor: '#F5F3FF',
+    borderColor: theme.colors.primary,
+    backgroundColor: isDark ? '#2A2341' : '#F5F3FF',
   },
   poolText: {
-    color: '#334155',
+    color: theme.colors.textPrimary,
     fontWeight: '800',
   },
   poolTextActive: {
-    color: '#6D28D9',
+    color: theme.colors.primary,
   },
   input: {
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#CBD5E1',
-    backgroundColor: '#FFFFFF',
-    color: '#0F172A',
+    borderColor: isDark ? '#4B3B73' : '#CBD5E1',
+    backgroundColor: isDark ? '#221C35' : '#FFFFFF',
+    color: theme.colors.textPrimary,
     fontSize: 22,
     fontWeight: '900',
     textAlign: 'center',
@@ -798,32 +805,33 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   feedbackGood: {
-    borderColor: '#22C55E',
-    backgroundColor: '#F0FDF4',
+    borderColor: isDark ? '#7EDB43' : '#22C55E',
+    backgroundColor: isDark ? '#1E3220' : '#F0FDF4',
   },
   feedbackBad: {
-    borderColor: '#EF4444',
-    backgroundColor: '#FEF2F2',
+    borderColor: theme.colors.danger,
+    backgroundColor: isDark ? '#3A1E28' : '#FEF2F2',
   },
   feedbackTitle: {
     fontSize: 16,
     fontWeight: '900',
-    color: '#0F172A',
+    color: theme.colors.textPrimary,
   },
   feedbackMessage: {
-    color: '#475569',
+    color: theme.colors.textSecondary,
     fontSize: 13,
   },
   feedbackBtnGood: {
-    backgroundColor: '#22C55E',
-    borderColor: '#22C55E',
+    backgroundColor: theme.colors.success,
+    borderColor: theme.colors.success,
   },
   feedbackBtnBad: {
-    backgroundColor: '#EF4444',
-    borderColor: '#EF4444',
+    backgroundColor: theme.colors.danger,
+    borderColor: theme.colors.danger,
   },
   verifyBtn: {
-    backgroundColor: '#7E57C2',
-    borderColor: '#7E57C2',
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
   },
-});
+  });
+}

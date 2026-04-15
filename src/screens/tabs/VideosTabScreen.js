@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import SectionHeader from '../../components/ui/SectionHeader';
 import SurfaceCard from '../../components/ui/SurfaceCard';
+import { useAppTheme } from '../../theme/ThemeProvider';
 
 const VIDEOS = [
   { title: 'Pronunciacion diaria', category: 'Basico', duration: '06:12' },
@@ -12,6 +13,8 @@ const VIDEOS = [
 ];
 
 export default function VideosTabScreen() {
+  const theme = useAppTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const [query, setQuery] = useState('');
 
   const filtered = useMemo(() => {
@@ -32,12 +35,12 @@ export default function VideosTabScreen() {
       />
 
       <View style={styles.searchBox}>
-        <Ionicons name="search" size={18} color="#64748B" />
+        <Ionicons name="search" size={18} color={theme.colors.textSecondary} />
         <TextInput
           value={query}
           onChangeText={setQuery}
           placeholder="Buscar videos..."
-          placeholderTextColor="#94A3B8"
+          placeholderTextColor={theme.colors.navInactive}
           style={styles.searchInput}
         />
       </View>
@@ -47,7 +50,7 @@ export default function VideosTabScreen() {
           <SurfaceCard key={video.title} style={styles.videoCard}>
             <Pressable style={styles.videoCardPressable}>
               <View style={styles.thumb}>
-                <Ionicons name="play-circle" size={32} color="#7E57C2" />
+                <Ionicons name="play-circle" size={32} color={theme.colors.primary} />
               </View>
               <View style={styles.info}>
                 <Text style={styles.videoTitle}>{video.title}</Text>
@@ -61,56 +64,58 @@ export default function VideosTabScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    gap: 12,
-  },
-  searchBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    gap: 8,
-  },
-  searchInput: {
-    flex: 1,
-    paddingVertical: 10,
-    color: '#0F172A',
-    fontSize: 14,
-  },
-  list: {
-    gap: 8,
-  },
-  videoCard: {
-    padding: 10,
-  },
-  videoCardPressable: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  thumb: {
-    width: 64,
-    height: 54,
-    borderRadius: 10,
-    backgroundColor: '#F5F3FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  info: {
-    flex: 1,
-  },
-  videoTitle: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#0F172A',
-  },
-  videoMeta: {
-    marginTop: 3,
-    fontSize: 12,
-    color: '#64748B',
-  },
-});
+function createStyles(theme) {
+  return StyleSheet.create({
+    container: {
+      gap: 12,
+    },
+    searchBox: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.colors.surface,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      borderRadius: 999,
+      paddingHorizontal: 12,
+      gap: 8,
+    },
+    searchInput: {
+      flex: 1,
+      paddingVertical: 10,
+      color: theme.colors.textPrimary,
+      fontSize: 14,
+    },
+    list: {
+      gap: 8,
+    },
+    videoCard: {
+      padding: 10,
+    },
+    videoCardPressable: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    thumb: {
+      width: 64,
+      height: 54,
+      borderRadius: 10,
+      backgroundColor: theme.colors.primarySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 10,
+    },
+    info: {
+      flex: 1,
+    },
+    videoTitle: {
+      fontSize: 14,
+      fontWeight: '800',
+      color: theme.colors.textPrimary,
+    },
+    videoMeta: {
+      marginTop: 3,
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+    },
+  });
+}

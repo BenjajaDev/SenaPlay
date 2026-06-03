@@ -1,5 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
+import * as Linking from 'expo-linking';
+import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
 import {
   Image,
@@ -16,12 +18,29 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../backend/supabase';
 import AdaptiveModal from '../components/AdaptiveModal';
 
+WebBrowser.maybeCompleteAuthSession();
+
+const TABS = [
+  { key: 'login', label: 'Iniciar sesion' },
+  { key: 'forgot', label: 'Recuperar contrasena' },
+];
+
+const SOCIAL = [
+  { id: 'google', provider: 'google', icon: require('../../assets/google.png') },
+  { id: 'facebook', provider: 'facebook', icon: require('../../assets/facebook.png') },
+  { id: 'x', provider: 'twitter', icon: require('../../assets/x.png') },
+];
+
 export default function LoginScreen({ onGoToRegister, onLoginSuccess }) {
+  const insets = useSafeAreaInsets();
+  const [activeTab, setActiveTab] = useState('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSocialLoading, setIsSocialLoading] = useState('');
   const [isResendingVerification, setIsResendingVerification] = useState(false);
+  const [isSendingReset, setIsSendingReset] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [modalState, setModalState] = useState({
     visible: false,
@@ -29,61 +48,33 @@ export default function LoginScreen({ onGoToRegister, onLoginSuccess }) {
     title: '',
     message: '',
   });
-  const insets = useSafeAreaInsets();
 
-  const socialLogins = [
-    { id: 'google', icon: require('../../assets/google.png'), accent: '#FFFFFF' },
-    { id: 'facebook', icon: require('../../assets/facebook.png'), accent: '#FFFFFF' },
-    { id: 'x', icon: require('../../assets/x.png'), accent: '#FFFFFF' },
-  ];
-
-  const openModal = (config) => {
-    setModalState({ visible: true, ...config });
-  };
-
-  const closeModal = () => {
-    setModalState((prev) => ({ ...prev, visible: false }));
-  };
+  const openModal = (config) => setModalState({ visible: true, ...config });
+  const closeModal = () => setModalState((prev) => ({ ...prev, visible: false }));
 
   useEffect(() => {
-    if (!resendCooldown) {
-      return undefined;
-    }
-
+    if (!resendCooldown) return undefined;
     const timer = setInterval(() => {
       setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
-
     return () => clearInterval(timer);
   }, [resendCooldown]);
 
-  const isEmailVerified = (user) => {
-    return Boolean(user?.email_confirmed_at || user?.confirmed_at);
-  };
+  const isEmailVerified = (user) => Boolean(user?.email_confirmed_at || user?.confirmed_at);
 
   const handleModalPrimary = () => {
     const shouldEnterSystem = modalState.context === 'login-success';
     closeModal();
-
-    if (shouldEnterSystem && onLoginSuccess) {
-      onLoginSuccess();
-    }
+    if (shouldEnterSystem && onLoginSuccess) onLoginSuccess();
   };
 
   const handleLogin = async () => {
     if (!email.trim()) {
-      openModal({
-        context: 'validation',
-        message: 'Ingrese su correo',
-      });
+      openModal({ context: 'validation', message: 'Ingrese su correo' });
       return;
     }
-
     if (!password) {
-      openModal({
-        context: 'validation',
-        message: 'Ingrese la contraseña',
-      });
+      openModal({ context: 'validation', message: 'Ingrese la contrasena' });
       return;
     }
 
@@ -95,91 +86,111 @@ export default function LoginScreen({ onGoToRegister, onLoginSuccess }) {
       });
 
       if (error) {
-        openModal({
-          context: 'auth-error',
-          message: error.message,
-        });
+        openModal({ context: 'auth-error', message: error.message });
         return;
       }
 
       if (!isEmailVerified(data?.user)) {
         await supabase.auth.signOut();
-        openModal({
-          context: 'email-verification-required',
-        });
+        openModal({ context: 'email-verification-required' });
         return;
       }
 
-      openModal({
-        context: 'login-success',
-      });
-    } catch (err) {
-      openModal({
-        context: 'auth-error',
-        message: 'No se pudo iniciar sesion. Intentalo de nuevo.',
-      });
+      openModal({ context: 'login-success' });
+    } catch {
+      openModal({ context: 'auth-error', message: 'No se pudo iniciar sesion. Intentalo de nuevo.' });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleResendVerification = async () => {
-    if (resendCooldown > 0) {
-      openModal({
-        context: 'validation',
-        message: `Espera ${resendCooldown}s para reenviar el correo.`,
-      });
-      return;
-    }
-
+  const handleForgotPassword = async () => {
     if (!email.trim()) {
-      openModal({
-        context: 'validation',
-        message: 'Ingresa tu correo para reenviar la verificacion.',
-      });
+      openModal({ context: 'validation', message: 'Ingresa tu correo para recibir el enlace de recuperacion.' });
       return;
     }
 
     try {
-      setIsResendingVerification(true);
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email: email.trim(),
+      setIsSendingReset(true);
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: Linking.createURL('/auth/reset-password'),
       });
 
       if (error) {
-        openModal({
-          context: 'auth-error',
-          message: error.message,
-        });
+        openModal({ context: 'auth-error', message: error.message });
         return;
       }
 
       openModal({
         context: 'email-verification-sent',
+        message: 'Te enviamos un enlace de recuperacion a tu correo. Revisalo y sigue las instrucciones.',
       });
-      setResendCooldown(60);
-    } catch (err) {
-      openModal({
-        context: 'auth-error',
-        message: 'No se pudo reenviar el correo de verificacion.',
-      });
+    } catch {
+      openModal({ context: 'auth-error', message: 'No se pudo enviar el enlace. Intentalo de nuevo.' });
     } finally {
-      setIsResendingVerification(false);
+      setIsSendingReset(false);
     }
   };
 
-  const handleRegister = () => {
-    if (onGoToRegister) {
-      onGoToRegister();
+  const handleSocialLogin = async (provider) => {
+    try {
+      setIsSocialLoading(provider);
+      const redirectTo = Linking.createURL('/auth/callback');
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo, skipBrowserRedirect: true },
+      });
+
+      if (error) {
+        openModal({ context: 'auth-error', message: error.message });
+        return;
+      }
+
+      if (!data?.url) return;
+
+      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+      if (result.type === 'success' && result.url) {
+        const url = result.url;
+        const hash = url.split('#')[1] || '';
+        const params = new URLSearchParams(hash.includes('=') ? hash : url.split('?')[1] || '');
+        const accessToken = params.get('access_token');
+        const refreshToken = params.get('refresh_token');
+
+        if (accessToken && refreshToken) {
+          await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+        }
+      }
+    } catch {
+      openModal({ context: 'auth-error', message: 'No se pudo iniciar sesion con este proveedor.' });
+    } finally {
+      setIsSocialLoading('');
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (resendCooldown > 0) {
+      openModal({ context: 'validation', message: `Espera ${resendCooldown}s para reenviar el correo.` });
+      return;
+    }
+    if (!email.trim()) {
+      openModal({ context: 'validation', message: 'Ingresa tu correo para reenviar la verificacion.' });
       return;
     }
 
-    openModal({
-      context: 'info',
-      title: 'Registro',
-      message: 'Aqui navegaras a la pantalla de registro.',
-    });
+    try {
+      setIsResendingVerification(true);
+      const { error } = await supabase.auth.resend({ type: 'signup', email: email.trim() });
+      if (error) {
+        openModal({ context: 'auth-error', message: error.message });
+        return;
+      }
+      openModal({ context: 'email-verification-sent' });
+      setResendCooldown(60);
+    } catch {
+      openModal({ context: 'auth-error', message: 'No se pudo reenviar el correo de verificacion.' });
+    } finally {
+      setIsResendingVerification(false);
+    }
   };
 
   return (
@@ -199,7 +210,6 @@ export default function LoginScreen({ onGoToRegister, onLoginSuccess }) {
           ]}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
-          automaticallyAdjustKeyboardInsets
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.hero}>
@@ -212,100 +222,160 @@ export default function LoginScreen({ onGoToRegister, onLoginSuccess }) {
             </View>
             <Text style={styles.brand}>OratioLingo</Text>
             <Text style={styles.subtitle}>
-              Inicia sesión para continuar con tus niveles, progreso y práctica diaria.
+              Inicia sesion para continuar con tus niveles, progreso y practica diaria.
             </Text>
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>¡Bienvenido de nuevo!</Text>
-            <Text style={styles.cardSubtitle}>Ingresa con tu correo y contraseña</Text>
-
-            <Text style={styles.label}>Correo</Text>
-            <TextInput
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="email-address"
-              placeholder="tuemail@correo.com"
-              placeholderTextColor="#8D97A8"
-              style={styles.input}
-              value={email}
-              onChangeText={setEmail}
-            />
-
-            <Text style={styles.label}>Contraseña</Text>
-            <View style={styles.inputRow}>
-              <TextInput
-                autoCapitalize="none"
-                autoCorrect={false}
-                placeholder="••••••••"
-                placeholderTextColor="#8D97A8"
-                secureTextEntry={!showPassword}
-                style={styles.inputWithIcon}
-                value={password}
-                onChangeText={setPassword}
-              />
-              <Pressable
-                onPress={() => setShowPassword((prev) => !prev)}
-                style={styles.eyeButton}
-                hitSlop={10}
-              >
-                <Ionicons
-                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                  size={20}
-                  color="#6B7280"
-                />
-              </Pressable>
-            </View>
-
-            <Pressable
-              style={({ pressed }) => [styles.button, pressed && styles.buttonPressed, isLoading && styles.buttonDisabled]}
-              onPress={handleLogin}
-              disabled={isLoading}
-            >
-              <Text style={styles.buttonText}>{isLoading ? 'Entrando...' : 'Entrar'}</Text>
-            </Pressable>
-
-            <Pressable onPress={handleRegister} hitSlop={10}>
-              <Text style={styles.registerText}>
-                ¿No tienes cuenta? <Text style={styles.registerLink}>Regístrate</Text>
-              </Text>
-            </Pressable>
-
-            <Pressable
-              onPress={handleResendVerification}
-              hitSlop={10}
-              disabled={isResendingVerification || resendCooldown > 0}
-            >
-              <Text style={styles.verifyText}>
-                {isResendingVerification
-                  ? 'Reenviando verificacion...'
-                  : resendCooldown > 0
-                    ? `Reenviar disponible en ${resendCooldown}s`
-                    : 'No te llego el correo? Reenviar verificacion'}
-              </Text>
-            </Pressable>
-
-            <View style={styles.socialLogin}>
-              {socialLogins.map((provider) => (
+            {/* Tab switcher */}
+            <View style={styles.tabRow}>
+              {TABS.map((tab) => (
                 <Pressable
-                  key={provider.id}
-                  style={({ pressed }) => [
-                    styles.socialButton,
-                    pressed && styles.socialButtonPressed,
-                  ]}
+                  key={tab.key}
+                  style={[styles.tabBtn, activeTab === tab.key && styles.tabBtnActive]}
+                  onPress={() => setActiveTab(tab.key)}
                 >
-                  <View style={[styles.socialIcon, { backgroundColor: provider.accent }]}>
-                    <Image source={provider.icon} style={styles.socialIconImage} resizeMode="contain" />
-                  </View>
+                  <Text style={[styles.tabText, activeTab === tab.key && styles.tabTextActive]}>
+                    {tab.label}
+                  </Text>
                 </Pressable>
               ))}
             </View>
 
+            {activeTab === 'login' ? (
+              <>
+                <Text style={styles.cardSubtitle}>Ingresa con tu correo y contrasena</Text>
+
+                <Text style={styles.label}>Correo</Text>
+                <TextInput
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="email-address"
+                  placeholder="tuemail@correo.com"
+                  placeholderTextColor="#8D97A8"
+                  style={styles.input}
+                  value={email}
+                  onChangeText={setEmail}
+                />
+
+                <Text style={styles.label}>Contrasena</Text>
+                <View style={styles.inputRow}>
+                  <TextInput
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    placeholder="••••••••"
+                    placeholderTextColor="#8D97A8"
+                    secureTextEntry={!showPassword}
+                    style={styles.inputWithIcon}
+                    value={password}
+                    onChangeText={setPassword}
+                  />
+                  <Pressable onPress={() => setShowPassword((p) => !p)} style={styles.eyeButton} hitSlop={10}>
+                    <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#6B7280" />
+                  </Pressable>
+                </View>
+
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.button,
+                    pressed && styles.buttonPressed,
+                    isLoading && styles.buttonDisabled,
+                  ]}
+                  onPress={handleLogin}
+                  disabled={isLoading}
+                >
+                  <Text style={styles.buttonText}>{isLoading ? 'Entrando...' : 'Entrar'}</Text>
+                </Pressable>
+
+                <Pressable onPress={onGoToRegister} hitSlop={10}>
+                  <Text style={styles.linkText}>
+                    {'No tienes cuenta? '}<Text style={styles.linkHighlight}>Registrate</Text>
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  onPress={handleResendVerification}
+                  hitSlop={10}
+                  disabled={isResendingVerification || resendCooldown > 0}
+                >
+                  <Text style={styles.verifyText}>
+                    {isResendingVerification
+                      ? 'Reenviando verificacion...'
+                      : resendCooldown > 0
+                        ? `Reenviar disponible en ${resendCooldown}s`
+                        : 'No te llego el correo? Reenviar verificacion'}
+                  </Text>
+                </Pressable>
+
+                <View style={styles.divider}>
+                  <View style={styles.dividerLine} />
+                  <Text style={styles.dividerText}>o continua con</Text>
+                  <View style={styles.dividerLine} />
+                </View>
+
+                <View style={styles.socialRow}>
+                  {SOCIAL.map((s) => (
+                    <Pressable
+                      key={s.id}
+                      style={({ pressed }) => [
+                        styles.socialButton,
+                        pressed && styles.socialButtonPressed,
+                        isSocialLoading === s.provider && styles.buttonDisabled,
+                      ]}
+                      onPress={() => handleSocialLogin(s.provider)}
+                      disabled={!!isSocialLoading}
+                    >
+                      <View style={styles.socialIcon}>
+                        <Image source={s.icon} style={styles.socialIconImage} resizeMode="contain" />
+                      </View>
+                    </Pressable>
+                  ))}
+                </View>
+              </>
+            ) : (
+              <>
+                <Text style={styles.cardSubtitle}>
+                  Te enviaremos un enlace a tu correo para restablecer tu contrasena.
+                </Text>
+
+                <Text style={styles.label}>Correo</Text>
+                <TextInput
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="email-address"
+                  placeholder="tuemail@correo.com"
+                  placeholderTextColor="#8D97A8"
+                  style={styles.input}
+                  value={email}
+                  onChangeText={setEmail}
+                />
+
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.button,
+                    pressed && styles.buttonPressed,
+                    isSendingReset && styles.buttonDisabled,
+                  ]}
+                  onPress={handleForgotPassword}
+                  disabled={isSendingReset}
+                >
+                  <Text style={styles.buttonText}>
+                    {isSendingReset ? 'Enviando...' : 'Enviar enlace de recuperacion'}
+                  </Text>
+                </Pressable>
+
+                <Pressable onPress={() => setActiveTab('login')} hitSlop={10}>
+                  <Text style={styles.linkText}>
+                    {'Volver a '}<Text style={styles.linkHighlight}>Iniciar sesion</Text>
+                  </Text>
+                </Pressable>
+              </>
+            )}
           </View>
 
           <View style={styles.footerNote}>
             <Text style={styles.footerText}>
-              Todos los derechos reservados © 2024 OratioLingo. Hecho con ❤️.
+              Todos los derechos reservados 2024 OratioLingo.
             </Text>
           </View>
         </ScrollView>
@@ -324,13 +394,8 @@ export default function LoginScreen({ onGoToRegister, onLoginSuccess }) {
 }
 
 const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-  },
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#EDE7F6',
-  },
+  flex: { flex: 1 },
+  safeArea: { flex: 1, backgroundColor: '#EDE7F6' },
   content: {
     flexGrow: 1,
     paddingHorizontal: 20,
@@ -355,10 +420,7 @@ const styles = StyleSheet.create({
     borderRadius: 110,
     backgroundColor: 'rgba(31, 41, 55, 0.08)',
   },
-  hero: {
-    marginBottom: 18,
-    alignItems: 'center',
-  },
+  hero: { marginBottom: 18, alignItems: 'center' },
   logoPlaceholder: {
     width: 150,
     height: 150,
@@ -377,10 +439,7 @@ const styles = StyleSheet.create({
     elevation: 4,
     overflow: 'hidden',
   },
-  brandLogoImage: {
-    width: '84%',
-    height: '84%',
-  },
+  brandLogoImage: { width: '84%', height: '84%' },
   brand: {
     color: '#7E57C2',
     fontSize: 25,
@@ -390,41 +449,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     textAlign: 'center',
   },
-  title: {
-    color: '#101828',
-    fontSize: 20,
-    lineHeight: 36,
-    fontWeight: '800',
-    marginBottom: 12,
-    maxWidth: 340,
-    textAlign: 'center',
-  },
-  subtitle: {
-    color: '#5B6475',
-    fontSize: 13,
-    lineHeight: 22,
-    maxWidth: 340,
-    textAlign: 'center',
-  },
-  chipsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 18,
-    gap: 10,
-  },
-  chip: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: '#E3E8F1',
-  },
-  chipText: {
-    color: '#374151',
-    fontSize: 13,
-    fontWeight: '600',
-  },
+  subtitle: { color: '#5B6475', fontSize: 13, lineHeight: 22, maxWidth: 340, textAlign: 'center' },
   card: {
     backgroundColor: '#fbfbfb',
     borderRadius: 28,
@@ -437,23 +462,25 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     elevation: 5,
   },
-  cardTitle: {
-    color: '#101828',
-    fontSize: 22,
-    fontWeight: '800',
-    marginBottom: 6,
-  },
-  cardSubtitle: {
-    color: '#667085',
-    fontSize: 14,
+  tabRow: {
+    flexDirection: 'row',
+    backgroundColor: '#EDE7F6',
+    borderRadius: 14,
+    padding: 4,
     marginBottom: 18,
+    gap: 4,
   },
-  label: {
-    color: '#344054',
-    fontSize: 13,
-    fontWeight: '700',
-    marginBottom: 8,
+  tabBtn: {
+    flex: 1,
+    paddingVertical: 9,
+    borderRadius: 11,
+    alignItems: 'center',
   },
+  tabBtnActive: { backgroundColor: '#7E57C2' },
+  tabText: { fontSize: 12, fontWeight: '700', color: '#7E57C2' },
+  tabTextActive: { color: '#FFFFFF' },
+  cardSubtitle: { color: '#667085', fontSize: 14, marginBottom: 18 },
+  label: { color: '#344054', fontSize: 13, fontWeight: '700', marginBottom: 8 },
   input: {
     backgroundColor: '#EDE7F6',
     borderWidth: 1,
@@ -482,10 +509,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 4,
   },
-  eyeButton: {
-    paddingHorizontal: 6,
-    paddingVertical: 6,
-  },
+  eyeButton: { paddingHorizontal: 6, paddingVertical: 6 },
   button: {
     backgroundColor: '#7E57C2',
     borderRadius: 16,
@@ -494,41 +518,16 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     marginTop: 4,
   },
-  buttonPressed: {
-    opacity: 0.88,
-    transform: [{ scale: 0.99 }],
-  },
-  buttonDisabled: {
-    opacity: 0.65,
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  registerText: {
-    color: '#667085',
-    fontSize: 14,
-    textAlign: 'center',
-    marginTop: 18,
-  },
-  registerLink: {
-    color: '#7E57C2',
-    fontWeight: '800',
-  },
-  verifyText: {
-    color: '#7E57C2',
-    fontSize: 13,
-    textAlign: 'center',
-    marginTop: 10,
-    fontWeight: '700',
-  },
-  socialLogin: {
-    marginTop: 22,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 14,
-  },
+  buttonPressed: { opacity: 0.88, transform: [{ scale: 0.99 }] },
+  buttonDisabled: { opacity: 0.65 },
+  buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
+  linkText: { color: '#667085', fontSize: 14, textAlign: 'center', marginTop: 18 },
+  linkHighlight: { color: '#7E57C2', fontWeight: '800' },
+  verifyText: { color: '#7E57C2', fontSize: 13, textAlign: 'center', marginTop: 10, fontWeight: '700' },
+  divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 20, gap: 10 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: '#E6EBF3' },
+  dividerText: { color: '#9CA3AF', fontSize: 12, fontWeight: '600' },
+  socialRow: { flexDirection: 'row', justifyContent: 'center', gap: 14 },
   socialButton: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -544,30 +543,16 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 3,
   },
-  socialButtonPressed: {
-    opacity: 0.9,
-    transform: [{ scale: 0.99 }],
-  },
+  socialButtonPressed: { opacity: 0.9, transform: [{ scale: 0.99 }] },
   socialIcon: {
     width: 38,
     height: 38,
     borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
   },
-  socialIconImage: {
-    width: 22,
-    height: 22,
-  },
-  footerNote: {
-    alignItems: 'center',
-    marginTop: 18,
-    paddingHorizontal: 10,
-  },
-  footerText: {
-    color: '#7A8699',
-    fontSize: 12,
-    lineHeight: 18,
-    textAlign: 'center',
-  },
+  socialIconImage: { width: 22, height: 22 },
+  footerNote: { alignItems: 'center', marginTop: 18, paddingHorizontal: 10 },
+  footerText: { color: '#7A8699', fontSize: 12, lineHeight: 18, textAlign: 'center' },
 });

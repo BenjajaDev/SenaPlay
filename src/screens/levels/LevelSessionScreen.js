@@ -1,5 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Animated,
+  Easing,
   Pressable,
   StyleSheet,
   Text,
@@ -35,22 +38,48 @@ function buildMatchingCards(letters) {
 }
 
 function normalizeLetter(value) {
-  return value.trim().toUpperCase().replace('N~', 'N~');
+  return String(value || '').trim().toLocaleUpperCase('es');
 }
 
 function displayLetter(value) {
-  return String(value || '').toUpperCase();
+  return String(value || '').toLocaleUpperCase('es');
 }
 
-function LifeCounter({ lives, styles }) {
+function displaySign(value) {
+  return String(value || '').toLocaleLowerCase('es');
+}
+
+function LifeCounter({ lives, livesShake, lostHeartPulse, lostHeartIndex, styles }) {
+  const heartScale = lostHeartPulse.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.8],
+  });
+  const heartTranslate = lostHeartPulse.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -8],
+  });
+
   return (
-    <View style={styles.livesRow}>
-      {Array.from({ length: 3 }).map((_, index) => (
-        <Text key={`life-${index}`} style={styles.lifeIcon}>
-          {index < lives ? '❤' : '♡'}
-        </Text>
-      ))}
-    </View>
+    <Animated.View style={[styles.livesRow, { transform: [{ translateX: livesShake }] }]}>
+      {Array.from({ length: 3 }).map((_, index) => {
+        const isFilled = index < lives;
+        const isJustLost = index === lostHeartIndex;
+        return (
+          <Animated.Text
+            key={`life-${index}`}
+            style={[
+              styles.lifeIcon,
+              isJustLost && {
+                color: '#EF4444',
+                transform: [{ scale: heartScale }, { translateY: heartTranslate }],
+              },
+            ]}
+          >
+            {isFilled ? '❤' : '♡'}
+          </Animated.Text>
+        );
+      })}
+    </Animated.View>
   );
 }
 
@@ -66,6 +95,13 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
   const [gameOverVisible, setGameOverVisible] = useState(false);
   const [finishVisible, setFinishVisible] = useState(false);
   const [hintText, setHintText] = useState('');
+  const [hintsUsed, setHintsUsed] = useState(0);
+  const [lostHeartIndex, setLostHeartIndex] = useState(-1);
+
+  const livesShake = useRef(new Animated.Value(0)).current;
+  const lostHeartPulse = useRef(new Animated.Value(0)).current;
+  const hintAnim = useRef(new Animated.Value(0)).current;
+  const wrongFlash = useRef(new Animated.Value(0)).current;
 
   const [matchingCards, setMatchingCards] = useState([]);
   const [matchingSelected, setMatchingSelected] = useState(null);
@@ -119,16 +155,58 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
     return (current / level.exercises.length) * 100;
   }, [current, level.exercises.length]);
 
+  const triggerLifeAnimation = (lostIndex) => {
+    setLostHeartIndex(lostIndex);
+    livesShake.setValue(0);
+    lostHeartPulse.setValue(1);
+    wrongFlash.setValue(1);
+
+    Animated.parallel([
+      Animated.sequence([
+        Animated.timing(livesShake, { toValue: 12, duration: 50, useNativeDriver: true }),
+        Animated.timing(livesShake, { toValue: -12, duration: 50, useNativeDriver: true }),
+        Animated.timing(livesShake, { toValue: 10, duration: 50, useNativeDriver: true }),
+        Animated.timing(livesShake, { toValue: -8, duration: 50, useNativeDriver: true }),
+        Animated.timing(livesShake, { toValue: 6, duration: 50, useNativeDriver: true }),
+        Animated.timing(livesShake, { toValue: 0, duration: 50, useNativeDriver: true }),
+      ]),
+      Animated.timing(lostHeartPulse, {
+        toValue: 0,
+        duration: 500,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(wrongFlash, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: false,
+      }),
+    ]).start();
+  };
+
   const loseLife = () => {
     setFails((prev) => prev + 1);
     setLives((prev) => {
       const next = prev - 1;
+      triggerLifeAnimation(next);
       if (next <= 0) {
         setGameOverVisible(true);
         return 0;
       }
       return next;
     });
+  };
+
+  const revealHint = (text) => {
+    setHintText(text);
+    setHintsUsed((prev) => prev + 1);
+    hintAnim.setValue(0);
+    Animated.timing(hintAnim, {
+      toValue: 1,
+      duration: 280,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
   };
 
   const handleAnswer = (isCorrect, incorrectMessage) => {
@@ -233,6 +311,25 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
       }
       const builtWord = wordSlots.join('');
       handleAnswer(builtWord === exercise.word, 'La palabra formada no es correcta.');
+      return;
+    }
+
+    if (exercise.type === 'word-meaning') {
+      if (!choiceSelected) {
+        handleAnswer(false, 'Selecciona una opción.');
+        return;
+      }
+      handleAnswer(choiceSelected === exercise.correct, 'Ese no es el significado correcto.');
+      return;
+    }
+
+    if (exercise.type === 'true-false') {
+      if (!choiceSelected) {
+        handleAnswer(false, 'Responde Verdadero o Falso.');
+        return;
+      }
+      const expected = exercise.answer ? 'true' : 'false';
+      handleAnswer(choiceSelected === expected, 'Respuesta incorrecta.');
     }
   };
 
@@ -324,6 +421,10 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
     }
 
     if (exercise.type === 'matching') {
+      const isDense = exercise.letters.length > 5;
+      const cardStyle = isDense ? styles.matchCardDense : styles.matchCard;
+      const textStyle = isDense ? styles.matchTextDense : styles.matchText;
+      const typeStyle = isDense ? styles.matchTypeDense : styles.matchType;
       return (
         <View style={styles.exerciseBlock}>
           <Text style={styles.exerciseHint}>Toca una SEÑA y luego su letra correspondiente.</Text>
@@ -332,12 +433,12 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
               const active = matchingSelected?.id === card.id;
               const matched = matchingMatchedIds.includes(card.id);
               const isSign = card.type === 'sign';
-              const displayValue = isSign ? card.value : card.value.toUpperCase();
+              const displayValue = isSign ? card.value : card.value.toLocaleUpperCase('es');
               return (
                 <Pressable
                   key={card.id}
                   style={[
-                    styles.matchCard,
+                    cardStyle,
                     active && styles.matchCardActive,
                     matched && styles.matchCardDone,
                   ]}
@@ -350,14 +451,14 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
                 >
                   <Text
                     style={[
-                      styles.matchText,
+                      textStyle,
                       matched && styles.matchTextDone,
                       isSign && styles.signText,
                     ]}
                   >
                     {displayValue}
                   </Text>
-                  <Text style={[styles.matchType, matched && styles.matchTextDone]}>
+                  <Text style={[typeStyle, matched && styles.matchTextDone]}>
                     {card.type === 'sign' ? 'SEÑA' : 'LETRA'}
                   </Text>
                 </Pressable>
@@ -395,18 +496,30 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
     if (exercise.type === 'ordering') {
       return (
         <View style={styles.exerciseBlock}>
-          <Text style={styles.exerciseHint}>Completa los espacios en orden alfabetico.</Text>
-          <View style={styles.slotRow}>
+          <Text style={styles.exerciseHint}>Ordena las SEÑAS en orden alfabético.</Text>
+          <View style={styles.slotRowLarge}>
             {orderingSlots.map((item, index) => (
-              <Pressable key={`slot-${index}`} style={styles.slot} onPress={() => removeOrderingSlot(index)}>
-                <Text style={styles.slotText}>{item ? displayLetter(item) : '_'}</Text>
+              <Pressable
+                key={`slot-${index}`}
+                style={[styles.slotLarge, item && styles.slotLargeFilled]}
+                onPress={() => removeOrderingSlot(index)}
+              >
+                {item ? (
+                  <Text style={[styles.slotSign, styles.signText]}>{displaySign(item)}</Text>
+                ) : (
+                  <Text style={styles.slotPlaceholder}>{index + 1}</Text>
+                )}
               </Pressable>
             ))}
           </View>
-          <View style={styles.poolRow}>
+          <View style={styles.poolRowLarge}>
             {orderingPool.map((item, index) => (
-              <Pressable key={`pool-${item}-${index}`} style={styles.poolChip} onPress={() => addOrderingLetter(item)}>
-                <Text style={styles.poolText}>{displayLetter(item)}</Text>
+              <Pressable
+                key={`pool-${item}-${index}`}
+                style={styles.poolChipLargeSign}
+                onPress={() => addOrderingLetter(item)}
+              >
+                <Text style={[styles.poolChipSignText, styles.signText]}>{displaySign(item)}</Text>
               </Pressable>
             ))}
           </View>
@@ -467,8 +580,8 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
             <>
               <Text style={styles.exerciseHint}>Interpreta las SEÑAS y forma la palabra correcta.</Text>
               <SurfaceCard style={styles.signStrip}>
-                {exercise.signs.map((sign) => (
-                  <Text key={sign} style={[styles.signStripText, styles.signText]}>{sign}</Text>
+                {exercise.signs.map((sign, idx) => (
+                  <Text key={`sign-${idx}`} style={[styles.signStripText, styles.signText]}>{sign}</Text>
                 ))}
               </SurfaceCard>
             </>
@@ -495,6 +608,94 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
       );
     }
 
+    if (exercise.type === 'word-meaning') {
+      return (
+        <View style={styles.exerciseBlock}>
+          <Text style={styles.exerciseHint}>Lee las SEÑAS y elige el significado correcto.</Text>
+          <SurfaceCard style={styles.signStrip}>
+            {exercise.signs.map((sign, idx) => (
+              <Text key={`wm-sign-${idx}`} style={[styles.signStripText, styles.signText]}>{sign}</Text>
+            ))}
+          </SurfaceCard>
+          <View style={styles.optionList}>
+            {exercise.options.map((option) => (
+              <Pressable
+                key={option}
+                style={[styles.optionBtn, choiceSelected === option && styles.optionBtnActive]}
+                onPress={() => setChoiceSelected(option)}
+              >
+                <Text
+                  style={[
+                    styles.optionTextWord,
+                    choiceSelected === option && styles.optionTextActive,
+                  ]}
+                >
+                  {option}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      );
+    }
+
+    if (exercise.type === 'true-false') {
+      return (
+        <View style={styles.exerciseBlock}>
+          <SurfaceCard style={styles.statementCard}>
+            <Text style={styles.statementText}>"{exercise.statement}"</Text>
+          </SurfaceCard>
+          <View style={styles.tfRow}>
+            <Pressable
+              style={[
+                styles.tfBtn,
+                styles.tfBtnTrue,
+                choiceSelected === 'true' && styles.tfBtnTrueActive,
+              ]}
+              onPress={() => setChoiceSelected('true')}
+            >
+              <Ionicons
+                name="checkmark-circle"
+                size={28}
+                color={choiceSelected === 'true' ? '#FFFFFF' : '#22C55E'}
+              />
+              <Text
+                style={[
+                  styles.tfText,
+                  choiceSelected === 'true' && styles.tfTextActive,
+                ]}
+              >
+                Verdadero
+              </Text>
+            </Pressable>
+
+            <Pressable
+              style={[
+                styles.tfBtn,
+                styles.tfBtnFalse,
+                choiceSelected === 'false' && styles.tfBtnFalseActive,
+              ]}
+              onPress={() => setChoiceSelected('false')}
+            >
+              <Ionicons
+                name="close-circle"
+                size={28}
+                color={choiceSelected === 'false' ? '#FFFFFF' : '#EF4444'}
+              />
+              <Text
+                style={[
+                  styles.tfText,
+                  choiceSelected === 'false' && styles.tfTextActive,
+                ]}
+              >
+                Falso
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      );
+    }
+
     return null;
   };
 
@@ -507,7 +708,13 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
           <Text style={styles.levelTitle}>{level.title}</Text>
           <Text style={styles.levelSubtitle}>Ejercicio {current + 1} de {level.exercises.length}</Text>
         </View>
-        <LifeCounter lives={lives} styles={styles} />
+        <LifeCounter
+          lives={lives}
+          livesShake={livesShake}
+          lostHeartPulse={lostHeartPulse}
+          lostHeartIndex={lostHeartIndex}
+          styles={styles}
+        />
       </View>
 
       <View style={styles.progressTrack}>
@@ -516,13 +723,53 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
 
       <SurfaceCard style={styles.exerciseCard}>
         <Text style={styles.exerciseTitle}>{exercise?.title}</Text>
-        {hintText ? <Text style={styles.hintText}>{hintText}</Text> : null}
-        {exercise?.hint ? (
-          <Pressable onPress={() => setHintText(`Pista: ${exercise.hint}`)}>
-            <Text style={styles.showHintText}>Mostrar pista</Text>
+
+        {hintText ? (
+          <Animated.View
+            style={[
+              styles.hintBox,
+              {
+                opacity: hintAnim,
+                transform: [
+                  {
+                    translateY: hintAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-6, 0],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
+            <Ionicons name="bulb" size={16} color="#B45309" />
+            <Text style={styles.hintBoxText}>{hintText}</Text>
+          </Animated.View>
+        ) : null}
+
+        {exercise?.hint && !hintText ? (
+          <Pressable
+            style={styles.hintBtn}
+            onPress={() => revealHint(exercise.hint)}
+          >
+            <Ionicons name="bulb-outline" size={14} color={theme.colors.primary} />
+            <Text style={styles.hintBtnText}>Pedir pista</Text>
           </Pressable>
         ) : null}
+
         {renderExercise()}
+
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.wrongFlash,
+            {
+              opacity: wrongFlash.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, 0.18],
+              }),
+            },
+          ]}
+        />
       </SurfaceCard>
 
       {feedback ? (
@@ -553,6 +800,8 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
           setHits(0);
           setFails(0);
           setFeedback(null);
+          setLostHeartIndex(-1);
+          setHintsUsed(0);
         }}
         onSecondaryPress={onBack}
         onRequestClose={() => setGameOverVisible(false)}
@@ -570,7 +819,7 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
           if (onComplete) {
             onComplete({
               levelId: level.id,
-              score: Math.max(0, hits * 100 - fails * 30 + lives * 20),
+              score: Math.max(0, hits * 100 - fails * 30 + lives * 20 - hintsUsed * 5),
               hits,
               fails,
             });
@@ -646,6 +895,88 @@ function createStyles(theme) {
     fontSize: 12,
     fontWeight: '700',
   },
+  hintBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: isDark ? '#3A2E12' : '#FEF3C7',
+    borderLeftWidth: 3,
+    borderLeftColor: '#F59E0B',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  hintBoxText: {
+    flex: 1,
+    fontSize: 12,
+    color: isDark ? '#F5E7B2' : '#92400E',
+    fontWeight: '600',
+  },
+  hintBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 5,
+    backgroundColor: isDark ? '#2A2341' : '#F5F3FF',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+  },
+  hintBtnText: {
+    color: theme.colors.primary,
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  wrongFlash: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#EF4444',
+    borderRadius: 18,
+  },
+  optionTextWord: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: theme.colors.textPrimary,
+    textAlign: 'center',
+  },
+  statementCard: {
+    paddingVertical: 16,
+    paddingHorizontal: 14,
+  },
+  statementText: {
+    fontSize: 15,
+    fontStyle: 'italic',
+    color: theme.colors.textPrimary,
+    lineHeight: 22,
+    textAlign: 'center',
+  },
+  tfRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 10,
+  },
+  tfBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderRadius: 14,
+    borderWidth: 2,
+    paddingVertical: 16,
+    backgroundColor: isDark ? '#221C35' : '#FFFFFF',
+  },
+  tfBtnTrue: { borderColor: '#22C55E' },
+  tfBtnFalse: { borderColor: '#EF4444' },
+  tfBtnTrueActive: { backgroundColor: '#22C55E', borderColor: '#22C55E' },
+  tfBtnFalseActive: { backgroundColor: '#EF4444', borderColor: '#EF4444' },
+  tfText: { fontSize: 15, fontWeight: '800', color: theme.colors.textPrimary },
+  tfTextActive: { color: '#FFFFFF' },
   exerciseBlock: {
     flex: 1,
     gap: 10,
@@ -693,13 +1024,36 @@ function createStyles(theme) {
     color: theme.colors.textSecondary,
     fontWeight: '700',
   },
+  matchCardDense: {
+    width: '22%',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: isDark ? '#4B3B73' : '#CBD5E1',
+    backgroundColor: isDark ? '#221C35' : '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    minHeight: 62,
+    marginBottom: 6,
+  },
+  matchTextDense: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: theme.colors.textPrimary,
+  },
+  matchTypeDense: {
+    marginTop: 2,
+    fontSize: 8,
+    color: theme.colors.textSecondary,
+    fontWeight: '700',
+  },
   signCard: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 18,
+    paddingVertical: 24,
   },
   signLarge: {
-    fontSize: 56,
+    fontSize: 84,
     color: theme.colors.primary,
     fontWeight: '900',
   },
@@ -708,29 +1062,32 @@ function createStyles(theme) {
     fontWeight: '400',
   },
   signLabel: {
-    fontSize: 12,
+    fontSize: 13,
     color: theme.colors.textSecondary,
+    marginTop: 6,
   },
   signStrip: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 12,
-    paddingVertical: 10,
+    gap: 14,
+    paddingVertical: 18,
+    paddingHorizontal: 10,
   },
   signStripText: {
-    fontSize: 28,
+    fontSize: 44,
     color: theme.colors.primary,
   },
   optionList: {
-    gap: 8,
+    gap: 10,
   },
   optionBtn: {
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: 14,
+    borderWidth: 2,
     borderColor: isDark ? '#4B3B73' : '#CBD5E1',
     backgroundColor: isDark ? '#221C35' : '#FFFFFF',
-    paddingVertical: 12,
+    paddingVertical: 16,
     alignItems: 'center',
   },
   optionBtnActive: {
@@ -738,7 +1095,7 @@ function createStyles(theme) {
     backgroundColor: isDark ? '#2A2341' : '#F5F3FF',
   },
   optionText: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: '900',
     color: theme.colors.textPrimary,
   },
@@ -748,35 +1105,38 @@ function createStyles(theme) {
   slotRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
+    gap: 8,
   },
   slot: {
-    minWidth: 38,
-    borderRadius: 8,
-    borderWidth: 1,
+    minWidth: 48,
+    borderRadius: 10,
+    borderWidth: 1.5,
     borderColor: isDark ? '#4B3B73' : '#CBD5E1',
     backgroundColor: isDark ? '#221C35' : '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 10,
   },
   slotText: {
+    fontSize: 20,
     fontWeight: '800',
     color: theme.colors.textPrimary,
   },
   poolRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
+    gap: 8,
   },
   poolChip: {
     borderRadius: 999,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: isDark ? '#4B3B73' : '#CBD5E1',
     backgroundColor: isDark ? '#221C35' : '#FFFFFF',
-    paddingHorizontal: 11,
-    paddingVertical: 7,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    minWidth: 44,
+    alignItems: 'center',
   },
   poolChipActive: {
     borderColor: theme.colors.primary,
@@ -785,8 +1145,62 @@ function createStyles(theme) {
   poolText: {
     color: theme.colors.textPrimary,
     fontWeight: '800',
+    fontSize: 18,
   },
   poolTextActive: {
+    color: theme.colors.primary,
+  },
+  slotRowLarge: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'center',
+    paddingVertical: 6,
+  },
+  slotLarge: {
+    width: 64,
+    height: 78,
+    borderRadius: 14,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderColor: isDark ? '#4B3B73' : '#CBD5E1',
+    backgroundColor: isDark ? '#221C35' : '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  slotLargeFilled: {
+    borderStyle: 'solid',
+    borderColor: theme.colors.primary,
+    backgroundColor: isDark ? '#2A2341' : '#F5F3FF',
+  },
+  slotSign: {
+    fontSize: 44,
+    color: theme.colors.primary,
+  },
+  slotPlaceholder: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: isDark ? '#5B5275' : '#9CA3AF',
+  },
+  poolRowLarge: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  poolChipLargeSign: {
+    width: 64,
+    height: 78,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: isDark ? '#4B3B73' : '#CBD5E1',
+    backgroundColor: isDark ? '#221C35' : '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  poolChipSignText: {
+    fontSize: 44,
     color: theme.colors.primary,
   },
   input: {

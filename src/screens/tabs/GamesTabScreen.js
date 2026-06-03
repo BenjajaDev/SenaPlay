@@ -28,7 +28,7 @@ const GAMES = [
     description: 'Proximamente',
     icon: 'hand-left-outline',
     color: '#1CB0F6',
-    available: false,
+    available: true,
   },
   {
     id: 'spelling',

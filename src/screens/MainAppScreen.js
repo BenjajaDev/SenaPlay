@@ -1,7 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useMemo, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Pressable,
   SafeAreaView,
@@ -12,6 +11,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../backend/supabase';
+import { getLevelProgress, recordDailyActivity, saveLevelProgress } from '../../backend/userStats';
 import AdaptiveModal from '../components/AdaptiveModal';
 import AppBottomNav from '../components/AppBottomNav';
 import ProfileActionsModal from '../components/ProfileActionsModal';
@@ -28,79 +28,73 @@ import LevelSessionScreen from './levels/LevelSessionScreen';
 import { getLevelById } from '../data/levelsConfig';
 import { useAppTheme } from '../theme/ThemeProvider';
 
-const LEVEL_PROGRESS_KEY = 'oratiolingo.level.progress.v1';
-
-const DEFAULT_LEVEL_PROGRESS = {
-  unlocked: [1],
-  completed: {},
-};
+const DEFAULT_LEVEL_PROGRESS = { unlocked: [1], completed: {} };
 
 export default function MainAppScreen({ onLogout }) {
   const insets = useSafeAreaInsets();
   const theme = useAppTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
+
   const [activeTab, setActiveTab] = useState('levels');
   const [activeLevelId, setActiveLevelId] = useState(null);
   const [activeGame, setActiveGame] = useState(null);
-  const [levelProgress, setLevelProgress] = useState(DEFAULT_LEVEL_PROGRESS);
   const [isProfileModalVisible, setIsProfileModalVisible] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [userEmail, setUserEmail] = useState('');
-  const [feedbackModal, setFeedbackModal] = useState({
-    visible: false,
-    context: 'auth-error',
-    message: '',
-  });
+  const [feedbackModal, setFeedbackModal] = useState({ visible: false, context: 'auth-error', message: '' });
 
+  const [user, setUser] = useState(null);
+  const [levelProgress, setLevelProgress] = useState(null);
+  const [userStats, setUserStats] = useState(null);
+  const [editTrigger, setEditTrigger] = useState(0);
+
+  const progressLoaded = useRef(false);
+
+  // Load user on mount
   useEffect(() => {
-    let isMounted = true;
-
-    const loadUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      if (!isMounted) {
-        return;
-      }
-      setUserEmail(data?.user?.email || '');
-    };
-
-    loadUser();
-
-    return () => {
-      isMounted = false;
-    };
+    let mounted = true;
+    supabase.auth.getUser().then(({ data }) => {
+      if (!mounted || !data?.user) return;
+      setUser(data.user);
+    });
+    return () => { mounted = false; };
   }, []);
 
+  // Load user-specific data when user is available
   useEffect(() => {
-    let isMounted = true;
+    if (!user?.id) return;
 
-    const loadLevelProgress = async () => {
-      try {
-        const raw = await AsyncStorage.getItem(LEVEL_PROGRESS_KEY);
-        if (!raw || !isMounted) {
-          return;
-        }
+    progressLoaded.current = false;
+    let mounted = true;
 
-        const parsed = JSON.parse(raw);
-        if (!parsed || !Array.isArray(parsed.unlocked) || typeof parsed.completed !== 'object') {
-          return;
-        }
-
-        setLevelProgress(parsed);
-      } catch (err) {
-        // Keep default if local progress is corrupted.
-      }
+    const init = async () => {
+      const [progress, stats] = await Promise.all([
+        getLevelProgress(user.id),
+        recordDailyActivity(user.id),
+      ]);
+      if (!mounted) return;
+      progressLoaded.current = true;
+      setLevelProgress(progress);
+      setUserStats(stats);
     };
 
-    loadLevelProgress();
+    init();
+    return () => { mounted = false; };
+  }, [user?.id]);
 
-    return () => {
-      isMounted = false;
-    };
+  // Save level progress whenever it changes (user-specific, only after initial load)
+  useEffect(() => {
+    if (!user?.id || !progressLoaded.current || levelProgress === null) return;
+    saveLevelProgress(user.id, levelProgress);
+  }, [levelProgress, user?.id]);
+
+  const refreshUser = useCallback(async (userOverride) => {
+    if (userOverride) {
+      setUser(userOverride);
+      return;
+    }
+    const { data } = await supabase.auth.getUser();
+    if (data?.user) setUser(data.user);
   }, []);
-
-  useEffect(() => {
-    AsyncStorage.setItem(LEVEL_PROGRESS_KEY, JSON.stringify(levelProgress));
-  }, [levelProgress]);
 
   const tabTitle = useMemo(() => {
     if (activeLevelId) return `Nivel ${activeLevelId}`;
@@ -115,39 +109,22 @@ export default function MainAppScreen({ onLogout }) {
     return 'Niveles';
   }, [activeGame, activeLevelId, activeTab]);
 
-  const openLevel = (levelId) => {
-    setActiveLevelId(levelId);
-  };
-
-  const closeLevel = () => {
-    setActiveLevelId(null);
-  };
-
-  const openGame = (gameId) => {
-    setActiveGame(gameId);
-  };
-
-  const closeGame = () => {
-    setActiveGame(null);
-  };
+  const openLevel = (levelId) => setActiveLevelId(levelId);
+  const closeLevel = () => setActiveLevelId(null);
+  const openGame = (gameId) => setActiveGame(gameId);
+  const closeGame = () => setActiveGame(null);
 
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
       const { error } = await supabase.auth.signOut();
       if (error) {
-        setFeedbackModal({
-          visible: true,
-          context: 'auth-error',
-          message: error.message,
-        });
+        setFeedbackModal({ visible: true, context: 'auth-error', message: error.message });
         return;
       }
       setIsProfileModalVisible(false);
-      if (onLogout) {
-        onLogout();
-      }
-    } catch (err) {
+      if (onLogout) onLogout();
+    } catch {
       setFeedbackModal({
         visible: true,
         context: 'auth-error',
@@ -158,12 +135,12 @@ export default function MainAppScreen({ onLogout }) {
     }
   };
 
+  const effectiveLevelProgress = levelProgress ?? DEFAULT_LEVEL_PROGRESS;
+
   const renderContent = () => {
     if (activeLevelId) {
       const level = getLevelById(activeLevelId);
-      if (!level) {
-        return null;
-      }
+      if (!level) return null;
 
       return (
         <LevelSessionScreen
@@ -171,141 +148,135 @@ export default function MainAppScreen({ onLogout }) {
           onBack={closeLevel}
           onComplete={({ levelId, score, hits, fails }) => {
             const nextLevelId = levelId + 1;
-
             setLevelProgress((prev) => {
-              const unlockedSet = new Set(prev.unlocked || [1]);
+              const base = prev ?? DEFAULT_LEVEL_PROGRESS;
+              const unlockedSet = new Set(base.unlocked || [1]);
               unlockedSet.add(levelId);
               if (getLevelById(nextLevelId)?.available) {
                 unlockedSet.add(nextLevelId);
               }
-
               return {
                 unlocked: Array.from(unlockedSet).sort((a, b) => a - b),
-                completed: {
-                  ...prev.completed,
-                  [levelId]: {
-                    score,
-                    hits,
-                    fails,
-                  },
-                },
+                completed: { ...base.completed, [levelId]: { score, hits, fails } },
               };
             });
-
             closeLevel();
           }}
         />
       );
     }
 
-    if (activeGame === 'memory') {
-      return <MemoryGameScreen onBack={closeGame} />;
-    }
-    if (activeGame === 'quiz') {
-      return <QuickQuizGameScreen onBack={closeGame} />;
-    }
-    if (activeGame === 'hand3d') {
-      return <Hand3DGameScreen onBack={closeGame} />;
-    }
+    if (activeGame === 'hand3d') return null;
+    if (activeGame === 'memory') return <MemoryGameScreen onBack={closeGame} />;
+    if (activeGame === 'quiz') return <QuickQuizGameScreen onBack={closeGame} />;
     if (activeTab === 'dictionary') return <DictionaryTabScreen />;
     if (activeTab === 'videos') return <VideosTabScreen />;
     if (activeTab === 'games') return <GamesTabScreen onOpenGame={openGame} />;
-    if (activeTab === 'progress') return <ProgressTabScreen />;
-    if (activeTab === 'profile') {
+    if (activeTab === 'progress') {
       return (
-        <ProfileTabScreen
-          userEmail={userEmail}
-          onLogout={handleLogout}
-          isLoggingOut={isLoggingOut}
+        <ProgressTabScreen
+          levelProgress={effectiveLevelProgress}
+          userStats={userStats}
         />
       );
     }
-    return <LevelsTabScreen levelProgress={levelProgress} onOpenLevel={openLevel} />;
+    if (activeTab === 'profile') {
+      return (
+        <ProfileTabScreen
+          user={user}
+          onLogout={handleLogout}
+          isLoggingOut={isLoggingOut}
+          onRefreshUser={refreshUser}
+          editTrigger={editTrigger}
+        />
+      );
+    }
+    return <LevelsTabScreen levelProgress={effectiveLevelProgress} onOpenLevel={openLevel} />;
   };
 
   const usesVirtualizedList = activeGame === 'memory';
 
   return (
-    <SafeAreaView style={styles.screen}>
-      <StatusBar style={theme.mode === 'dark' ? 'light' : 'dark'} />
-      {!activeGame && !activeLevelId ? (
-        <View style={[styles.header, { paddingTop: insets.top + 8 }]}> 
-          <View>
-            <Text style={styles.headerTitle}>{tabTitle}</Text>
-            <Text style={styles.headerSubtitle}>OratioLingo</Text>
+    <>
+      <SafeAreaView style={styles.screen}>
+        <StatusBar style={theme.mode === 'dark' ? 'light' : 'dark'} />
+        {!activeGame && !activeLevelId ? (
+          <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+            <View>
+              <Text style={styles.headerTitle}>{tabTitle}</Text>
+              <Text style={styles.headerSubtitle}>OratioLingo</Text>
+            </View>
+
+            <Pressable
+              style={styles.profileTrigger}
+              onPress={() => setIsProfileModalVisible((prev) => !prev)}
+              hitSlop={10}
+            >
+              <Ionicons name="person-circle-outline" size={34} color={theme.colors.textSecondary} />
+            </Pressable>
           </View>
+        ) : null}
 
-          <Pressable
-            style={styles.profileTrigger}
-            onPress={() => setIsProfileModalVisible((prev) => !prev)}
-            hitSlop={10}
+        {usesVirtualizedList ? (
+          <View
+            style={[
+              styles.contentContainer,
+              { flex: 1, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 12 },
+            ]}
           >
-            <Ionicons name="person-circle-outline" size={34} color={theme.colors.textSecondary} />
-          </Pressable>
-        </View>
-      ) : null}
+            {renderContent()}
+          </View>
+        ) : (
+          <ScrollView
+            contentContainerStyle={[
+              styles.contentContainer,
+              activeGame || activeLevelId
+                ? { flexGrow: 1, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 12 }
+                : null,
+            ]}
+            showsVerticalScrollIndicator={false}
+          >
+            {renderContent()}
+          </ScrollView>
+        )}
 
-      {usesVirtualizedList ? (
-        <View
-          style={[
-            styles.contentContainer,
-            {
-              flex: 1,
-              paddingTop: insets.top + 12,
-              paddingBottom: insets.bottom + 12,
-            },
-          ]}
-        >
-          {renderContent()}
+        {!activeGame && !activeLevelId ? (
+          <AppBottomNav activeTab={activeTab} onChangeTab={setActiveTab} />
+        ) : null}
+
+        <ProfileActionsModal
+          visible={isProfileModalVisible && !activeGame && !activeLevelId}
+          onClose={() => setIsProfileModalVisible(false)}
+          onEditProfile={() => {
+            setActiveTab('profile');
+            setIsProfileModalVisible(false);
+            setEditTrigger((prev) => prev + 1);
+          }}
+          onLogout={handleLogout}
+          isLoggingOut={isLoggingOut}
+        />
+
+        <AdaptiveModal
+          visible={feedbackModal.visible}
+          context={feedbackModal.context}
+          message={feedbackModal.message}
+          onPrimaryPress={() => setFeedbackModal((prev) => ({ ...prev, visible: false }))}
+          onRequestClose={() => setFeedbackModal((prev) => ({ ...prev, visible: false }))}
+        />
+      </SafeAreaView>
+
+      {activeGame === 'hand3d' && (
+        <View style={StyleSheet.absoluteFill}>
+          <Hand3DGameScreen onBack={closeGame} />
         </View>
-      ) : (
-        <ScrollView
-          contentContainerStyle={[
-            styles.contentContainer,
-            activeGame || activeLevelId
-              ? {
-                  flexGrow: 1,
-                  paddingTop: insets.top + 12,
-                  paddingBottom: insets.bottom + 12,
-                }
-              : null,
-          ]}
-          showsVerticalScrollIndicator={false}
-        >
-          {renderContent()}
-        </ScrollView>
       )}
-
-      {!activeGame && !activeLevelId ? <AppBottomNav activeTab={activeTab} onChangeTab={setActiveTab} /> : null}
-
-      <ProfileActionsModal
-        visible={isProfileModalVisible && !activeGame && !activeLevelId}
-        onClose={() => setIsProfileModalVisible(false)}
-        onEditProfile={() => {
-          setActiveTab('profile');
-          setIsProfileModalVisible(false);
-        }}
-        onLogout={handleLogout}
-        isLoggingOut={isLoggingOut}
-      />
-
-      <AdaptiveModal
-        visible={feedbackModal.visible}
-        context={feedbackModal.context}
-        message={feedbackModal.message}
-        onPrimaryPress={() => setFeedbackModal((prev) => ({ ...prev, visible: false }))}
-        onRequestClose={() => setFeedbackModal((prev) => ({ ...prev, visible: false }))}
-      />
-    </SafeAreaView>
+    </>
   );
 }
 
 function createStyles(theme) {
   return StyleSheet.create({
-    screen: {
-      flex: 1,
-      backgroundColor: theme.colors.background,
-    },
+    screen: { flex: 1, backgroundColor: theme.colors.background },
     header: {
       backgroundColor: theme.colors.surface,
       paddingHorizontal: 18,
@@ -316,26 +287,9 @@ function createStyles(theme) {
       borderBottomWidth: 1,
       borderBottomColor: theme.colors.border,
     },
-    headerTitle: {
-      fontSize: 22,
-      fontWeight: '800',
-      color: theme.colors.textPrimary,
-    },
-    headerSubtitle: {
-      fontSize: 13,
-      color: theme.colors.textSecondary,
-      marginTop: 2,
-    },
-    profileTrigger: {
-      width: 38,
-      height: 38,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    contentContainer: {
-      paddingHorizontal: 16,
-      paddingTop: 14,
-      paddingBottom: 24,
-    },
+    headerTitle: { fontSize: 22, fontWeight: '800', color: theme.colors.textPrimary },
+    headerSubtitle: { fontSize: 13, color: theme.colors.textSecondary, marginTop: 2 },
+    profileTrigger: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' },
+    contentContainer: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 24 },
   });
 }

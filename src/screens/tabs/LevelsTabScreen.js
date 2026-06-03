@@ -87,6 +87,11 @@ export default function LevelsTabScreen({ levelProgress, onOpenLevel }) {
     }
   };
 
+  const rows = [];
+  for (let i = 0; i < levels.length; i += 2) {
+    rows.push(levels.slice(i, i + 2));
+  }
+
   return (
     <View style={styles.container}>
       <SectionHeader
@@ -94,23 +99,19 @@ export default function LevelsTabScreen({ levelProgress, onOpenLevel }) {
         subtitle="Niveles interactivos con desbloqueo progresivo"
       />
 
-      <View style={styles.pathRow}>
-        <LevelBubble item={levels[0]} onPress={handleOpenLevel} theme={theme} styles={styles} />
-        <View style={styles.pathLine} />
-        <LevelBubble item={levels[1]} onPress={handleOpenLevel} theme={theme} styles={styles} />
-      </View>
-
-      <View style={styles.pathRow}>
-        <LevelBubble item={levels[2]} onPress={handleOpenLevel} theme={theme} styles={styles} />
-        <View style={styles.pathLine} />
-        <LevelBubble item={levels[3]} onPress={handleOpenLevel} theme={theme} styles={styles} />
-      </View>
-
-      <View style={styles.pathRow}>
-        <LevelBubble item={levels[4]} onPress={handleOpenLevel} theme={theme} styles={styles} />
-        <View style={styles.pathLine} />
-        <LevelBubble item={levels[5]} onPress={handleOpenLevel} theme={theme} styles={styles} />
-      </View>
+      {rows.map((row, rowIdx) => (
+        <View key={`row-${rowIdx}`} style={styles.pathRow}>
+          <LevelBubble item={row[0]} onPress={handleOpenLevel} theme={theme} styles={styles} />
+          {row[1] ? (
+            <>
+              <View style={styles.pathLine} />
+              <LevelBubble item={row[1]} onPress={handleOpenLevel} theme={theme} styles={styles} />
+            </>
+          ) : (
+            <View style={styles.levelItemPlaceholder} />
+          )}
+        </View>
+      ))}
     </View>
   );
 }
@@ -178,6 +179,9 @@ function createStyles(theme) {
       width: 24,
       borderRadius: 2,
       backgroundColor: theme.colors.border,
+    },
+    levelItemPlaceholder: {
+      width: '44%',
     },
   });
 }

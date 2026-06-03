@@ -16,9 +16,19 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../backend/supabase';
 import AdaptiveModal from '../components/AdaptiveModal';
 
+const GENDERS = [
+  { key: 'masculino', label: 'Masculino' },
+  { key: 'femenino', label: 'Femenino' },
+  { key: 'otro', label: 'Otro' },
+];
+
 export default function RegisterScreen({ onGoToLogin }) {
   const insets = useSafeAreaInsets();
+  const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
+  const [telefono, setTelefono] = useState('');
+  const [fechaNac, setFechaNac] = useState('');
+  const [genero, setGenero] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -31,44 +41,37 @@ export default function RegisterScreen({ onGoToLogin }) {
     message: '',
   });
 
-  const openModal = (config) => {
-    setModalState({ visible: true, ...config });
-  };
+  const openModal = (config) => setModalState({ visible: true, ...config });
+  const closeModal = () => setModalState((prev) => ({ ...prev, visible: false }));
 
-  const closeModal = () => {
-    setModalState((prev) => ({ ...prev, visible: false }));
+  const handleBirthdate = (text) => {
+    const digits = text.replace(/\D/g, '');
+    let formatted = digits;
+    if (digits.length > 2) formatted = digits.slice(0, 2) + '/' + digits.slice(2);
+    if (digits.length > 4) formatted = formatted.slice(0, 5) + '/' + digits.slice(4);
+    if (digits.length > 8) return;
+    setFechaNac(formatted);
   };
 
   const handleRegister = async () => {
+    if (!nombre.trim()) {
+      openModal({ context: 'validation', message: 'Ingrese su nombre completo' });
+      return;
+    }
     if (!email.trim()) {
-      openModal({
-        context: 'validation',
-        message: 'Ingrese su correo',
-      });
+      openModal({ context: 'validation', message: 'Ingrese su correo' });
       return;
     }
-
     if (!password) {
-      openModal({
-        context: 'validation',
-        message: 'Ingrese la contraseña',
-      });
+      openModal({ context: 'validation', message: 'Ingrese la contraseña' });
       return;
     }
-
-    if (!confirmPassword) {
-      openModal({
-        context: 'validation',
-        message: 'Ingrese la contraseña',
-      });
+    if (password.length < 6) {
+      openModal({ context: 'validation', message: 'La contraseña debe tener al menos 6 caracteres' });
       return;
     }
-
     if (password !== confirmPassword) {
-      openModal({
-        context: 'validation',
-        message: 'Las contraseñas no coinciden',
-      });
+      openModal({ context: 'validation', message: 'Las contraseñas no coinciden' });
       return;
     }
 
@@ -77,13 +80,18 @@ export default function RegisterScreen({ onGoToLogin }) {
       const { error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
+        options: {
+          data: {
+            full_name: nombre.trim(),
+            phone: telefono.trim() || null,
+            birthdate: fechaNac.trim() || null,
+            gender: genero || null,
+          },
+        },
       });
 
       if (error) {
-        openModal({
-          context: 'auth-error',
-          message: error.message,
-        });
+        openModal({ context: 'auth-error', message: error.message });
         return;
       }
 
@@ -91,7 +99,7 @@ export default function RegisterScreen({ onGoToLogin }) {
         context: 'email-verification-sent',
         message: 'Tu cuenta fue creada. Te enviamos un correo de verificacion.',
       });
-    } catch (err) {
+    } catch {
       openModal({
         context: 'auth-error',
         message: 'No se pudo completar el registro. Intentalo de nuevo.',
@@ -101,28 +109,12 @@ export default function RegisterScreen({ onGoToLogin }) {
     }
   };
 
-  const handleBackToLogin = () => {
-    if (onGoToLogin) {
-      onGoToLogin();
-      return;
-    }
-
-    openModal({
-      context: 'info',
-      title: 'Login',
-      message: 'Aqui volverias al login.',
-    });
-  };
-
   const handleModalPrimary = () => {
     const shouldGoToLogin =
       modalState.context === 'register-success' ||
       modalState.context === 'email-verification-sent';
     closeModal();
-
-    if (shouldGoToLogin && onGoToLogin) {
-      onGoToLogin();
-    }
+    if (shouldGoToLogin && onGoToLogin) onGoToLogin();
   };
 
   return (
@@ -143,7 +135,6 @@ export default function RegisterScreen({ onGoToLogin }) {
           ]}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
-          automaticallyAdjustKeyboardInsets
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.hero}>
@@ -162,7 +153,20 @@ export default function RegisterScreen({ onGoToLogin }) {
             <Text style={styles.cardTitle}>Crear cuenta</Text>
             <Text style={styles.cardSubtitle}>Completa los datos para registrarte</Text>
 
-            <Text style={styles.label}>Correo</Text>
+
+
+            <Text style={styles.label}>Nombre completo *</Text>
+            <TextInput
+              autoCapitalize="words"
+              autoCorrect={false}
+              placeholder="Tu nombre y apellido"
+              placeholderTextColor="#8D97A8"
+              style={styles.input}
+              value={nombre}
+              onChangeText={setNombre}
+            />
+
+            <Text style={styles.label}>Correo *</Text>
             <TextInput
               autoCapitalize="none"
               autoCorrect={false}
@@ -174,7 +178,43 @@ export default function RegisterScreen({ onGoToLogin }) {
               onChangeText={setEmail}
             />
 
-            <Text style={styles.label}>Contraseña</Text>
+            <Text style={styles.label}>Teléfono</Text>
+            <TextInput
+              keyboardType="phone-pad"
+              placeholder="+54 9 11 1234-5678"
+              placeholderTextColor="#8D97A8"
+              style={styles.input}
+              value={telefono}
+              onChangeText={setTelefono}
+            />
+
+            <Text style={styles.label}>Fecha de nacimiento (opcional)</Text>
+            <TextInput
+              keyboardType="numeric"
+              placeholder="DD/MM/AAAA"
+              placeholderTextColor="#8D97A8"
+              style={styles.input}
+              value={fechaNac}
+              onChangeText={handleBirthdate}
+              maxLength={10}
+            />
+
+            <Text style={styles.label}>Género (opcional)</Text>
+            <View style={styles.genderRow}>
+              {GENDERS.map((g) => (
+                <Pressable
+                  key={g.key}
+                  style={[styles.genderBtn, genero === g.key && styles.genderBtnActive]}
+                  onPress={() => setGenero((prev) => (prev === g.key ? '' : g.key))}
+                >
+                  <Text style={[styles.genderText, genero === g.key && styles.genderTextActive]}>
+                    {g.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <Text style={[styles.label, { marginTop: 4 }]}>Contraseña *</Text>
             <View style={styles.inputRow}>
               <TextInput
                 autoCapitalize="none"
@@ -186,20 +226,12 @@ export default function RegisterScreen({ onGoToLogin }) {
                 value={password}
                 onChangeText={setPassword}
               />
-              <Pressable
-                onPress={() => setShowPassword((prev) => !prev)}
-                style={styles.eyeButton}
-                hitSlop={10}
-              >
-                <Ionicons
-                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                  size={20}
-                  color="#6B7280"
-                />
+              <Pressable onPress={() => setShowPassword((p) => !p)} style={styles.eyeButton} hitSlop={10}>
+                <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#6B7280" />
               </Pressable>
             </View>
 
-            <Text style={styles.label}>Confirmar contraseña</Text>
+            <Text style={styles.label}>Confirmar contraseña *</Text>
             <View style={styles.inputRow}>
               <TextInput
                 autoCapitalize="none"
@@ -211,30 +243,26 @@ export default function RegisterScreen({ onGoToLogin }) {
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
               />
-              <Pressable
-                onPress={() => setShowConfirmPassword((prev) => !prev)}
-                style={styles.eyeButton}
-                hitSlop={10}
-              >
-                <Ionicons
-                  name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
-                  size={20}
-                  color="#6B7280"
-                />
+              <Pressable onPress={() => setShowConfirmPassword((p) => !p)} style={styles.eyeButton} hitSlop={10}>
+                <Ionicons name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#6B7280" />
               </Pressable>
             </View>
 
             <Pressable
-              style={({ pressed }) => [styles.button, pressed && styles.buttonPressed, isLoading && styles.buttonDisabled]}
+              style={({ pressed }) => [
+                styles.button,
+                pressed && styles.buttonPressed,
+                isLoading && styles.buttonDisabled,
+              ]}
               onPress={handleRegister}
               disabled={isLoading}
             >
               <Text style={styles.buttonText}>{isLoading ? 'Registrando...' : 'Registrar'}</Text>
             </Pressable>
 
-            <Pressable onPress={handleBackToLogin} hitSlop={10}>
+            <Pressable onPress={onGoToLogin} hitSlop={10}>
               <Text style={styles.registerText}>
-                ¿Ya tienes cuenta? <Text style={styles.registerLink}>Inicia sesión</Text>
+                {'Ya tienes cuenta? '}<Text style={styles.registerLink}>Inicia sesion</Text>
               </Text>
             </Pressable>
           </View>
@@ -254,13 +282,8 @@ export default function RegisterScreen({ onGoToLogin }) {
 }
 
 const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-  },
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#EDE7F6',
-  },
+  flex: { flex: 1 },
+  safeArea: { flex: 1, backgroundColor: '#EDE7F6' },
   content: {
     flexGrow: 1,
     paddingHorizontal: 20,
@@ -285,13 +308,10 @@ const styles = StyleSheet.create({
     borderRadius: 110,
     backgroundColor: 'rgba(31, 41, 55, 0.08)',
   },
-  hero: {
-    marginBottom: 18,
-    alignItems: 'center',
-  },
+  hero: { marginBottom: 18, alignItems: 'center' },
   logoPlaceholder: {
-    width: 150,
-    height: 150,
+    width: 120,
+    height: 120,
     borderRadius: 20,
     backgroundColor: '#F7F7F1',
     borderWidth: 1,
@@ -299,7 +319,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
     shadowColor: '#0F172A',
     shadowOpacity: 0.09,
     shadowOffset: { width: 0, height: 10 },
@@ -307,17 +327,14 @@ const styles = StyleSheet.create({
     elevation: 4,
     overflow: 'hidden',
   },
-  brandLogoImage: {
-    width: '84%',
-    height: '84%',
-  },
+  brandLogoImage: { width: '84%', height: '84%' },
   brand: {
     color: '#7E57C2',
     fontSize: 25,
     fontWeight: '700',
     letterSpacing: 0.9,
     textTransform: 'uppercase',
-    marginBottom: 10,
+    marginBottom: 8,
     textAlign: 'center',
   },
   subtitle: {
@@ -339,23 +356,9 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     elevation: 5,
   },
-  cardTitle: {
-    color: '#101828',
-    fontSize: 22,
-    fontWeight: '800',
-    marginBottom: 6,
-  },
-  cardSubtitle: {
-    color: '#667085',
-    fontSize: 14,
-    marginBottom: 18,
-  },
-  label: {
-    color: '#344054',
-    fontSize: 13,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
+  cardTitle: { color: '#101828', fontSize: 22, fontWeight: '800', marginBottom: 6 },
+  cardSubtitle: { color: '#667085', fontSize: 14, marginBottom: 18 },
+  label: { color: '#344054', fontSize: 13, fontWeight: '700', marginBottom: 8 },
   input: {
     backgroundColor: '#EDE7F6',
     borderWidth: 1,
@@ -384,10 +387,27 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 4,
   },
-  eyeButton: {
-    paddingHorizontal: 6,
-    paddingVertical: 6,
+  eyeButton: { paddingHorizontal: 6, paddingVertical: 6 },
+  genderRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 16,
   },
+  genderBtn: {
+    flex: 1,
+    borderRadius: 12,
+    paddingVertical: 10,
+    alignItems: 'center',
+    backgroundColor: '#EDE7F6',
+    borderWidth: 1,
+    borderColor: '#DCE3EE',
+  },
+  genderBtnActive: {
+    backgroundColor: '#7E57C2',
+    borderColor: '#7E57C2',
+  },
+  genderText: { fontSize: 13, fontWeight: '600', color: '#5B6475' },
+  genderTextActive: { color: '#FFFFFF' },
   button: {
     backgroundColor: '#7E57C2',
     borderRadius: 16,
@@ -396,26 +416,9 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     marginTop: 4,
   },
-  buttonPressed: {
-    opacity: 0.88,
-    transform: [{ scale: 0.99 }],
-  },
-  buttonDisabled: {
-    opacity: 0.65,
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  registerText: {
-    color: '#667085',
-    fontSize: 14,
-    textAlign: 'center',
-    marginTop: 18,
-  },
-  registerLink: {
-    color: '#7E57C2',
-    fontWeight: '800',
-  },
+  buttonPressed: { opacity: 0.88, transform: [{ scale: 0.99 }] },
+  buttonDisabled: { opacity: 0.65 },
+  buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
+  registerText: { color: '#667085', fontSize: 14, textAlign: 'center', marginTop: 18 },
+  registerLink: { color: '#7E57C2', fontWeight: '800' },
 });

@@ -1,120 +1,844 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useRef } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
-import ActionButton from '../../components/ui/ActionButton';
+import { useCallback, useRef, useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { WebView } from 'react-native-webview';
 import GameScreenHeader from '../../components/ui/GameScreenHeader';
 
-export default function Hand3DGameScreen({ onBack }) {
-  const rotate = useRef(new Animated.Value(0)).current;
-  const pulse = useRef(new Animated.Value(1)).current;
+// ── IP del servidor Python (cambia por la IP local de tu PC en la misma WiFi) ─
+const SERVIDOR_IA = 'http://192.168.1.100:8000';
 
-  useEffect(() => {
-    Animated.loop(
-      Animated.timing(rotate, {
-        toValue: 1,
-        duration: 7000,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      })
-    ).start();
+// ── Señas disponibles para el modo práctica ────────────────────────────────────
+// Los landmarks deben estar en coordenadas Three.js world (mismo sistema del visor)
+const SIGNS = [
+  {
+    id: '5',
+    nombre: 'Número 5',
+    instruccion: 'Abre la mano con todos los dedos extendidos',
+    landmarks: [
+      [ 0.00, -1.00,  0.00], [-0.30, -0.70,  0.10], [-0.52, -0.42,  0.18],
+      [-0.68, -0.18,  0.12], [-0.80,  0.04,  0.06], [-0.22,  0.10,  0.00],
+      [-0.22,  0.42,  0.00], [-0.22,  0.68,  0.00], [-0.22,  0.90,  0.00],
+      [ 0.00,  0.15,  0.00], [ 0.00,  0.48,  0.00], [ 0.00,  0.76,  0.00],
+      [ 0.00,  0.98,  0.00], [ 0.22,  0.10,  0.00], [ 0.22,  0.42,  0.00],
+      [ 0.22,  0.66,  0.00], [ 0.22,  0.86,  0.00], [ 0.40,  0.00,  0.00],
+      [ 0.44,  0.26,  0.00], [ 0.47,  0.46,  0.00], [ 0.49,  0.62,  0.00],
+    ],
+  },
+  {
+    id: 'A',
+    nombre: 'Letra A',
+    instruccion: 'Cierra el puño con el pulgar al costado',
+    landmarks: [
+      [ 0.00, -1.00,  0.00], [-0.30, -0.70,  0.10], [-0.52, -0.42,  0.18],
+      [-0.68, -0.22,  0.14], [-0.82, -0.08,  0.08], [-0.22,  0.10,  0.00],
+      [-0.22,  0.30,  0.12], [-0.18,  0.42,  0.22], [-0.12,  0.38,  0.30],
+      [ 0.00,  0.15,  0.00], [ 0.00,  0.34,  0.12], [ 0.02,  0.46,  0.22],
+      [ 0.06,  0.42,  0.30], [ 0.22,  0.10,  0.00], [ 0.22,  0.30,  0.12],
+      [ 0.20,  0.42,  0.22], [ 0.16,  0.38,  0.30], [ 0.40,  0.00,  0.00],
+      [ 0.42,  0.18,  0.10], [ 0.42,  0.30,  0.20], [ 0.40,  0.28,  0.28],
+    ],
+  },
+  {
+    id: 'B',
+    nombre: 'Letra B',
+    instruccion: 'Mano plana, dedos juntos hacia arriba, pulgar doblado',
+    landmarks: [
+      [ 0.00, -1.00,  0.00], [-0.30, -0.70,  0.10], [-0.42, -0.50,  0.14],
+      [-0.44, -0.32,  0.16], [-0.36, -0.18,  0.15], [-0.22,  0.10,  0.00],
+      [-0.22,  0.42,  0.00], [-0.22,  0.68,  0.00], [-0.22,  0.90,  0.00],
+      [ 0.00,  0.15,  0.00], [ 0.00,  0.48,  0.00], [ 0.00,  0.76,  0.00],
+      [ 0.00,  0.98,  0.00], [ 0.22,  0.10,  0.00], [ 0.22,  0.42,  0.00],
+      [ 0.22,  0.66,  0.00], [ 0.22,  0.86,  0.00], [ 0.40,  0.00,  0.00],
+      [ 0.44,  0.26,  0.00], [ 0.47,  0.46,  0.00], [ 0.49,  0.62,  0.00],
+    ],
+  },
+  {
+    id: 'L',
+    nombre: 'Letra L',
+    instruccion: 'Índice arriba y pulgar al costado formando una L',
+    landmarks: [
+      [ 0.00, -1.00,  0.00], [-0.30, -0.70,  0.10], [-0.52, -0.42,  0.18],
+      [-0.68, -0.18,  0.12], [-0.80,  0.04,  0.06], [-0.22,  0.10,  0.00],
+      [-0.22,  0.42,  0.00], [-0.22,  0.68,  0.00], [-0.22,  0.90,  0.00],
+      [ 0.00,  0.15,  0.00], [ 0.00,  0.34,  0.12], [ 0.02,  0.46,  0.22],
+      [ 0.06,  0.42,  0.30], [ 0.22,  0.10,  0.00], [ 0.22,  0.30,  0.12],
+      [ 0.20,  0.42,  0.22], [ 0.16,  0.38,  0.30], [ 0.40,  0.00,  0.00],
+      [ 0.42,  0.18,  0.10], [ 0.42,  0.30,  0.20], [ 0.40,  0.28,  0.28],
+    ],
+  },
+  {
+    id: 'C',
+    nombre: 'Letra C',
+    instruccion: 'Curva todos los dedos como si agarraras una pelota',
+    landmarks: [
+      [ 0.00, -1.00,  0.00], [-0.28, -0.72,  0.08], [-0.48, -0.46,  0.16],
+      [-0.60, -0.22,  0.20], [-0.68, -0.02,  0.22], [-0.20,  0.10,  0.00],
+      [-0.28,  0.36,  0.12], [-0.30,  0.58,  0.18], [-0.28,  0.74,  0.20],
+      [ 0.00,  0.14,  0.00], [-0.06,  0.42,  0.12], [-0.08,  0.64,  0.18],
+      [-0.06,  0.80,  0.20], [ 0.18,  0.12,  0.00], [ 0.14,  0.40,  0.12],
+      [ 0.12,  0.60,  0.18], [ 0.14,  0.76,  0.20], [ 0.36,  0.02,  0.00],
+      [ 0.36,  0.24,  0.10], [ 0.36,  0.42,  0.16], [ 0.36,  0.56,  0.18],
+    ],
+  },
+];
 
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, {
-          toValue: 1.1,
-          duration: 900,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulse, {
-          toValue: 1,
-          duration: 900,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-  }, [rotate, pulse]);
+// ── HTML del visor Three.js con modo práctica integrado ───────────────────────
 
-  const spin = rotate.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
+const HAND_HTML = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { background:#0F172A; overflow:hidden; width:100vw; height:100vh; }
+    #vid {
+      position:absolute; top:0; left:0;
+      width:100%; height:100%;
+      object-fit:cover;
+      transform:scaleX(-1);
+      opacity:0; transition:opacity 0.6s;
+    }
+    #vid.active { opacity:1; }
+    canvas { position:absolute; top:0; left:0; display:block; }
+
+    /* ── Overlay de estado inferior ── */
+    #status {
+      position:absolute; bottom:28px; left:0; right:0;
+      text-align:center; color:rgba(255,255,255,0.55);
+      font:13px/1.4 sans-serif; pointer-events:none;
+    }
+
+    /* ── Panel de práctica (aparece cuando teachMode=true) ── */
+    #panel-practica {
+      display:none;
+      position:absolute; top:12px; left:12px; right:12px;
+      background:rgba(15,23,42,0.85);
+      border:1px solid rgba(255,255,255,0.12);
+      border-radius:16px;
+      padding:14px 16px 12px;
+      backdrop-filter:blur(8px);
+      pointer-events:none;
+    }
+    #panel-practica.visible { display:block; }
+
+    #nombre-seña {
+      color:#F1F5F9; font:700 17px sans-serif;
+      margin-bottom:4px;
+    }
+    #instruccion-seña {
+      color:rgba(203,213,225,0.75); font:13px sans-serif;
+      margin-bottom:10px;
+    }
+
+    /* Barra de puntuación global */
+    #barra-contenedor {
+      background:rgba(255,255,255,0.08);
+      border-radius:8px; height:10px; overflow:hidden;
+      margin-bottom:8px;
+    }
+    #barra-progreso {
+      height:100%; width:0%; border-radius:8px;
+      background:linear-gradient(90deg, #EF4444, #F59E0B, #22C55E);
+      background-size:300% 100%;
+      transition:width 0.25s ease, background-position 0.25s ease;
+    }
+
+    /* Puntuación numérica */
+    #texto-puntuacion {
+      color:#94A3B8; font:12px sans-serif;
+      text-align:right;
+    }
+    #texto-puntuacion span {
+      font-weight:700; font-size:14px;
+    }
+  </style>
+</head>
+<body>
+  <video id="vid" autoplay playsinline muted></video>
+
+  <!-- Panel práctica -->
+  <div id="panel-practica">
+    <div id="nombre-seña">—</div>
+    <div id="instruccion-seña"></div>
+    <div id="barra-contenedor">
+      <div id="barra-progreso"></div>
+    </div>
+    <div id="texto-puntuacion">Similitud: <span id="num-puntuacion">0</span>%</div>
+  </div>
+
+  <div id="status">Iniciando…</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.js" crossorigin="anonymous"><\/script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>
+  <script>
+
+  // ── 1. Escena Three.js ──────────────────────────────────────────────────────
+  const W = window.innerWidth, H = window.innerHeight;
+  const scene = new THREE.Scene();
+  const CAM   = new THREE.PerspectiveCamera(50, W / H, 0.01, 100);
+  CAM.position.z = 4;
+
+  const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+  renderer.setSize(W, H);
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setClearColor(0x000000, 0);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  document.body.appendChild(renderer.domElement);
+
+  // ── 2. Conexiones y radios de huesos ────────────────────────────────────────
+  const CN = [
+    [0,1],[1,2],[2,3],[3,4],
+    [0,5],[5,6],[6,7],[7,8],
+    [0,9],[9,10],[10,11],[11,12],
+    [0,13],[13,14],[14,15],[15,16],
+    [0,17],[17,18],[18,19],[19,20],
+    [5,9],[9,13],[13,17],
+  ];
+
+  function boneR(a, b) {
+    if ([4,8,12,16,20].includes(b)) return 0.052;
+    if ([3,7,11,15,19].includes(b)) return 0.063;
+    if ([2,6,10,14,18].includes(b)) return 0.073;
+    if ([1,5,9,13,17].includes(b))  return 0.085;
+    if (a === 0)                     return 0.092;
+    return 0.083;
+  }
+
+  const jointR = new Array(21).fill(0);
+  CN.forEach(([a, b]) => {
+    const r = boneR(a, b);
+    jointR[a] = Math.max(jointR[a], r);
+    jointR[b] = Math.max(jointR[b], r);
   });
 
+  // ── 3. Colores de feedback por puntuación ────────────────────────────────────
+  // Interpola entre rojo (0) → amarillo (0.7) → verde (1.0)
+  function puntuacionAColor(p) {
+    if (p > 0.88) return 0x22C55E;   // verde
+    if (p > 0.72) return 0x84CC16;   // verde-lima
+    if (p > 0.58) return 0xF59E0B;   // amarillo
+    if (p > 0.42) return 0xF97316;   // naranja
+    return 0xEF4444;                   // rojo
+  }
+
+  // ── 4. Materiales ─────────────────────────────────────────────────────────────
+  // Mano principal: materiales individuales por hueso para colorear el feedback
+  const matPiel = new THREE.MeshStandardMaterial({ color:0xC8845A, roughness:0.80, metalness:0.0 });
+  const matUña  = new THREE.MeshStandardMaterial({ color:0xEED0C0, roughness:0.28, metalness:0.04 });
+
+  // Un material por hueso (permite cambiar color individualmente)
+  const matHuesos = CN.map(() => matPiel.clone());
+  const matJoints = Array.from({length:21}, () => matPiel.clone());
+
+  // Mano fantasma: semi-transparente en azul (pose objetivo)
+  const matFantasma = new THREE.MeshStandardMaterial({
+    color:0x38BDF8, roughness:0.5, metalness:0.0,
+    transparent:true, opacity:0.35,
+  });
+
+  // ── 5. Construcción de grupos de malla ───────────────────────────────────────
+  function construirMano(mats_huesos, mat_joints, mat_palma, mat_uña) {
+    const grupo = new THREE.Group();
+
+    // Huesos (cilindros)
+    const huesos = CN.map(([a, b], i) => {
+      const r = boneR(a, b);
+      const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 1, 20, 1), mats_huesos[i]);
+      m.castShadow = true;
+      grupo.add(m);
+      return m;
+    });
+
+    // Articulaciones (esferas)
+    const joints = Array.from({length:21}, (_, i) => {
+      const m = new THREE.Mesh(new THREE.SphereGeometry(jointR[i], 20, 20), mat_joints[i]);
+      m.castShadow = true;
+      grupo.add(m);
+      return m;
+    });
+
+    // Palma (triángulos actualizables)
+    const PALM_TRIS = [[0,1,5],[0,5,9],[0,9,13],[0,13,17]];
+    const palmVerts = new Float32Array(PALM_TRIS.length * 6 * 3);
+    const palmNorms = new Float32Array(palmVerts.length);
+    const palmIdx   = [];
+    PALM_TRIS.forEach((_, ti) => {
+      const b = ti * 6;
+      palmIdx.push(b,b+1,b+2);
+      palmIdx.push(b+3,b+5,b+4);
+    });
+    const palmGeo = new THREE.BufferGeometry();
+    palmGeo.setAttribute('position', new THREE.BufferAttribute(palmVerts, 3));
+    palmGeo.setAttribute('normal',   new THREE.BufferAttribute(palmNorms, 3));
+    palmGeo.setIndex(palmIdx);
+    const palmMesh = new THREE.Mesh(palmGeo, mat_palma);
+    grupo.add(palmMesh);
+
+    // Uñas
+    const nailDefs = [4,8,12,16,20];
+    const uñas = nailDefs.map(tipIdx => {
+      const r = tipIdx === 4 ? 0.040 : 0.036;
+      const m = new THREE.Mesh(new THREE.SphereGeometry(r, 14, 10), mat_uña);
+      m.scale.set(1.05, 1.25, 0.26);
+      grupo.add(m);
+      return { mesh:m, tipIdx };
+    });
+
+    return { grupo, huesos, joints, palmVerts, palmNorms, palmGeo, palmMesh, uñas };
+  }
+
+  // Mano real (cámara)
+  const manoReal = construirMano(matHuesos, matJoints, matPiel, matUña);
+  scene.add(manoReal.grupo);
+
+  // Mano fantasma (pose objetivo) — todos sus huesos comparten el mismo material transparente
+  const matsFantasmaHuesos = CN.map(() => matFantasma);
+  const matsFantasmaJoints = Array.from({length:21}, () => matFantasma);
+  const manoFantasma = construirMano(matsFantasmaHuesos, matsFantasmaJoints, matFantasma, matFantasma);
+  manoFantasma.grupo.visible = false;
+  scene.add(manoFantasma.grupo);
+
+  // ── 6. Función de actualización de malla ────────────────────────────────────
+  const UP = new THREE.Vector3(0, 1, 0);
+
+  function actualizarMano(datos, mano) {
+    const { huesos, joints, palmVerts, palmNorms, palmGeo, uñas } = mano;
+
+    CN.forEach(([a, b], i) => {
+      const vA  = new THREE.Vector3(...datos[a]);
+      const vB  = new THREE.Vector3(...datos[b]);
+      const dir = new THREE.Vector3().subVectors(vB, vA);
+      const len = dir.length();
+      dir.normalize();
+      huesos[i].position.copy(new THREE.Vector3().addVectors(vA, vB).multiplyScalar(0.5));
+      huesos[i].quaternion.setFromUnitVectors(UP, len > 0.001 ? dir : UP);
+      huesos[i].scale.y = len;
+    });
+
+    joints.forEach((m, i) => m.position.set(...datos[i]));
+
+    const T = 0.05;
+    let vi = 0;
+    [[0,1,5],[0,5,9],[0,9,13],[0,13,17]].forEach(([a, b, c]) => {
+      [a,b,c].forEach(idx => {
+        palmVerts[vi]=datos[idx][0]; palmVerts[vi+1]=datos[idx][1]; palmVerts[vi+2]=datos[idx][2]+T;
+        palmNorms[vi]=0; palmNorms[vi+1]=0; palmNorms[vi+2]=1;
+        vi+=3;
+      });
+      [a,b,c].forEach(idx => {
+        palmVerts[vi]=datos[idx][0]; palmVerts[vi+1]=datos[idx][1]; palmVerts[vi+2]=datos[idx][2]-T;
+        palmNorms[vi]=0; palmNorms[vi+1]=0; palmNorms[vi+2]=-1;
+        vi+=3;
+      });
+    });
+    palmGeo.attributes.position.needsUpdate = true;
+    palmGeo.attributes.normal.needsUpdate   = true;
+
+    uñas.forEach(({ mesh, tipIdx }) => {
+      const tip    = new THREE.Vector3(...datos[tipIdx]);
+      const parent = new THREE.Vector3(...datos[tipIdx-1]);
+      const dir    = new THREE.Vector3().subVectors(tip, parent).normalize();
+      mesh.position.copy(tip.clone().addScaledVector(dir, 0.012).add(new THREE.Vector3(0,0,0.030)));
+      mesh.quaternion.setFromUnitVectors(UP, dir.lengthSq() > 0 ? dir : UP);
+    });
+  }
+
+  // ── 7. Lógica de comparación en JS (sin latencia de red) ────────────────────
+
+  function normalizarMano(lm) {
+    const muñeca = lm[0];
+    const centrado = lm.map(p => [p[0]-muñeca[0], p[1]-muñeca[1], p[2]-muñeca[2]]);
+    const palma = centrado[9];
+    const escala = Math.sqrt(palma[0]**2 + palma[1]**2 + palma[2]**2);
+    if (escala < 1e-6) return centrado;
+    return centrado.map(p => [p[0]/escala, p[1]/escala, p[2]/escala]);
+  }
+
+  function similitudHueso(u, r, i, j) {
+    const va = [u[j][0]-u[i][0], u[j][1]-u[i][1], u[j][2]-u[i][2]];
+    const vb = [r[j][0]-r[i][0], r[j][1]-r[i][1], r[j][2]-r[i][2]];
+    const na = Math.sqrt(va[0]**2+va[1]**2+va[2]**2);
+    const nb = Math.sqrt(vb[0]**2+vb[1]**2+vb[2]**2);
+    if (na < 1e-6 || nb < 1e-6) return 1.0;
+    const cos = (va[0]*vb[0]+va[1]*vb[1]+va[2]*vb[2]) / (na*nb);
+    return (Math.max(-1, Math.min(1, cos)) + 1) / 2;
+  }
+
+  const HUESOS_DEDOS = {
+    pulgar:  [[0,1],[1,2],[2,3],[3,4]],
+    indice:  [[0,5],[5,6],[6,7],[7,8]],
+    medio:   [[0,9],[9,10],[10,11],[11,12]],
+    anular:  [[0,13],[13,14],[14,15],[15,16]],
+    menique: [[0,17],[17,18],[18,19],[19,20]],
+  };
+
+  function calcularPuntuacion(lmUsuario, lmReferencia) {
+    const u = normalizarMano(lmUsuario);
+    const r = normalizarMano(lmReferencia);
+    const scoresDedo = {};
+    const todasSims = [];
+
+    for (const [dedo, huesos] of Object.entries(HUESOS_DEDOS)) {
+      const sims = huesos.map(([a, b]) => similitudHueso(u, r, a, b));
+      const promedio = sims.reduce((s, v) => s+v, 0) / sims.length;
+      scoresDedo[dedo] = promedio;
+      todasSims.push(...sims);
+    }
+
+    const global = todasSims.reduce((s, v) => s+v, 0) / todasSims.length;
+    return { global, dedos: scoresDedo };
+  }
+
+  function aplicarColoresFeedback(scoresDedo) {
+    // Colorear huesos de cada dedo según su puntuación
+    const dedoAHuesos = [
+      ['pulgar',  [0,1,2,3]],
+      ['indice',  [4,5,6,7]],
+      ['medio',   [8,9,10,11]],
+      ['anular',  [12,13,14,15]],
+      ['menique', [16,17,18,19]],
+    ];
+
+    dedoAHuesos.forEach(([dedo, idxHuesos]) => {
+      const score = scoresDedo[dedo] ?? 1;
+      const color = puntuacionAColor(score);
+      idxHuesos.forEach(i => matHuesos[i].color.setHex(color));
+    });
+
+    // Colorear articulaciones según el dedo al que pertenecen
+    const lmDeDedo = {
+      pulgar:[1,2,3,4], indice:[5,6,7,8], medio:[9,10,11,12],
+      anular:[13,14,15,16], menique:[17,18,19,20]
+    };
+    Object.entries(lmDeDedo).forEach(([dedo, idxLm]) => {
+      const score = scoresDedo[dedo] ?? 1;
+      const color = puntuacionAColor(score);
+      idxLm.forEach(i => matJoints[i].color.setHex(color));
+    });
+
+    // La muñeca usa el color global (promedio)
+    const global = Object.values(scoresDedo).reduce((s,v)=>s+v,0) / Object.keys(scoresDedo).length;
+    matJoints[0].color.setHex(puntuacionAColor(global));
+    matPiel.color.setHex(puntuacionAColor(global));
+  }
+
+  function resetearColoresMano() {
+    matHuesos.forEach(m => m.color.setHex(0xC8845A));
+    matJoints.forEach(m => m.color.setHex(0xC8845A));
+    matPiel.color.setHex(0xC8845A);  // palma
+  }
+
+  // ── 8. Estado de la sesión ────────────────────────────────────────────────────
+  const DEMO = [
+    [ 0.00, -1.00,  0.00],[-0.30, -0.70,  0.10],[-0.52, -0.42,  0.18],
+    [-0.68, -0.18,  0.12],[-0.80,  0.04,  0.06],[-0.22,  0.10,  0.00],
+    [-0.22,  0.42,  0.00],[-0.22,  0.68,  0.00],[-0.22,  0.90,  0.00],
+    [ 0.00,  0.15,  0.00],[ 0.00,  0.48,  0.00],[ 0.00,  0.76,  0.00],
+    [ 0.00,  0.98,  0.00],[ 0.22,  0.10,  0.00],[ 0.22,  0.42,  0.00],
+    [ 0.22,  0.66,  0.00],[ 0.22,  0.86,  0.00],[ 0.40,  0.00,  0.00],
+    [ 0.44,  0.26,  0.00],[ 0.47,  0.46,  0.00],[ 0.49,  0.62,  0.00],
+  ];
+  actualizarMano(DEMO, manoReal);
+
+  let landmarksActuales = DEMO.slice();
+  let landmarksReferencia = null;
+  let modoEnseñanza = false;
+
+  // ── 9. API de control desde React Native ────────────────────────────────────
+  // React Native llama a estas funciones mediante injectJavaScript()
+
+  window.activarModoLibre = function() {
+    modoEnseñanza = false;
+    landmarksReferencia = null;
+    manoFantasma.grupo.visible = false;
+    document.getElementById('panel-practica').classList.remove('visible');
+    resetearColoresMano();
+  };
+
+  window.activarModoPractica = function(lmReferencia, nombre, instruccion) {
+    modoEnseñanza = true;
+    landmarksReferencia = lmReferencia;
+    manoFantasma.grupo.visible = true;
+    actualizarMano(lmReferencia, manoFantasma);
+
+    // Actualizar UI del panel
+    document.getElementById('nombre-seña').textContent = nombre || '';
+    document.getElementById('instruccion-seña').textContent = instruccion || '';
+    document.getElementById('panel-practica').classList.add('visible');
+  };
+
+  window.actualizarPuntuacionUI = function(porcentaje) {
+    const barra = document.getElementById('barra-progreso');
+    const num   = document.getElementById('num-puntuacion');
+    barra.style.width = porcentaje + '%';
+    // El degradado CSS va de rojo a verde según posición
+    const pos = (100 - porcentaje) + '%';
+    barra.style.backgroundPosition = pos + ' 0';
+    num.textContent = porcentaje;
+  };
+
+  // ── 10. Iluminación ──────────────────────────────────────────────────────────
+  scene.add(new THREE.AmbientLight(0xFFEEDD, 0.55));
+  const keyL = new THREE.DirectionalLight(0xFFE8D0, 2.0);
+  keyL.position.set(1, 2, 4); keyL.castShadow = true;
+  scene.add(keyL);
+  const fillL = new THREE.DirectionalLight(0xFFDDCC, 0.65);
+  fillL.position.set(-2, 1, 2);
+  scene.add(fillL);
+  const rimL = new THREE.PointLight(0x38BDF8, 0.9, 8);
+  rimL.position.set(0.5, -0.5, -2.5);
+  scene.add(rimL);
+
+  // ── 11. Interacción táctil (modo libre, rotación manual) ─────────────────────
+  let rotY=0, rotX=0, tRotY=0, tRotX=0;
+  let drag=false, autoRot=true, lx=0, ly=0;
+
+  function pDown(x,y) { drag=true; autoRot=false; lx=x; ly=y; }
+  function pMove(x,y) {
+    if (!drag) return;
+    tRotY += (x-lx)*0.012; tRotX += (y-ly)*0.012;
+    tRotX = Math.max(-1.2, Math.min(1.2, tRotX));
+    lx=x; ly=y;
+  }
+  function pUp() { drag=false; setTimeout(() => { autoRot=true; }, 2500); }
+
+  const cv = renderer.domElement;
+  cv.addEventListener('mousedown',  e => pDown(e.clientX, e.clientY));
+  cv.addEventListener('mousemove',  e => pMove(e.clientX, e.clientY));
+  cv.addEventListener('mouseup',    pUp);
+  cv.addEventListener('touchstart', e => { e.preventDefault(); pDown(e.touches[0].clientX, e.touches[0].clientY); }, {passive:false});
+  cv.addEventListener('touchmove',  e => { e.preventDefault(); pMove(e.touches[0].clientX, e.touches[0].clientY); }, {passive:false});
+  cv.addEventListener('touchend',   pUp);
+
+  // ── 12. MediaPipe Hands ───────────────────────────────────────────────────────
+  const STATUS = document.getElementById('status');
+  const VID    = document.getElementById('vid');
+  let liveMode = false;
+  let mpHands  = null;
+  let sending  = false;
+
+  // Convierte landmarks de MediaPipe (objetos {x,y,z} en rango 0-1) a Three.js world
+  function mpAWorld(mpLm) {
+    const S = 3.2;
+    return mpLm.map(p => [
+      (0.5 - p.x) * S,
+      -(p.y - 0.5) * S,
+      -p.z * S * 0.35,
+    ]);
+  }
+
+  function iniciarMP() {
+    mpHands = new Hands({
+      locateFile: f => \`https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/\${f}\`,
+    });
+    mpHands.setOptions({
+      maxNumHands:            1,
+      modelComplexity:        1,
+      minDetectionConfidence: 0.65,
+      minTrackingConfidence:  0.55,
+    });
+    mpHands.onResults(resultados => {
+      if (resultados.multiHandLandmarks && resultados.multiHandLandmarks.length > 0) {
+        const lmWorld = mpAWorld(resultados.multiHandLandmarks[0]);
+        landmarksActuales = lmWorld;
+        actualizarMano(lmWorld, manoReal);
+        liveMode = true;
+        STATUS.textContent = '';
+
+        // Si estamos en modo práctica, calcular y mostrar feedback en tiempo real
+        if (modoEnseñanza && landmarksReferencia) {
+          const resultado = calcularPuntuacion(lmWorld, landmarksReferencia);
+          aplicarColoresFeedback(resultado.dedos);
+          const pct = Math.round(resultado.global * 100);
+          actualizarPuntuacionUI(pct);
+
+          // Enviar a React Native para que pueda llamar al servidor IA
+          if (window.ReactNativeWebView) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              tipo: 'landmarks',
+              landmarks: lmWorld,
+              puntuacion: pct,
+            }));
+          }
+        }
+      } else {
+        if (liveMode) {
+          STATUS.textContent = 'Muestra tu mano a la cámara';
+          if (modoEnseñanza) resetearColoresMano();
+        }
+      }
+    });
+  }
+
+  async function iniciarCamara() {
+    STATUS.textContent = 'Solicitando acceso a la cámara…';
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode:'user', width:{ideal:640}, height:{ideal:480} },
+      });
+      VID.srcObject = stream;
+      await new Promise(resolve => { VID.onloadedmetadata = resolve; });
+      VID.play();
+      VID.classList.add('active');
+      iniciarMP();
+      STATUS.textContent = 'Muestra tu mano a la cámara';
+
+      async function procesarFrame() {
+        if (mpHands && VID.readyState >= 2 && !sending) {
+          sending = true;
+          try { await mpHands.send({ image: VID }); }
+          finally { sending = false; }
+        }
+        setTimeout(() => requestAnimationFrame(procesarFrame), 66); // ~15 fps
+      }
+      procesarFrame();
+    } catch (err) {
+      console.warn('Error de cámara:', err);
+    }
+  }
+
+  setTimeout(iniciarCamara, 700);
+
+  // ── 13. Loop de animación ─────────────────────────────────────────────────────
+  let t = 0;
+  function animate() {
+    requestAnimationFrame(animate);
+    t += 0.011;
+
+    if (!liveMode) {
+      if (autoRot && !drag) {
+        tRotY = Math.sin(t * 0.42) * 0.32;
+        tRotX = Math.sin(t * 0.28) * 0.06 - 0.03;
+      }
+      rotY += (tRotY - rotY) * 0.10;
+      rotX += (tRotX - rotX) * 0.10;
+      manoReal.grupo.rotation.y = rotY;
+      manoReal.grupo.rotation.x = rotX;
+      if (modoEnseñanza) {
+        manoFantasma.grupo.rotation.y = rotY;
+        manoFantasma.grupo.rotation.x = rotX;
+      }
+    } else {
+      manoReal.grupo.rotation.set(0, 0, 0);
+      manoFantasma.grupo.rotation.set(0, 0, 0);
+    }
+
+    rimL.intensity = 0.7 + Math.sin(t * 2) * 0.22;
+    renderer.render(scene, CAM);
+  }
+  animate();
+
+  window.addEventListener('resize', () => {
+    const W = window.innerWidth, H = window.innerHeight;
+    CAM.aspect = W / H;
+    CAM.updateProjectionMatrix();
+    renderer.setSize(W, H);
+  });
+
+  <\/script>
+</body>
+</html>`;
+
+// ── Componente React Native ────────────────────────────────────────────────────
+
+export default function Hand3DGameScreen({ onBack }) {
+  const webRef    = useRef(null);
+  const insets    = useSafeAreaInsets();
+  const [modoActivo, setModoActivo] = useState('libre'); // 'libre' | 'practica'
+  const [signIndex, setSignIndex] = useState(0);
+  const [puntuacion, setPuntuacion] = useState(null);
+
+  const currentSign = SIGNS[signIndex];
+
+  // ── Inyección de comandos en el WebView ───────────────────────────────────────
+
+  const activarModoLibre = useCallback(() => {
+    setModoActivo('libre');
+    setPuntuacion(null);
+    webRef.current?.injectJavaScript('activarModoLibre(); true;');
+  }, []);
+
+  const activarModoPractica = useCallback((sign) => {
+    setModoActivo('practica');
+    setPuntuacion(null);
+    const lmJson = JSON.stringify(sign.landmarks);
+    const cmd = `activarModoPractica(${lmJson}, ${JSON.stringify(sign.nombre)}, ${JSON.stringify(sign.instruccion)}); true;`;
+    webRef.current?.injectJavaScript(cmd);
+  }, []);
+
+  const navSign = useCallback((delta) => {
+    const nextIdx = (signIndex + delta + SIGNS.length) % SIGNS.length;
+    setSignIndex(nextIdx);
+    if (modoActivo === 'practica') {
+      activarModoPractica(SIGNS[nextIdx]);
+    }
+  }, [signIndex, modoActivo, activarModoPractica]);
+
+  // ── Mensajes del WebView → React Native ──────────────────────────────────────
+
+  const manejarMensaje = useCallback((evento) => {
+    try {
+      const msg = JSON.parse(evento.nativeEvent.data);
+      if (msg.tipo === 'landmarks') {
+        setPuntuacion(msg.puntuacion);
+        // Aquí se puede llamar al servidor IA para clasificación avanzada:
+        // fetch(`${SERVIDOR_IA}/clasificar`, { method:'POST', body: JSON.stringify({ landmarks: msg.landmarks }) })
+      }
+    } catch (_) {}
+  }, []);
+
+  // ── Renderizado ───────────────────────────────────────────────────────────────
+
   return (
-    <View style={styles.screen}>
-      <GameScreenHeader title="Mano 3D" onBack={onBack} />
+    <View style={styles.pantalla}>
+      {/* Cabecera */}
+      <View style={{ paddingTop: insets.top, paddingHorizontal: 12 }}>
+        <GameScreenHeader title="Mano 3D" onBack={onBack} />
+      </View>
 
-      <View style={styles.center}>
-        <Animated.View style={[styles.iconWrap, { transform: [{ rotate: spin }, { scale: pulse }] }]}> 
-          <Ionicons name="hand-left" size={82} color="#1CB0F6" />
-        </Animated.View>
-        <Text style={styles.soonTitle}>Proximamente</Text>
-        <Text style={styles.description}>Estamos preparando esta experiencia interactiva.</Text>
+      {/* Visor Three.js */}
+      <WebView
+        ref={webRef}
+        source={{ html: HAND_HTML }}
+        style={StyleSheet.absoluteFill}
+        scrollEnabled={false}
+        bounces={false}
+        overScrollMode="never"
+        androidLayerType="hardware"
+        originWhitelist={['*']}
+        javaScriptEnabled
+        domStorageEnabled
+        allowsInlineMediaPlayback
+        mediaPlaybackRequiresUserAction={false}
+        onPermissionRequest={e => e.nativeEvent.request.grant(e.nativeEvent.request.resources)}
+        onMessage={manejarMensaje}
+      />
 
-        <View style={styles.featureCard}>
-          <Text style={styles.featureTitle}>Incluira:</Text>
-          <Text style={styles.featureItem}>• Mano 3D interactiva</Text>
-          <Text style={styles.featureItem}>• Movimientos por dedos</Text>
-          <Text style={styles.featureItem}>• Retos de precision por niveles</Text>
+      {/* Barra de controles inferior */}
+      <View style={[styles.barraControl, { paddingBottom: insets.bottom + 8 }]}>
+
+        {/* Toggle Libre / Práctica */}
+        <View style={styles.toggleContenedor}>
+          <TouchableOpacity
+            style={[styles.toggleBtn, modoActivo === 'libre' && styles.toggleActivo]}
+            onPress={activarModoLibre}
+          >
+            <Text style={[styles.toggleTexto, modoActivo === 'libre' && styles.toggleTextoActivo]}>
+              Libre
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.toggleBtn, modoActivo === 'practica' && styles.toggleActivo]}
+            onPress={() => activarModoPractica(currentSign)}
+          >
+            <Text style={[styles.toggleTexto, modoActivo === 'practica' && styles.toggleTextoActivo]}>
+              Práctica
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        <ActionButton label="Volver a juegos" onPress={onBack} style={styles.backBtn} />
+        {/* Navegacion de señas (modo practica) */}
+        {modoActivo === 'practica' && (
+          <View style={styles.signNav}>
+            <TouchableOpacity style={styles.btnNav} onPress={() => navSign(-1)}>
+              <Text style={styles.btnNavTexto}>‹</Text>
+            </TouchableOpacity>
+
+            <View style={styles.signInfo}>
+              <Text style={styles.signName}>{currentSign.nombre}</Text>
+              {puntuacion !== null && (
+                <Text style={[
+                  styles.puntuacion,
+                  { color: puntuacion > 88 ? '#22C55E' : puntuacion > 72 ? '#F59E0B' : '#EF4444' },
+                ]}>
+                  {puntuacion}%
+                </Text>
+              )}
+            </View>
+
+            <TouchableOpacity style={styles.btnNav} onPress={() => navSign(1)}>
+              <Text style={styles.btnNavTexto}>›</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
+  pantalla: {
     flex: 1,
+    backgroundColor: '#0F172A',
   },
-  center: {
+  barraControl: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    backgroundColor: 'rgba(15,23,42,0.88)',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.08)',
+    gap: 10,
+  },
+  toggleContenedor: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    borderRadius: 12,
+    padding: 3,
+  },
+  toggleBtn: {
     flex: 1,
+    paddingVertical: 8,
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 10,
+    borderRadius: 10,
   },
-  iconWrap: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: '#E0F2FE',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 18,
-  },
-  soonTitle: {
-    fontSize: 30,
-    fontWeight: '900',
-    color: '#0F172A',
-  },
-  description: {
-    marginTop: 8,
-    fontSize: 14,
-    color: '#64748B',
-    textAlign: 'center',
-    marginBottom: 14,
-  },
-  featureCard: {
-    width: '100%',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#BAE6FD',
-    backgroundColor: '#F0F9FF',
-    padding: 14,
-    marginBottom: 14,
-  },
-  featureTitle: {
-    fontWeight: '900',
-    color: '#0369A1',
-    marginBottom: 8,
-  },
-  featureItem: {
-    color: '#0C4A6E',
-    marginBottom: 4,
-  },
-  backBtn: {
-    width: '100%',
+  toggleActivo: {
     backgroundColor: '#1CB0F6',
-    borderColor: '#1CB0F6',
+  },
+  toggleTexto: {
+    color: 'rgba(255,255,255,0.5)',
+    fontWeight: '700',
+    fontSize: 13,
+  },
+  toggleTextoActivo: {
+    color: '#FFFFFF',
+  },
+  signNav: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  btnNav: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 10,
+  },
+  btnNavTexto: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: '300',
+    lineHeight: 26,
+  },
+  signInfo: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  signName: {
+    color: '#F1F5F9',
+    fontWeight: '800',
+    fontSize: 15,
+  },
+  puntuacion: {
+    fontWeight: '800',
+    fontSize: 20,
+    marginTop: 2,
   },
 });

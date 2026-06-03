@@ -2,6 +2,7 @@
   "expo": {
     "name": "oratioLingoRN",
     "slug": "oratioLingoRN",
+    "scheme": "oratiolingo",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -24,6 +25,15 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-web-browser",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "OratioLingo necesita acceso a tu galería para cambiar tu foto de perfil."
+        }
+      ]
+    ]
   }
 }

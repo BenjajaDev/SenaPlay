@@ -5,29 +5,92 @@ import StatCard from '../../components/ui/StatCard';
 import SurfaceCard from '../../components/ui/SurfaceCard';
 import { useAppTheme } from '../../theme/ThemeProvider';
 
-export default function ProgressTabScreen() {
+export default function ProgressTabScreen({ levelProgress, userStats }) {
   const theme = useAppTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
+  const completed = levelProgress?.completed || {};
+  const unlocked = levelProgress?.unlocked || [1];
+
+  const completedCount = Object.keys(completed).length;
+  const totalLevels = 6;
+
+  const scores = Object.values(completed).map((c) => c.score || 0);
+  const avgScore = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
+
+  const streak = userStats?.streak ?? 0;
+  const totalDays = userStats?.totalDays ?? 0;
+
+  const streakLabel = streak === 1 ? '1 dia' : `${streak} dias`;
+  const totalLabel = totalDays === 1 ? '1 dia' : `${totalDays} dias`;
+
+  const levelEntries = Array.from({ length: totalLevels }, (_, i) => {
+    const id = i + 1;
+    const isCompleted = Boolean(completed[id]);
+    const isUnlocked = unlocked.includes(id);
+    const score = completed[id]?.score ?? null;
+
+    let statusLabel;
+    if (isCompleted) statusLabel = `Completado (${score}pts)`;
+    else if (isUnlocked) statusLabel = 'En progreso';
+    else statusLabel = 'Bloqueado';
+
+    return { id, isCompleted, isUnlocked, statusLabel };
+  });
+
   return (
     <View style={styles.container}>
-      <SectionHeader
-        title="Tu progreso"
-        subtitle="Resumen de actividad y rendimiento"
-      />
+      <SectionHeader title="Tu progreso" subtitle="Resumen de actividad y rendimiento" />
 
       <View style={styles.statsGrid}>
-        <StatCard label="Niveles completados" value="2 / 6" tone="green" style={styles.statCard} />
-        <StatCard label="Precision" value="86%" tone="blue" style={styles.statCard} />
-        <StatCard label="Racha actual" value="5 dias" tone="orange" style={styles.statCard} />
-        <StatCard label="Tiempo total" value="3h 42m" tone="violet" style={styles.statCard} />
+        <StatCard
+          label="Niveles completados"
+          value={`${completedCount} / ${totalLevels}`}
+          tone="green"
+          style={styles.statCard}
+        />
+        <StatCard
+          label="Precision promedio"
+          value={completedCount > 0 ? `${avgScore}%` : '-'}
+          tone="blue"
+          style={styles.statCard}
+        />
+        <StatCard
+          label="Racha actual"
+          value={streakLabel}
+          tone="orange"
+          style={styles.statCard}
+        />
+        <StatCard
+          label="Dias activos"
+          value={totalLabel}
+          tone="violet"
+          style={styles.statCard}
+        />
       </View>
 
       <SurfaceCard style={styles.panel}>
         <Text style={styles.panelTitle}>Detalle por nivel</Text>
-        <Text style={styles.panelItem}>Nivel 1: Completado, puntaje max 95</Text>
-        <Text style={styles.panelItem}>Nivel 2: En progreso</Text>
-        <Text style={styles.panelItem}>Nivel 3: Bloqueado</Text>
+        {levelEntries.map((entry) => (
+          <View key={entry.id} style={styles.levelRow}>
+            <View
+              style={[
+                styles.levelDot,
+                entry.isCompleted && styles.levelDotCompleted,
+                !entry.isUnlocked && styles.levelDotLocked,
+              ]}
+            />
+            <Text
+              style={[
+                styles.levelText,
+                entry.isCompleted && styles.levelTextCompleted,
+                !entry.isUnlocked && styles.levelTextLocked,
+              ]}
+            >
+              {`Nivel ${entry.id}: ${entry.statusLabel}`}
+            </Text>
+          </View>
+        ))}
       </SurfaceCard>
     </View>
   );
@@ -35,32 +98,32 @@ export default function ProgressTabScreen() {
 
 function createStyles(theme) {
   return StyleSheet.create({
-    container: {
-      gap: 12,
-    },
+    container: { gap: 12 },
     statsGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',
       justifyContent: 'space-between',
       rowGap: 8,
     },
-    statCard: {
-      width: '48.5%',
-    },
-    panel: {
-      marginTop: 6,
-      padding: 12,
-      gap: 6,
-    },
+    statCard: { width: '48.5%' },
+    panel: { marginTop: 6, padding: 14, gap: 10 },
     panelTitle: {
       fontSize: 15,
       fontWeight: '800',
       color: theme.colors.textPrimary,
-      marginBottom: 2,
+      marginBottom: 4,
     },
-    panelItem: {
-      color: theme.colors.textSecondary,
-      fontSize: 13,
+    levelRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    levelDot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: '#F59E0B',
     },
+    levelDotCompleted: { backgroundColor: '#22C55E' },
+    levelDotLocked: { backgroundColor: '#D1D5DB' },
+    levelText: { fontSize: 13, color: theme.colors.textSecondary },
+    levelTextCompleted: { color: '#22C55E', fontWeight: '700' },
+    levelTextLocked: { color: '#9CA3AF' },
   });
 }

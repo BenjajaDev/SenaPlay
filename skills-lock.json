@@ -55,6 +55,12 @@
       "skillPath": "plugins/claude-opus-4-5-migration/skills/claude-opus-4-5-migration/SKILL.md",
       "computedHash": "b03b91554e25480cd5dfdcb8e1c797a4703b9ed5e303593c9ac338d6d43c040a"
     },
+    "excalidraw-diagram": {
+      "source": "coleam00/excalidraw-diagram-skill",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "fc91249969c7c1adc1f810ddfe10f18e206b78609467bb4955248e9138932e8a"
+    },
     "frontend-design": {
       "source": "anthropics/claude-code",
       "sourceType": "github",

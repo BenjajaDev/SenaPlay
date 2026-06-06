@@ -27,6 +27,12 @@ const CONTEXT_PRESETS = {
     message: 'Debes verificar tu correo antes de iniciar sesion.',
     primaryText: 'Entendido',
   },
+  'password-updated': {
+    variant: 'success',
+    title: 'Contrasena actualizada',
+    message: 'Tu contrasena se cambio correctamente. Inicia sesion con la nueva.',
+    primaryText: 'Iniciar sesion',
+  },
   validation: {
     variant: 'warning',
     title: 'Validacion',

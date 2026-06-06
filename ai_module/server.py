@@ -75,12 +75,13 @@ def _obtener_modelo_dinamico():
 # ── Esquemas de entrada/salida (Pydantic) ─────────────────────────────────────
 
 class FrameMano(BaseModel):
-    # 21 landmarks en coordenadas Three.js world (mismo formato que signs_reference.json)
+    # 21 landmarks CRUDOS de MediaPipe (x, y, z en rango ~0-1), igual que el
+    # entrenamiento. El cliente (app) los manda tal cual los entrega MediaPipe.
     landmarks: list[list[float]]
 
 
 class SecuenciaMano(BaseModel):
-    # Para señas con movimiento: N frames de 21 landmarks cada uno
+    # Para señas con movimiento: N frames de 21 landmarks CRUDOS de MediaPipe
     frames: list[list[list[float]]]
     fps: Optional[float] = 15.0  # Cuadros por segundo de la captura
 
@@ -140,7 +141,8 @@ def obtener_seña(seña_id: str):
 @app.post("/clasificar")
 def clasificar_seña_estatica(req: FrameMano):
     """
-    Clasifica una seña estática a partir de 21 landmarks.
+    Clasifica una seña estática a partir de 21 landmarks CRUDOS de MediaPipe.
+    (A diferencia de /comparar, que usa poses de referencia en coordenadas world.)
     Requiere haber entrenado el modelo: python model/train_static.py
     """
     modelo = _obtener_modelo_estatico()

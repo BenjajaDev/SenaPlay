@@ -142,6 +142,32 @@ DATASETS = {
 3. Ejecutar: python data/extract_landmarks.py --entrada data/raw/hagrid --salida data/landmarks_estaticos --modo imagen
         """,
     },
+
+    "lsch-roboflow": {
+        "nombre": "Lengua de Señas Chilena 'desde cero' (Roboflow)",
+        "descripcion": (
+            "~1105 imágenes del ALFABETO de la Lengua de Señas Chilena (LSCh).\n"
+            "Es el dataset más relevante para esta app: son las letras reales chilenas,\n"
+            "no gestos genéricos ni señas de otro país.\n"
+            "Descarga directa con API key gratuita de Roboflow."
+        ),
+        "url_info": "https://universe.roboflow.com/project-jak2u/lengua-de-senas-chilena-desde-cero/dataset/10",
+        "url_descarga": "https://universe.roboflow.com/project-jak2u/lengua-de-senas-chilena-desde-cero",
+        "tipo": ["estatica"],
+        "señas": 27,
+        "muestras": 1105,
+        "requiere_registro": True,
+        "instrucciones": """
+1. Crea una cuenta gratis en https://roboflow.com y copia tu API key (Settings → API).
+2. pip install roboflow
+3. Ejecuta (reemplaza TU_API_KEY):
+   python data/download_datasets.py --dataset lsch-roboflow --api-key TU_API_KEY --salida data/raw
+4. Extrae landmarks:
+   python data/extract_landmarks.py --entrada data/raw/lsch_alfabeto --salida data/landmarks_estaticos --modo imagen
+5. Entrena:
+   python model/train_static.py --datos data/landmarks_estaticos --salida models_saved/estatico.pkl
+        """,
+    },
 }
 
 
@@ -210,6 +236,107 @@ def descargar_hagrid(directorio_salida: str):
     print(f"\n[Descarga] HaGRID guardado en: {directorio_salida}")
 
 
+def descargar_roboflow_lsch(api_key: str, directorio_salida: str):
+    """
+    Descarga el dataset del alfabeto LSCh desde Roboflow Universe.
+
+    El proyecto es de tipo OBJECT-DETECTION, así que lo bajamos en formato VOC
+    (cada imagen trae un .xml con la clase de la letra) y reorganizamos las
+    imágenes en carpetas por letra, dejándolas listas para
+    extract_landmarks.py --modo imagen.
+
+    Resultado:
+        directorio_salida/lsch_alfabeto/
+            A/  ...jpg
+            B/  ...jpg
+            ...
+    """
+    try:
+        from roboflow import Roboflow
+    except ImportError:
+        print("[Error] Instala el paquete primero:  pip install roboflow")
+        return
+
+    import shutil
+    import glob
+    import xml.etree.ElementTree as ET
+
+    destino = os.path.join(directorio_salida, "lsch_alfabeto")
+    carpeta_descarga = os.path.join(destino, "_descarga")
+    os.makedirs(destino, exist_ok=True)
+
+    print("[Roboflow] Descargando 'lengua-de-senas-chilena-desde-cero' v10 (VOC → organizando por letra)...")
+    try:
+        rf = Roboflow(api_key=api_key)
+        proyecto = rf.workspace("project-jak2u").project("lengua-de-senas-chilena-desde-cero")
+        dataset = proyecto.version(10).download("voc", location=carpeta_descarga)
+    except Exception as e:
+        print(f"[Error] No se pudo descargar desde Roboflow: {e}")
+        print("        Verifica tu API key (Account → Roboflow Keys).")
+        return
+
+    origen = getattr(dataset, "location", carpeta_descarga)
+    extensiones = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
+
+    def clase_desde_xml(ruta_xml):
+        """Lee la clase del primer objeto anotado en un XML Pascal VOC."""
+        try:
+            raiz = ET.parse(ruta_xml).getroot()
+            obj = raiz.find("object")
+            if obj is None:
+                return None, None
+            clase = (obj.findtext("name") or "").strip()
+            archivo = (raiz.findtext("filename") or "").strip()
+            return (clase or None), (archivo or None)
+        except Exception:
+            return None, None
+
+    # Recorrer splits, leer cada XML y copiar su imagen a la carpeta de su letra
+    total = 0
+    for split in ("train", "valid", "test"):
+        ruta_split = os.path.join(origen, split)
+        if not os.path.isdir(ruta_split):
+            continue
+
+        for ruta_xml in glob.glob(os.path.join(ruta_split, "*.xml")):
+            clase, archivo = clase_desde_xml(ruta_xml)
+            if not clase:
+                continue
+
+            # Resolver la imagen: por <filename> o por el mismo nombre base del XML
+            img_src = os.path.join(ruta_split, archivo) if archivo else ""
+            if not img_src or not os.path.exists(img_src):
+                base = os.path.splitext(os.path.basename(ruta_xml))[0]
+                candidatos = [
+                    f for f in os.listdir(ruta_split)
+                    if os.path.splitext(f)[0] == base
+                    and os.path.splitext(f)[1].lower() in extensiones
+                ]
+                if not candidatos:
+                    continue
+                archivo = candidatos[0]
+                img_src = os.path.join(ruta_split, archivo)
+
+            destino_clase = os.path.join(destino, clase)
+            os.makedirs(destino_clase, exist_ok=True)
+            shutil.copy2(img_src, os.path.join(destino_clase, f"{split}_{archivo}"))
+            total += 1
+
+    if total == 0:
+        print("[Aviso] No se pudieron organizar imágenes por clase.")
+        print(f"        Revisa la estructura descargada en: {origen}")
+        return
+
+    clases = sorted([
+        d for d in os.listdir(destino)
+        if os.path.isdir(os.path.join(destino, d)) and d != "_descarga"
+    ])
+    print(f"\n[Roboflow] {total} imágenes organizadas en: {destino}")
+    print(f"[Roboflow] Clases ({len(clases)}): {clases}")
+    print("\nSiguiente paso:")
+    print(f"  python data/extract_landmarks.py --entrada {destino} --salida data/landmarks_estaticos --modo imagen")
+
+
 def mostrar_instrucciones_dataset(nombre_dataset: str):
     """Muestra las instrucciones de descarga de un dataset específico."""
     if nombre_dataset not in DATASETS:
@@ -235,11 +362,17 @@ if __name__ == "__main__":
                         help="Dataset a descargar o ver instrucciones")
     parser.add_argument("--salida", default="data/raw",
                         help="Directorio donde guardar el dataset")
+    parser.add_argument("--api-key", default="",
+                        help="(Solo lsch-roboflow) API key de Roboflow")
     args = parser.parse_args()
 
     if args.info or not args.dataset:
         mostrar_info_todos()
     elif args.dataset == "hagrid":
         descargar_hagrid(os.path.join(args.salida, "hagrid"))
+    elif args.dataset == "lsch-roboflow":
+        if not args.api_key:
+            parser.error("--api-key es obligatorio para lsch-roboflow (cópiala de roboflow.com → Settings → API)")
+        descargar_roboflow_lsch(args.api_key, args.salida)
     else:
         mostrar_instrucciones_dataset(args.dataset)

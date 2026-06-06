@@ -1,11 +1,13 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
+import { useCameraPermissions } from 'expo-camera';
 import GameScreenHeader from '../../components/ui/GameScreenHeader';
 
-// ── IP del servidor Python (cambia por la IP local de tu PC en la misma WiFi) ─
-const SERVIDOR_IA = 'http://192.168.1.100:8000';
+// ── IP del servidor Python (debe ser la IP local de tu PC en la misma WiFi) ─
+// Detectada automáticamente: 192.168.0.15. Si tu PC cambia de IP, actualízala aquí.
+const SERVIDOR_IA = 'http://192.168.0.15:8000';
 
 // ── Señas disponibles para el modo práctica ────────────────────────────────────
 // Los landmarks deben estar en coordenadas Three.js world (mismo sistema del visor)
@@ -81,6 +83,11 @@ const SIGNS = [
     ],
   },
 ];
+
+// ── Palabras para el modo Deletreo ──────────────────────────────────────────────
+// Solo letras estáticas (evitamos J/Z/X que el modelo estático reconoce peor).
+const PALABRAS = ['HOLA', 'AMIGO', 'MAMA', 'CASA', 'AMOR', 'GATO', 'PERA'];
+const UMBRAL_DELETREO = 0.55; // confianza mínima de la IA para dar por buena la letra
 
 // ── HTML del visor Three.js con modo práctica integrado ───────────────────────
 
@@ -518,6 +525,7 @@ const HAND_HTML = `<!DOCTYPE html>
   let liveMode = false;
   let mpHands  = null;
   let sending  = false;
+  let ultimoEnvio = 0;   // throttle para no saturar el servidor IA
 
   // Convierte landmarks de MediaPipe (objetos {x,y,z} en rango 0-1) a Three.js world
   function mpAWorld(mpLm) {
@@ -542,26 +550,32 @@ const HAND_HTML = `<!DOCTYPE html>
     mpHands.onResults(resultados => {
       if (resultados.multiHandLandmarks && resultados.multiHandLandmarks.length > 0) {
         const lmWorld = mpAWorld(resultados.multiHandLandmarks[0]);
+        // Crudos de MediaPipe (x,y,z ~0-1): es el formato que espera el clasificador IA.
+        const lmCrudos = resultados.multiHandLandmarks[0].map(p => [p.x, p.y, p.z]);
         landmarksActuales = lmWorld;
         actualizarMano(lmWorld, manoReal);
         liveMode = true;
         STATUS.textContent = '';
 
-        // Si estamos en modo práctica, calcular y mostrar feedback en tiempo real
+        // En modo práctica: feedback geométrico (colores + similitud)
+        let pct = null;
         if (modoEnseñanza && landmarksReferencia) {
           const resultado = calcularPuntuacion(lmWorld, landmarksReferencia);
           aplicarColoresFeedback(resultado.dedos);
-          const pct = Math.round(resultado.global * 100);
+          pct = Math.round(resultado.global * 100);
           actualizarPuntuacionUI(pct);
+        }
 
-          // Enviar a React Native para que pueda llamar al servidor IA
-          if (window.ReactNativeWebView) {
-            window.ReactNativeWebView.postMessage(JSON.stringify({
-              tipo: 'landmarks',
-              landmarks: lmWorld,
-              puntuacion: pct,
-            }));
-          }
+        // Enviar landmarks CRUDOS a React Native para clasificación con la IA.
+        // Throttle a ~500ms para no saturar el servidor.
+        const ahora = Date.now();
+        if (window.ReactNativeWebView && ahora - ultimoEnvio > 500) {
+          ultimoEnvio = ahora;
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            tipo: 'landmarks',
+            landmarks: lmCrudos,
+            puntuacion: pct,
+          }));
         }
       } else {
         if (liveMode) {
@@ -572,9 +586,20 @@ const HAND_HTML = `<!DOCTYPE html>
     });
   }
 
+  function reportarError(msg) {
+    STATUS.textContent = 'Cámara: ' + msg;
+    if (window.ReactNativeWebView) {
+      window.ReactNativeWebView.postMessage(JSON.stringify({ tipo: 'error-camara', mensaje: msg }));
+    }
+  }
+
   async function iniciarCamara() {
     STATUS.textContent = 'Solicitando acceso a la cámara…';
     try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        reportarError('getUserMedia no disponible (contexto no seguro)');
+        return;
+      }
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode:'user', width:{ideal:640}, height:{ideal:480} },
       });
@@ -595,7 +620,7 @@ const HAND_HTML = `<!DOCTYPE html>
       }
       procesarFrame();
     } catch (err) {
-      console.warn('Error de cámara:', err);
+      reportarError((err && (err.name + ': ' + err.message)) || String(err));
     }
   }
 
@@ -649,6 +674,25 @@ export default function Hand3DGameScreen({ onBack }) {
   const [modoActivo, setModoActivo] = useState('libre'); // 'libre' | 'practica'
   const [signIndex, setSignIndex] = useState(0);
   const [puntuacion, setPuntuacion] = useState(null);
+  const [iaResultado, setIaResultado] = useState(null); // { sena, confianza }
+  const [iaEstado, setIaEstado] = useState(null);        // null | 'ok' | 'sin-conexion'
+  const [errorCamara, setErrorCamara] = useState(null);
+  const enClasificacion = useRef(false);
+
+  // Estado del modo Deletreo
+  const [palabraIdx, setPalabraIdx] = useState(0);
+  const [letraIdx, setLetraIdx] = useState(0);
+  const palabraActual = PALABRAS[palabraIdx];
+  const palabraCompleta = letraIdx >= palabraActual.length;
+
+  // Permiso de cámara (necesario para que el WebView pueda usar getUserMedia)
+  const [permisoCamara, pedirPermisoCamara] = useCameraPermissions();
+
+  useEffect(() => {
+    if (permisoCamara && !permisoCamara.granted && permisoCamara.canAskAgain) {
+      pedirPermisoCamara();
+    }
+  }, [permisoCamara, pedirPermisoCamara]);
 
   const currentSign = SIGNS[signIndex];
 
@@ -676,20 +720,88 @@ export default function Hand3DGameScreen({ onBack }) {
     }
   }, [signIndex, modoActivo, activarModoPractica]);
 
+  // ── Modo Deletreo (escribir una palabra letra por letra) ─────────────────────
+
+  const activarDeletreo = useCallback(() => {
+    setModoActivo('deletreo');
+    setLetraIdx(0);
+    setPuntuacion(null);
+    webRef.current?.injectJavaScript('activarModoLibre(); true;'); // sin mano fantasma
+  }, []);
+
+  const siguientePalabra = useCallback(() => {
+    setPalabraIdx((p) => (p + 1) % PALABRAS.length);
+    setLetraIdx(0);
+  }, []);
+
+  const cambiarModo = useCallback((key) => {
+    if (key === 'libre') activarModoLibre();
+    else if (key === 'practica') activarModoPractica(currentSign);
+    else if (key === 'deletreo') activarDeletreo();
+  }, [activarModoLibre, activarModoPractica, activarDeletreo, currentSign]);
+
+  // ── Clasificación con la IA (servidor Python) ────────────────────────────────
+
+  const clasificarSena = useCallback(async (landmarks) => {
+    if (enClasificacion.current) return; // evita peticiones encimadas
+    enClasificacion.current = true;
+    try {
+      const ctrl = new AbortController();
+      const timeout = setTimeout(() => ctrl.abort(), 2500);
+      const resp = await fetch(`${SERVIDOR_IA}/clasificar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ landmarks }),
+        signal: ctrl.signal,
+      });
+      clearTimeout(timeout);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = await resp.json();
+      setIaResultado({ sena: data['seña'], confianza: data.confianza });
+      setIaEstado('ok');
+    } catch (_) {
+      setIaEstado('sin-conexion');
+    } finally {
+      enClasificacion.current = false;
+    }
+  }, []);
+
   // ── Mensajes del WebView → React Native ──────────────────────────────────────
 
   const manejarMensaje = useCallback((evento) => {
     try {
       const msg = JSON.parse(evento.nativeEvent.data);
       if (msg.tipo === 'landmarks') {
-        setPuntuacion(msg.puntuacion);
-        // Aquí se puede llamar al servidor IA para clasificación avanzada:
-        // fetch(`${SERVIDOR_IA}/clasificar`, { method:'POST', body: JSON.stringify({ landmarks: msg.landmarks }) })
+        if (typeof msg.puntuacion === 'number') setPuntuacion(msg.puntuacion);
+        if (Array.isArray(msg.landmarks)) clasificarSena(msg.landmarks);
+      } else if (msg.tipo === 'error-camara') {
+        setErrorCamara(msg.mensaje);
       }
     } catch (_) {}
-  }, []);
+  }, [clasificarSena]);
+
+  // ── Avance automático del deletreo cuando la IA reconoce la letra esperada ───
+  useEffect(() => {
+    if (modoActivo !== 'deletreo' || !iaResultado || palabraCompleta) return;
+    const esperada = palabraActual[letraIdx];
+    const reconocida = String(iaResultado.sena).toUpperCase();
+    if (reconocida === esperada && (iaResultado.confianza || 0) >= UMBRAL_DELETREO) {
+      setLetraIdx((i) => i + 1);
+    }
+  }, [iaResultado, modoActivo, palabraActual, letraIdx, palabraCompleta]);
 
   // ── Renderizado ───────────────────────────────────────────────────────────────
+
+  const objetivoActual =
+    modoActivo === 'deletreo'
+      ? (palabraCompleta ? null : palabraActual[letraIdx])
+      : modoActivo === 'practica'
+        ? currentSign?.id
+        : null;
+  const aciertoIA =
+    iaResultado &&
+    objetivoActual &&
+    String(iaResultado.sena).toUpperCase() === String(objetivoActual).toUpperCase();
 
   return (
     <View style={styles.pantalla}>
@@ -698,46 +810,138 @@ export default function Hand3DGameScreen({ onBack }) {
         <GameScreenHeader title="Mano 3D" onBack={onBack} />
       </View>
 
-      {/* Visor Three.js */}
-      <WebView
-        ref={webRef}
-        source={{ html: HAND_HTML }}
-        style={StyleSheet.absoluteFill}
-        scrollEnabled={false}
-        bounces={false}
-        overScrollMode="never"
-        androidLayerType="hardware"
-        originWhitelist={['*']}
-        javaScriptEnabled
-        domStorageEnabled
-        allowsInlineMediaPlayback
-        mediaPlaybackRequiresUserAction={false}
-        onPermissionRequest={e => e.nativeEvent.request.grant(e.nativeEvent.request.resources)}
-        onMessage={manejarMensaje}
-      />
+      {/* Visor Three.js — solo cuando hay permiso de cámara */}
+      {permisoCamara?.granted ? (
+        <WebView
+          ref={webRef}
+          source={{ html: HAND_HTML, baseUrl: 'https://localhost/' }}
+          style={StyleSheet.absoluteFill}
+          scrollEnabled={false}
+          bounces={false}
+          overScrollMode="never"
+          androidLayerType="hardware"
+          originWhitelist={['*']}
+          javaScriptEnabled
+          domStorageEnabled
+          allowsInlineMediaPlayback
+          mediaPlaybackRequiresUserAction={false}
+          mediaCapturePermissionGrantType="grant"
+          onPermissionRequest={e => e.nativeEvent.request.grant(e.nativeEvent.request.resources)}
+          onMessage={manejarMensaje}
+        />
+      ) : (
+        <View style={styles.permisoBox}>
+          <Text style={styles.permisoTitulo}>Cámara necesaria</Text>
+          <Text style={styles.permisoTexto}>
+            Para reconocer tus señas con la mano necesitamos acceso a la cámara.
+          </Text>
+          <TouchableOpacity style={styles.permisoBtn} onPress={pedirPermisoCamara}>
+            <Text style={styles.permisoBtnTexto}>
+              {permisoCamara && !permisoCamara.canAskAgain ? 'Abrir ajustes y permitir' : 'Permitir cámara'}
+            </Text>
+          </TouchableOpacity>
+          {permisoCamara && !permisoCamara.canAskAgain ? (
+            <Text style={styles.permisoNota}>
+              Si lo bloqueaste, actívalo en Ajustes → OratioLingo → Permisos → Cámara.
+            </Text>
+          ) : null}
+        </View>
+      )}
 
       {/* Barra de controles inferior */}
       <View style={[styles.barraControl, { paddingBottom: insets.bottom + 8 }]}>
 
-        {/* Toggle Libre / Práctica */}
-        <View style={styles.toggleContenedor}>
-          <TouchableOpacity
-            style={[styles.toggleBtn, modoActivo === 'libre' && styles.toggleActivo]}
-            onPress={activarModoLibre}
-          >
-            <Text style={[styles.toggleTexto, modoActivo === 'libre' && styles.toggleTextoActivo]}>
-              Libre
+        {/* Aviso de error de cámara (diagnóstico) */}
+        {errorCamara ? (
+          <View style={styles.errorCamaraBox}>
+            <Text style={styles.errorCamaraTexto}>⚠ {errorCamara}</Text>
+          </View>
+        ) : null}
+
+        {/* Banner de reconocimiento de la IA */}
+        <View style={styles.iaBanner}>
+          {iaEstado === 'sin-conexion' ? (
+            <Text style={styles.iaTextoError}>
+              IA no conectada · revisa el servidor ({SERVIDOR_IA})
             </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.toggleBtn, modoActivo === 'practica' && styles.toggleActivo]}
-            onPress={() => activarModoPractica(currentSign)}
-          >
-            <Text style={[styles.toggleTexto, modoActivo === 'practica' && styles.toggleTextoActivo]}>
-              Práctica
+          ) : iaResultado ? (
+            <Text style={styles.iaTexto}>
+              {'IA reconoce: '}
+              <Text
+                style={[
+                  styles.iaLetra,
+                  { color: aciertoIA ? '#22C55E' : '#1CB0F6' },
+                ]}
+              >
+                {iaResultado.sena}
+              </Text>
+              {`  (${Math.round((iaResultado.confianza || 0) * 100)}%)`}
+              {aciertoIA ? '  ✓' : ''}
             </Text>
-          </TouchableOpacity>
+          ) : (
+            <Text style={styles.iaTextoTenue}>Muestra una seña para que la IA la reconozca…</Text>
+          )}
         </View>
+
+        {/* Toggle Libre / Práctica / Deletreo */}
+        <View style={styles.toggleContenedor}>
+          {[
+            { key: 'libre', label: 'Libre' },
+            { key: 'practica', label: 'Práctica' },
+            { key: 'deletreo', label: 'Deletreo' },
+          ].map((m) => (
+            <TouchableOpacity
+              key={m.key}
+              style={[styles.toggleBtn, modoActivo === m.key && styles.toggleActivo]}
+              onPress={() => cambiarModo(m.key)}
+            >
+              <Text style={[styles.toggleTexto, modoActivo === m.key && styles.toggleTextoActivo]}>
+                {m.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Panel de Deletreo */}
+        {modoActivo === 'deletreo' && (
+          <View style={styles.deletreoBox}>
+            <View style={styles.palabraRow}>
+              {palabraActual.split('').map((ch, i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.letraChip,
+                    i < letraIdx && styles.letraChipOk,
+                    i === letraIdx && !palabraCompleta && styles.letraChipActual,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.letraChipTexto,
+                      (i < letraIdx || (i === letraIdx && !palabraCompleta)) && styles.letraChipTextoOn,
+                    ]}
+                  >
+                    {ch}
+                  </Text>
+                </View>
+              ))}
+            </View>
+
+            {palabraCompleta ? (
+              <View style={styles.deletreoFooter}>
+                <Text style={styles.deletreoOk}>¡Palabra completa! 🎉</Text>
+                <TouchableOpacity style={styles.btnSiguiente} onPress={siguientePalabra}>
+                  <Text style={styles.btnSiguienteTexto}>Siguiente palabra ›</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <Text style={styles.deletreoInstr}>
+                {'Haz la seña de la letra '}
+                <Text style={styles.deletreoLetra}>{palabraActual[letraIdx]}</Text>
+              </Text>
+            )}
+          </View>
+        )}
 
         {/* Navegacion de señas (modo practica) */}
         {modoActivo === 'practica' && (
@@ -773,6 +977,24 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0F172A',
   },
+  permisoBox: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+    gap: 14,
+  },
+  permisoTitulo: { color: '#F1F5F9', fontSize: 20, fontWeight: '800' },
+  permisoTexto: { color: 'rgba(226,232,240,0.7)', fontSize: 14, textAlign: 'center', lineHeight: 20 },
+  permisoBtn: {
+    backgroundColor: '#1CB0F6',
+    paddingHorizontal: 22,
+    paddingVertical: 12,
+    borderRadius: 14,
+    marginTop: 4,
+  },
+  permisoBtnTexto: { color: '#FFFFFF', fontWeight: '800', fontSize: 15 },
+  permisoNota: { color: 'rgba(226,232,240,0.5)', fontSize: 12, textAlign: 'center' },
   barraControl: {
     position: 'absolute',
     bottom: 0,
@@ -785,6 +1007,25 @@ const styles = StyleSheet.create({
     borderTopColor: 'rgba(255,255,255,0.08)',
     gap: 10,
   },
+  iaBanner: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 10,
+  },
+  iaTexto: { color: '#E2E8F0', fontSize: 14, fontWeight: '600' },
+  iaLetra: { fontSize: 18, fontWeight: '900' },
+  iaTextoTenue: { color: 'rgba(226,232,240,0.5)', fontSize: 12 },
+  iaTextoError: { color: '#FCA5A5', fontSize: 11, fontWeight: '600', textAlign: 'center' },
+  errorCamaraBox: {
+    backgroundColor: 'rgba(239,68,68,0.15)',
+    borderRadius: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+  },
+  errorCamaraTexto: { color: '#FCA5A5', fontSize: 12, fontWeight: '600', textAlign: 'center' },
   toggleContenedor: {
     flexDirection: 'row',
     backgroundColor: 'rgba(255,255,255,0.07)',
@@ -807,6 +1048,72 @@ const styles = StyleSheet.create({
   },
   toggleTextoActivo: {
     color: '#FFFFFF',
+  },
+  deletreoBox: {
+    alignItems: 'center',
+    gap: 8,
+    paddingTop: 4,
+  },
+  palabraRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  letraChip: {
+    width: 38,
+    height: 46,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.12)',
+  },
+  letraChipOk: {
+    backgroundColor: 'rgba(34,197,94,0.18)',
+    borderColor: '#22C55E',
+  },
+  letraChipActual: {
+    borderColor: '#1CB0F6',
+    backgroundColor: 'rgba(28,176,246,0.15)',
+  },
+  letraChipTexto: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: 'rgba(255,255,255,0.4)',
+  },
+  letraChipTextoOn: {
+    color: '#FFFFFF',
+  },
+  deletreoInstr: {
+    color: 'rgba(226,232,240,0.8)',
+    fontSize: 14,
+  },
+  deletreoLetra: {
+    color: '#1CB0F6',
+    fontWeight: '900',
+    fontSize: 18,
+  },
+  deletreoFooter: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  deletreoOk: {
+    color: '#22C55E',
+    fontWeight: '800',
+    fontSize: 15,
+  },
+  btnSiguiente: {
+    backgroundColor: '#1CB0F6',
+    paddingHorizontal: 18,
+    paddingVertical: 9,
+    borderRadius: 12,
+  },
+  btnSiguienteTexto: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+    fontSize: 14,
   },
   signNav: {
     flexDirection: 'row',

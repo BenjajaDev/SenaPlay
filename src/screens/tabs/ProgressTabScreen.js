@@ -15,8 +15,17 @@ export default function ProgressTabScreen({ levelProgress, userStats }) {
   const completedCount = Object.keys(completed).length;
   const totalLevels = 6;
 
-  const scores = Object.values(completed).map((c) => c.score || 0);
-  const avgScore = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
+  // Precision = aciertos / (aciertos + fallos) por nivel, promediada. Siempre 0-100%.
+  const accuracies = Object.values(completed).map((c) => {
+    const hits = c.hits || 0;
+    const fails = c.fails || 0;
+    const attempts = hits + fails;
+    return attempts > 0 ? (hits / attempts) * 100 : 0;
+  });
+  const avgScore =
+    accuracies.length > 0
+      ? Math.round(accuracies.reduce((a, b) => a + b, 0) / accuracies.length)
+      : 0;
 
   const streak = userStats?.streak ?? 0;
   const totalDays = userStats?.totalDays ?? 0;

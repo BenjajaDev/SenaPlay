@@ -25,7 +25,7 @@ import MemoryGameScreen from './games/MemoryGameScreen';
 import QuickQuizGameScreen from './games/QuickQuizGameScreen';
 import Hand3DGameScreen from './games/Hand3DGameScreen';
 import LevelSessionScreen from './levels/LevelSessionScreen';
-import { getLevelById } from '../data/levelsConfig';
+import { useCatalog } from '../data/CatalogContext';
 import { useAppTheme } from '../theme/ThemeProvider';
 
 const DEFAULT_LEVEL_PROGRESS = { unlocked: [1], completed: {} };
@@ -33,6 +33,7 @@ const DEFAULT_LEVEL_PROGRESS = { unlocked: [1], completed: {} };
 export default function MainAppScreen({ onLogout }) {
   const insets = useSafeAreaInsets();
   const theme = useAppTheme();
+  const { getLevelById } = useCatalog();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
   const [activeTab, setActiveTab] = useState('levels');

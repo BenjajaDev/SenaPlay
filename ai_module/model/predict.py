@@ -33,19 +33,17 @@ class ClasificadorEstatico:
 
     def _extraer_caracteristicas(self, landmarks: np.ndarray) -> np.ndarray:
         """
-        Convierte 21 landmarks (21×3) en un vector de características.
-        Normaliza relativo a la muñeca para ser invariante a posición y escala.
+        Convierte 21 landmarks (21×3) en el MISMO vector de características que
+        usa el entrenamiento (63 coordenadas normalizadas + 16 ángulos de flexión).
+
+        IMPORTANTE: debe ser idéntico a train_static.extraer_caracteristicas, de lo
+        contrario el modelo recibe un número de features distinto y falla. Por eso
+        reutilizamos esa misma función en vez de duplicar la lógica.
+
+        Se esperan landmarks CRUDOS de MediaPipe (x, y, z en rango ~0-1).
         """
-        # Centrar en la muñeca
-        centrado = landmarks - landmarks[0]
-
-        # Escalar por distancia muñeca→base dedo medio
-        escala = np.linalg.norm(centrado[9])
-        if escala > 1e-6:
-            centrado = centrado / escala
-
-        # Aplanar a vector de 63 valores
-        return centrado.flatten()
+        from model.train_static import extraer_caracteristicas
+        return extraer_caracteristicas(landmarks)
 
     def predecir(self, landmarks: np.ndarray) -> tuple[str, float]:
         """

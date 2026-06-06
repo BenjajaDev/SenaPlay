@@ -1,17 +1,25 @@
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useFonts } from 'expo-font';
 import { supabase } from './backend/supabase';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
+import VerifyCodeScreen from './src/screens/VerifyCodeScreen';
+import ResetPasswordScreen from './src/screens/ResetPasswordScreen';
 import MainAppScreen from './src/screens/MainAppScreen';
 import { APP_FONTS } from './src/constants/fonts';
 import { AppThemeProvider, useAppTheme } from './src/theme/ThemeProvider';
+import { CatalogProvider } from './src/data/CatalogContext';
 
 function AppContent() {
   const [screen, setScreen] = useState('login');
+  const [pendingEmail, setPendingEmail] = useState('');
+  const [verifyPurpose, setVerifyPurpose] = useState('signup');
   const [isBootstrapping, setIsBootstrapping] = useState(true);
+  // Durante la recuperacion de contrasena verifyOtp crea una sesion; esta bandera
+  // evita que el listener nos lleve a 'main' antes de definir la nueva clave.
+  const recoveringRef = useRef(false);
   const theme = useAppTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const [fontsLoaded] = useFonts({
@@ -34,6 +42,7 @@ function AppContent() {
     hydrateSession();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (recoveringRef.current) return;
       setScreen(session ? 'main' : 'login');
     });
 
@@ -59,11 +68,45 @@ function AppContent() {
         <LoginScreen
           onGoToRegister={() => setScreen('register')}
           onLoginSuccess={() => setScreen('main')}
+          onNeedPasswordReset={(email) => {
+            recoveringRef.current = true;
+            setPendingEmail(email);
+            setVerifyPurpose('recovery');
+            setScreen('verify');
+          }}
         />
       )}
 
       {screen === 'register' && (
-        <RegisterScreen onGoToLogin={() => setScreen('login')} />
+        <RegisterScreen
+          onGoToLogin={() => setScreen('login')}
+          onNeedVerification={(email) => {
+            setVerifyPurpose('signup');
+            setPendingEmail(email);
+            setScreen('verify');
+          }}
+        />
+      )}
+
+      {screen === 'verify' && (
+        <VerifyCodeScreen
+          email={pendingEmail}
+          purpose={verifyPurpose}
+          onBack={() => {
+            recoveringRef.current = false;
+            setScreen('login');
+          }}
+          onVerified={() => setScreen(verifyPurpose === 'recovery' ? 'resetPassword' : 'main')}
+        />
+      )}
+
+      {screen === 'resetPassword' && (
+        <ResetPasswordScreen
+          onDone={() => {
+            recoveringRef.current = false;
+            setScreen('login');
+          }}
+        />
       )}
 
       {screen === 'main' && (
@@ -76,7 +119,9 @@ function AppContent() {
 export default function App() {
   return (
     <AppThemeProvider>
-      <AppContent />
+      <CatalogProvider>
+        <AppContent />
+      </CatalogProvider>
     </AppThemeProvider>
   );
 }

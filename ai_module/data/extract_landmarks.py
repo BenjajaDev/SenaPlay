@@ -25,30 +25,48 @@ import mediapipe as mp
 from tqdm import tqdm
 
 
-# ── Configuración de MediaPipe ─────────────────────────────────────────────────
+# ── Configuración de MediaPipe (Tasks API) ─────────────────────────────────────
+# La API antigua (mp.solutions.hands) fue removida en mediapipe >= 0.10.3x, así
+# que usamos HandLandmarker de la Tasks API, que requiere el modelo .task.
+
+_DIR_AI = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # carpeta ai_module
+RUTA_MODELO_MANOS = os.path.join(_DIR_AI, "models_mediapipe", "hand_landmarker.task")
+
 
 def crear_detector_manos(confianza_deteccion: float = 0.5, confianza_seguimiento: float = 0.5):
-    """Crea y devuelve un detector de manos de MediaPipe."""
-    mp_hands = mp.solutions.hands
-    return mp_hands.Hands(
-        static_image_mode=False,        # False es más rápido para videos
-        max_num_hands=1,
-        model_complexity=1,             # 0=rápido, 1=más preciso
-        min_detection_confidence=confianza_deteccion,
+    """Crea un HandLandmarker (MediaPipe Tasks API) para una mano."""
+    from mediapipe.tasks import python
+    from mediapipe.tasks.python import vision
+
+    if not os.path.exists(RUTA_MODELO_MANOS):
+        raise FileNotFoundError(
+            f"No se encontró el modelo en {RUTA_MODELO_MANOS}.\n"
+            "Descárgalo con:\n"
+            "  curl -L -o models_mediapipe/hand_landmarker.task \\\n"
+            "  https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task"
+        )
+
+    opciones = vision.HandLandmarkerOptions(
+        base_options=python.BaseOptions(model_asset_path=RUTA_MODELO_MANOS),
+        num_hands=1,
+        min_hand_detection_confidence=confianza_deteccion,
         min_tracking_confidence=confianza_seguimiento,
     )
+    return vision.HandLandmarker.create_from_options(opciones)
 
 
-def landmarks_a_array(resultados) -> np.ndarray | None:
+def detectar_landmarks(detector, imagen_bgr) -> np.ndarray | None:
     """
-    Convierte los resultados de MediaPipe a un array numpy (21, 3).
-    Devuelve None si no se detectó ninguna mano.
+    Detecta una mano en una imagen BGR (OpenCV) y devuelve (21, 3) o None.
+    Salida idéntica a antes: landmarks normalizados [x, y, z].
     """
-    if not resultados.multi_hand_landmarks:
+    imagen_rgb = cv2.cvtColor(imagen_bgr, cv2.COLOR_BGR2RGB)
+    mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=imagen_rgb)
+    resultado = detector.detect(mp_image)
+    if not resultado.hand_landmarks:
         return None
-
-    landmarks = resultados.multi_hand_landmarks[0].landmark
-    return np.array([[lm.x, lm.y, lm.z] for lm in landmarks], dtype=np.float32)
+    lm = resultado.hand_landmarks[0]
+    return np.array([[p.x, p.y, p.z] for p in lm], dtype=np.float32)
 
 
 # ── Procesamiento de imágenes estáticas ───────────────────────────────────────
@@ -61,11 +79,7 @@ def extraer_de_imagen(ruta_imagen: str, detector) -> np.ndarray | None:
     imagen = cv2.imread(ruta_imagen)
     if imagen is None:
         return None
-
-    # MediaPipe requiere RGB
-    imagen_rgb = cv2.cvtColor(imagen, cv2.COLOR_BGR2RGB)
-    resultados = detector.process(imagen_rgb)
-    return landmarks_a_array(resultados)
+    return detectar_landmarks(detector, imagen)
 
 
 def procesar_dataset_imagenes(directorio_entrada: str, directorio_salida: str):
@@ -141,9 +155,7 @@ def extraer_de_video(
         if contador % (saltar_frames + 1) != 0:
             continue
 
-        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        resultados = detector.process(frame_rgb)
-        lm = landmarks_a_array(resultados)
+        lm = detectar_landmarks(detector, frame)
 
         if lm is not None:
             frames_landmarks.append(lm)
@@ -222,8 +234,6 @@ def capturar_desde_webcam(nombre_seña: str, directorio_salida: str, n_muestras:
     print("[Webcam] ESPACIO=capturar  Q=salir\n")
 
     detector = crear_detector_manos()
-    mp_dibujo = mp.solutions.drawing_utils
-    mp_hands = mp.solutions.hands
 
     cap = cv2.VideoCapture(0)
     capturadas = 0
@@ -233,14 +243,13 @@ def capturar_desde_webcam(nombre_seña: str, directorio_salida: str, n_muestras:
         if not ret:
             break
 
-        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        resultados = detector.process(frame_rgb)
-        lm = landmarks_a_array(resultados)
+        lm = detectar_landmarks(detector, frame)
 
-        # Dibujar landmarks en el frame
-        if resultados.multi_hand_landmarks:
-            for hand_lm in resultados.multi_hand_landmarks:
-                mp_dibujo.draw_landmarks(frame, hand_lm, mp_hands.HAND_CONNECTIONS)
+        # Dibujar los puntos detectados como círculos sobre el frame
+        if lm is not None:
+            h, w = frame.shape[:2]
+            for (x, y, _z) in lm:
+                cv2.circle(frame, (int(x * w), int(y * h)), 4, (0, 255, 0), -1)
 
         # Mostrar estado
         color_estado = (0, 200, 0) if lm is not None else (0, 0, 200)

@@ -22,7 +22,7 @@ const GENDERS = [
   { key: 'otro', label: 'Otro' },
 ];
 
-export default function RegisterScreen({ onGoToLogin }) {
+export default function RegisterScreen({ onGoToLogin, onNeedVerification }) {
   const insets = useSafeAreaInsets();
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
@@ -95,10 +95,7 @@ export default function RegisterScreen({ onGoToLogin }) {
         return;
       }
 
-      openModal({
-        context: 'email-verification-sent',
-        message: 'Tu cuenta fue creada. Te enviamos un correo de verificacion.',
-      });
+      if (onNeedVerification) onNeedVerification(email.trim());
     } catch {
       openModal({
         context: 'auth-error',

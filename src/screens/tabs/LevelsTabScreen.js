@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import SectionHeader from '../../components/ui/SectionHeader';
-import { LEVELS_CATALOG } from '../../data/levelsConfig';
+import { useCatalog } from '../../data/CatalogContext';
 import { useAppTheme } from '../../theme/ThemeProvider';
 
 function LevelBubble({ item, onPress, theme, styles }) {
@@ -62,8 +62,9 @@ function getLevelTone(theme, item) {
 export default function LevelsTabScreen({ levelProgress, onOpenLevel }) {
   const theme = useAppTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
+  const { levels: catalogLevels } = useCatalog();
 
-  const levels = LEVELS_CATALOG.map((level) => {
+  const levels = catalogLevels.map((level) => {
     const completion = levelProgress?.completed?.[level.id];
     const unlocked = (levelProgress?.unlocked || [1]).includes(level.id);
 

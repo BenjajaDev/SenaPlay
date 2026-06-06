@@ -2,6 +2,7 @@
   "expo": {
     "name": "oratioLingoRN",
     "slug": "oratioLingoRN",
+    "sdkVersion": "54.0.0",
     "scheme": "oratiolingo",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -21,7 +22,11 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "android.permission.CAMERA"
+      ],
+      "package": "com.anonymous.oratioLingoRN"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -32,6 +37,12 @@
         "expo-image-picker",
         {
           "photosPermission": "OratioLingo necesita acceso a tu galería para cambiar tu foto de perfil."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "OratioLingo necesita la cámara para reconocer tus señas con la mano."
         }
       ]
     ]

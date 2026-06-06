@@ -1,69 +1,19 @@
-import { useMemo, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import FilterChip from '../../components/ui/FilterChip';
 import SectionHeader from '../../components/ui/SectionHeader';
 import SurfaceCard from '../../components/ui/SurfaceCard';
 import { APP_FONTS } from '../../constants/fonts';
+import { fetchDictionary } from '../../../backend/dictionary';
+import { fetchSigns } from '../../../backend/signs';
+import { DICTIONARY_ENTRIES, DICTIONARY_FILTERS } from '../../data/dictionaryData';
+import { REAL_SIGNS, SIGN_THEMES } from '../../data/signsData';
 import { useAppTheme } from '../../theme/ThemeProvider';
 
-const ENTRIES = [
-  // Letras A-M
-  { letter: 'A', sign: 'a', description: 'Puño cerrado con pulgar al lado', category: 'A-M', difficulty: 'Fácil' },
-  { letter: 'B', sign: 'b', description: 'Dedos juntos hacia arriba', category: 'A-M', difficulty: 'Fácil' },
-  { letter: 'C', sign: 'c', description: 'Mano curvada en forma de C', category: 'A-M', difficulty: 'Fácil' },
-  { letter: 'D', sign: 'd', description: 'Índice arriba, otros dedos doblados', category: 'A-M', difficulty: 'Fácil' },
-  { letter: 'E', sign: 'e', description: 'Dedos doblados sobre la palma', category: 'A-M', difficulty: 'Fácil' },
-  { letter: 'F', sign: 'f', description: 'Círculo entre índice y pulgar', category: 'A-M', difficulty: 'Medio' },
-  { letter: 'G', sign: 'g', description: 'Índice y pulgar extendidos en horizontal', category: 'A-M', difficulty: 'Medio' },
-  { letter: 'H', sign: 'h', description: 'Índice y medio extendidos en horizontal', category: 'A-M', difficulty: 'Medio' },
-  { letter: 'I', sign: 'i', description: 'Meñique extendido hacia arriba', category: 'A-M', difficulty: 'Medio' },
-  { letter: 'J', sign: 'j', description: 'Meñique dibuja una J en el aire', category: 'A-M', difficulty: 'Medio' },
-  { letter: 'K', sign: 'k', description: 'Índice arriba y medio en ángulo', category: 'A-M', difficulty: 'Medio' },
-  { letter: 'L', sign: 'l', description: 'Índice y pulgar en forma de L', category: 'A-M', difficulty: 'Medio' },
-  { letter: 'M', sign: 'm', description: 'Pulgar bajo tres dedos', category: 'A-M', difficulty: 'Medio' },
-
-  // Letras N-Z
-  { letter: 'N', sign: 'n', description: 'Pulgar entre medio y anular', category: 'N-Z', difficulty: 'Difícil' },
-  { letter: 'Ñ', sign: 'ñ', description: 'N con movimiento ondulatorio', category: 'N-Z', difficulty: 'Difícil' },
-  { letter: 'O', sign: 'o', description: 'Todos los dedos forman un círculo', category: 'N-Z', difficulty: 'Difícil' },
-  { letter: 'P', sign: 'p', description: 'Como K pero apuntando hacia abajo', category: 'N-Z', difficulty: 'Difícil' },
-  { letter: 'Q', sign: 'q', description: 'Como G pero hacia abajo', category: 'N-Z', difficulty: 'Difícil' },
-  { letter: 'R', sign: 'r', description: 'Índice y medio cruzados', category: 'N-Z', difficulty: 'Difícil' },
-  { letter: 'S', sign: 's', description: 'Puño cerrado con pulgar sobre dedos', category: 'N-Z', difficulty: 'Difícil' },
-  { letter: 'T', sign: 't', description: 'Pulgar entre índice y medio', category: 'N-Z', difficulty: 'Difícil' },
-  { letter: 'U', sign: 'u', description: 'Índice y medio juntos hacia arriba', category: 'N-Z', difficulty: 'Difícil' },
-  { letter: 'V', sign: 'v', description: 'Índice y medio separados en V', category: 'N-Z', difficulty: 'Difícil' },
-  { letter: 'W', sign: 'w', description: 'Índice, medio y anular separados', category: 'N-Z', difficulty: 'Difícil' },
-  { letter: 'X', sign: 'x', description: 'Índice doblado como gancho', category: 'N-Z', difficulty: 'Difícil' },
-  { letter: 'Y', sign: 'y', description: 'Pulgar y meñique extendidos', category: 'N-Z', difficulty: 'Difícil' },
-  { letter: 'Z', sign: 'z', description: 'Índice dibuja una Z en el aire', category: 'N-Z', difficulty: 'Difícil' },
-
-  // Números (deletreados)
-  { letter: 'UNO (1)', sign: 'uno', description: 'Se deletrea U-N-O', category: 'Números', difficulty: 'Fácil' },
-  { letter: 'DOS (2)', sign: 'dos', description: 'Se deletrea D-O-S', category: 'Números', difficulty: 'Fácil' },
-  { letter: 'TRES (3)', sign: 'tres', description: 'Se deletrea T-R-E-S', category: 'Números', difficulty: 'Fácil' },
-  { letter: 'CUATRO (4)', sign: 'cuatro', description: 'Se deletrea C-U-A-T-R-O', category: 'Números', difficulty: 'Medio' },
-  { letter: 'CINCO (5)', sign: 'cinco', description: 'Mano abierta, todos los dedos extendidos', category: 'Números', difficulty: 'Fácil' },
-  { letter: 'SEIS (6)', sign: 'seis', description: 'Se deletrea S-E-I-S', category: 'Números', difficulty: 'Medio' },
-  { letter: 'SIETE (7)', sign: 'siete', description: 'Se deletrea S-I-E-T-E', category: 'Números', difficulty: 'Medio' },
-  { letter: 'OCHO (8)', sign: 'ocho', description: 'Se deletrea O-C-H-O', category: 'Números', difficulty: 'Medio' },
-  { letter: 'NUEVE (9)', sign: 'nueve', description: 'Se deletrea N-U-E-V-E', category: 'Números', difficulty: 'Medio' },
-  { letter: 'DIEZ (10)', sign: 'diez', description: 'Se deletrea D-I-E-Z', category: 'Números', difficulty: 'Medio' },
-
-  // Acciones / verbos
-  { letter: 'COMER', sign: 'comer', description: 'Llevar la mano cerrada hacia la boca', category: 'Acciones', difficulty: 'Fácil' },
-  { letter: 'BEBER', sign: 'beber', description: 'Simular tomar un vaso con la mano', category: 'Acciones', difficulty: 'Fácil' },
-  { letter: 'DORMIR', sign: 'dormir', description: 'Mano apoyada en la mejilla, cabeza inclinada', category: 'Acciones', difficulty: 'Medio' },
-  { letter: 'CORRER', sign: 'correr', description: 'Movimiento alternado de manos como brazos al correr', category: 'Acciones', difficulty: 'Medio' },
-  { letter: 'CAMINAR', sign: 'caminar', description: 'Dedos índice y medio simulando pasos', category: 'Acciones', difficulty: 'Medio' },
-  { letter: 'JUGAR', sign: 'jugar', description: 'Manos con pulgar y meñique extendidos, sacudidas', category: 'Acciones', difficulty: 'Medio' },
-  { letter: 'LEER', sign: 'leer', description: 'Dos dedos en V apuntando a la palma como ojos leyendo', category: 'Acciones', difficulty: 'Medio' },
-  { letter: 'ESCRIBIR', sign: 'escribir', description: 'Simular escribir con una mano sobre la palma', category: 'Acciones', difficulty: 'Medio' },
-  { letter: 'HABLAR', sign: 'hablar', description: 'Dedos abriendo y cerrando frente a la boca', category: 'Acciones', difficulty: 'Medio' },
-  { letter: 'TRABAJAR', sign: 'trabajar', description: 'Puños cerrados, uno golpea el otro', category: 'Acciones', difficulty: 'Difícil' },
+const MODES = [
+  { key: 'deletreo', label: 'Deletreo' },
+  { key: 'senas', label: 'Señas reales' },
 ];
-
-const FILTERS = ['Todos', 'A-M', 'N-Z', 'Números', 'Acciones'];
 
 function getBadgeColor(difficulty) {
   if (difficulty === 'Fácil') return '#58CC02';
@@ -74,53 +24,119 @@ function getBadgeColor(difficulty) {
 export default function DictionaryTabScreen() {
   const theme = useAppTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
+  const [mode, setMode] = useState('deletreo');
   const [filter, setFilter] = useState('Todos');
+  const [entries, setEntries] = useState(DICTIONARY_ENTRIES);
+  const [signs, setSigns] = useState(REAL_SIGNS);
 
-  const items = useMemo(() => {
-    if (filter === 'Todos') return ENTRIES;
-    return ENTRIES.filter((entry) => entry.category === filter);
-  }, [filter]);
+  useEffect(() => {
+    let mounted = true;
+    fetchDictionary().then((result) => {
+      if (mounted) setEntries(result.entries);
+    });
+    fetchSigns().then((result) => {
+      if (mounted) setSigns(result.signs);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // Al cambiar de modo, reseteamos el filtro porque las categorias difieren.
+  const handleModeChange = (nextMode) => {
+    setMode(nextMode);
+    setFilter('Todos');
+  };
+
+  const filters = mode === 'deletreo' ? DICTIONARY_FILTERS : SIGN_THEMES;
+
+  const dictionaryItems = useMemo(() => {
+    if (filter === 'Todos') return entries;
+    return entries.filter((entry) => entry.category === filter);
+  }, [entries, filter]);
+
+  const signItems = useMemo(() => {
+    if (filter === 'Todos') return signs;
+    return signs.filter((s) => s.theme === filter);
+  }, [signs, filter]);
 
   return (
     <View style={styles.container}>
-      <SectionHeader title="Diccionario de señas" subtitle="Letras, números y acciones por categoría" />
+      <SectionHeader
+        title="Diccionario de señas"
+        subtitle={mode === 'deletreo' ? 'Letras, números y acciones por categoría' : 'Señas reales (un gesto por palabra)'}
+      />
+
+      {/* Selector de modo */}
+      <View style={styles.modeRow}>
+        {MODES.map((m) => {
+          const selected = m.key === mode;
+          return (
+            <Pressable
+              key={m.key}
+              style={[styles.modeBtn, selected && styles.modeBtnActive]}
+              onPress={() => handleModeChange(m.key)}
+            >
+              <Text style={[styles.modeText, selected && styles.modeTextActive]}>{m.label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
 
       <View style={styles.filtersRow}>
-        {FILTERS.map((item) => {
-          const selected = item === filter;
-          return (
-            <FilterChip
-              key={item}
-              label={item}
-              selected={selected}
-              onPress={() => setFilter(item)}
-            />
-          );
-        })}
+        {filters.map((item) => (
+          <FilterChip
+            key={item}
+            label={item}
+            selected={item === filter}
+            onPress={() => setFilter(item)}
+          />
+        ))}
       </View>
 
-      <View style={styles.grid}>
-        {items.map((item) => {
-          const isMulti = item.sign.length > 1;
-          return (
-            <SurfaceCard key={`${item.letter}-${item.sign}`} style={styles.card}>
-              <View style={styles.cardTopRow}>
-                <Text style={styles.letter}>{item.letter}</Text>
-                <View style={[styles.badge, { backgroundColor: getBadgeColor(item.difficulty) }]}>
-                  <Text style={styles.badgeText}>{item.difficulty}</Text>
+      {mode === 'deletreo' ? (
+        <View style={styles.grid}>
+          {dictionaryItems.map((item) => {
+            const isMulti = item.sign.length > 1;
+            return (
+              <SurfaceCard key={`${item.letter}-${item.sign}`} style={styles.card}>
+                <View style={styles.cardTopRow}>
+                  <Text style={styles.letter}>{item.letter}</Text>
+                  <View style={[styles.badge, { backgroundColor: getBadgeColor(item.difficulty) }]}>
+                    <Text style={styles.badgeText}>{item.difficulty}</Text>
+                  </View>
                 </View>
+                <View style={styles.signRow}>
+                  <Text style={styles.signLabel}>Seña:</Text>
+                  <Text style={[styles.signGlyph, isMulti && styles.signGlyphSmall]}>{item.sign}</Text>
+                </View>
+                <Text style={styles.description}>{item.description}</Text>
+              </SurfaceCard>
+            );
+          })}
+        </View>
+      ) : (
+        <View style={styles.signsList}>
+          {signItems.map((item) => (
+            <SurfaceCard key={item.word} style={styles.signCard}>
+              <View style={styles.cardTopRow}>
+                <Text style={styles.word}>{item.word}</Text>
+                {item.type ? (
+                  <View style={styles.typeBadge}>
+                    <Text style={styles.typeBadgeText}>{item.type}</Text>
+                  </View>
+                ) : null}
               </View>
-              <View style={styles.signRow}>
-                <Text style={styles.signLabel}>Seña:</Text>
-                <Text style={[styles.signGlyph, isMulti && styles.signGlyphSmall]}>
-                  {item.sign}
-                </Text>
+              {item.meaning ? <Text style={styles.meaning}>{item.meaning}</Text> : null}
+              <View style={styles.howToRow}>
+                <Text style={styles.howToLabel}>Cómo se hace</Text>
+                <Text style={styles.howToText}>{item.howTo}</Text>
               </View>
-              <Text style={styles.description}>{item.description}</Text>
+              {item.page ? <Text style={styles.sourceRef}>Diccionario MINEDUC · pág. {item.page}</Text> : null}
             </SurfaceCard>
-          );
-        })}
-      </View>
+          ))}
+        </View>
+      )}
     </View>
   );
 }
@@ -128,6 +144,22 @@ export default function DictionaryTabScreen() {
 function createStyles(theme) {
   return StyleSheet.create({
     container: { gap: 12 },
+    modeRow: {
+      flexDirection: 'row',
+      backgroundColor: theme.mode === 'dark' ? '#251E3B' : '#EDE7F6',
+      borderRadius: 14,
+      padding: 4,
+      gap: 4,
+    },
+    modeBtn: {
+      flex: 1,
+      paddingVertical: 9,
+      borderRadius: 11,
+      alignItems: 'center',
+    },
+    modeBtnActive: { backgroundColor: theme.colors.primary },
+    modeText: { fontSize: 13, fontWeight: '700', color: theme.colors.textSecondary },
+    modeTextActive: { color: theme.colors.primaryContrast },
     filtersRow: {
       flexDirection: 'row',
       flexWrap: 'wrap',
@@ -188,6 +220,59 @@ function createStyles(theme) {
       color: '#FFFFFF',
       fontSize: 10,
       fontWeight: '800',
+    },
+    // Senas reales
+    signsList: { gap: 10 },
+    signCard: { padding: 14 },
+    word: {
+      fontSize: 17,
+      color: theme.colors.textPrimary,
+      fontWeight: '900',
+      flexShrink: 1,
+    },
+    typeBadge: {
+      borderRadius: 999,
+      paddingHorizontal: 10,
+      paddingVertical: 3,
+      backgroundColor: theme.mode === 'dark' ? '#33294F' : '#EDE7F6',
+    },
+    typeBadgeText: {
+      color: theme.colors.primary,
+      fontSize: 10,
+      fontWeight: '800',
+    },
+    meaning: {
+      marginTop: 6,
+      fontSize: 13,
+      color: theme.colors.textSecondary,
+      lineHeight: 18,
+    },
+    howToRow: {
+      marginTop: 10,
+      padding: 10,
+      borderRadius: 12,
+      backgroundColor: theme.mode === 'dark' ? '#221F31' : '#F7F4FC',
+      borderWidth: 1,
+      borderColor: theme.mode === 'dark' ? '#3A3352' : '#E6DEF6',
+    },
+    howToLabel: {
+      fontSize: 11,
+      fontWeight: '800',
+      color: theme.colors.primary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+      marginBottom: 4,
+    },
+    howToText: {
+      fontSize: 13,
+      color: theme.colors.textPrimary,
+      lineHeight: 19,
+    },
+    sourceRef: {
+      marginTop: 8,
+      fontSize: 11,
+      color: theme.colors.textSecondary,
+      fontStyle: 'italic',
     },
   });
 }

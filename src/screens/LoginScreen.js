@@ -21,8 +21,8 @@ import AdaptiveModal from '../components/AdaptiveModal';
 WebBrowser.maybeCompleteAuthSession();
 
 const TABS = [
-  { key: 'login', label: 'Iniciar sesion' },
-  { key: 'forgot', label: 'Recuperar contrasena' },
+  { key: 'login', label: 'Iniciar sesión' },
+  { key: 'forgot', label: 'Recuperar contraseña' },
 ];
 
 const SOCIAL = [
@@ -31,7 +31,7 @@ const SOCIAL = [
   { id: 'x', provider: 'twitter', icon: require('../../assets/x.png') },
 ];
 
-export default function LoginScreen({ onGoToRegister, onLoginSuccess }) {
+export default function LoginScreen({ onGoToRegister, onLoginSuccess, onNeedPasswordReset }) {
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState('login');
   const [email, setEmail] = useState('');
@@ -74,7 +74,7 @@ export default function LoginScreen({ onGoToRegister, onLoginSuccess }) {
       return;
     }
     if (!password) {
-      openModal({ context: 'validation', message: 'Ingrese la contrasena' });
+      openModal({ context: 'validation', message: 'Ingrese la contraseña' });
       return;
     }
 
@@ -112,19 +112,14 @@ export default function LoginScreen({ onGoToRegister, onLoginSuccess }) {
 
     try {
       setIsSendingReset(true);
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: Linking.createURL('/auth/reset-password'),
-      });
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
 
       if (error) {
         openModal({ context: 'auth-error', message: error.message });
         return;
       }
 
-      openModal({
-        context: 'email-verification-sent',
-        message: 'Te enviamos un enlace de recuperacion a tu correo. Revisalo y sigue las instrucciones.',
-      });
+      if (onNeedPasswordReset) onNeedPasswordReset(email.trim());
     } catch {
       openModal({ context: 'auth-error', message: 'No se pudo enviar el enlace. Intentalo de nuevo.' });
     } finally {
@@ -151,12 +146,18 @@ export default function LoginScreen({ onGoToRegister, onLoginSuccess }) {
       const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
       if (result.type === 'success' && result.url) {
         const url = result.url;
-        const hash = url.split('#')[1] || '';
-        const params = new URLSearchParams(hash.includes('=') ? hash : url.split('?')[1] || '');
-        const accessToken = params.get('access_token');
-        const refreshToken = params.get('refresh_token');
+        const queryParams = new URLSearchParams(url.split('?')[1]?.split('#')[0] || '');
+        const hashParams = new URLSearchParams(url.split('#')[1] || '');
 
-        if (accessToken && refreshToken) {
+        // Flujo PKCE: regresa ?code=... -> se intercambia por la sesion.
+        const code = queryParams.get('code');
+        // Flujo implicit: regresan los tokens directamente en el hash.
+        const accessToken = hashParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token');
+
+        if (code) {
+          await supabase.auth.exchangeCodeForSession(code);
+        } else if (accessToken && refreshToken) {
           await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
         }
       }
@@ -244,7 +245,7 @@ export default function LoginScreen({ onGoToRegister, onLoginSuccess }) {
 
             {activeTab === 'login' ? (
               <>
-                <Text style={styles.cardSubtitle}>Ingresa con tu correo y contrasena</Text>
+                <Text style={styles.cardSubtitle}>Ingresa con tu correo y contraseña</Text>
 
                 <Text style={styles.label}>Correo</Text>
                 <TextInput
@@ -258,7 +259,7 @@ export default function LoginScreen({ onGoToRegister, onLoginSuccess }) {
                   onChangeText={setEmail}
                 />
 
-                <Text style={styles.label}>Contrasena</Text>
+                <Text style={styles.label}>Contraseña</Text>
                 <View style={styles.inputRow}>
                   <TextInput
                     autoCapitalize="none"
@@ -335,7 +336,7 @@ export default function LoginScreen({ onGoToRegister, onLoginSuccess }) {
             ) : (
               <>
                 <Text style={styles.cardSubtitle}>
-                  Te enviaremos un enlace a tu correo para restablecer tu contrasena.
+                  Te enviaremos un enlace a tu correo para restablecer tu contraseña.
                 </Text>
 
                 <Text style={styles.label}>Correo</Text>

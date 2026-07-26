@@ -31,6 +31,19 @@ from sklearn.metrics import classification_report
 
 # ── Extracción de características ─────────────────────────────────────────────
 
+# Índices de las puntas de cada dedo en el esquema de MediaPipe Hands
+PUNTAS_DEDOS = [4, 8, 12, 16, 20]  # pulgar, índice, medio, anular, meñique
+
+# Pares de puntas cuya distancia discrimina señas que el modelo suele confundir:
+#  - pulgar → cada otra punta: distingue A/E/S/O/C (cuánto se cierra la mano)
+#  - puntas adyacentes índice-medio-anular-meñique: distingue U/V/R/W
+#    (qué dedos van juntos y cuáles separados)
+PARES_DISTANCIA_PUNTAS = [
+    (4, 8), (4, 12), (4, 16), (4, 20),   # pulgar con el resto
+    (8, 12), (12, 16), (16, 20),          # puntas vecinas
+]
+
+
 def extraer_caracteristicas(landmarks: np.ndarray) -> np.ndarray:
     """
     Convierte 21 landmarks (21×3) en un vector de características invariante
@@ -41,7 +54,14 @@ def extraer_caracteristicas(landmarks: np.ndarray) -> np.ndarray:
       2. Escalar por la distancia muñeca → base dedo medio (landmark 9)
       3. Aplanar a 63 valores
 
-    Luego añade ángulos de flexión por dedo para más discriminación.
+    Luego añade:
+      - ángulos de flexión por dedo (15 valores) para captar cuánto se dobla
+        cada falange,
+      - distancias entre puntas de dedos (7 valores) para captar qué dedos
+        están juntos o separados, que es justo lo que distingue los pares de
+        letras más confundidos (U/V/R, A/E/S, M/N...).
+
+    Vector resultante: 63 + 15 + 7 = 85 características.
     """
     centrado = landmarks - landmarks[0]
     escala = np.linalg.norm(centrado[9])
@@ -71,7 +91,69 @@ def extraer_caracteristicas(landmarks: np.ndarray) -> np.ndarray:
             else:
                 angulos.append(1.0)
 
-    return np.concatenate([coords_planas, angulos])
+    # Distancias entre puntas de dedos (ya en escala normalizada por 'centrado')
+    distancias = [
+        np.linalg.norm(centrado[a] - centrado[b])
+        for (a, b) in PARES_DISTANCIA_PUNTAS
+    ]
+
+    return np.concatenate([coords_planas, angulos, distancias])
+
+
+# ── Data augmentation sobre landmarks ─────────────────────────────────────────
+# Se aplica a los landmarks CRUDOS (21×3) antes de extraer características, para
+# que el modelo vea variaciones realistas de la misma seña: la mano un poco
+# rotada, ruido de detección de MediaPipe y manos zurdas (espejo). Esto reduce
+# el sobreajuste a las fotos de estudio del dataset y mejora la robustez en la
+# cámara real del usuario, sin necesidad de capturar más muestras.
+
+def _rotar_landmarks(landmarks: np.ndarray, rng: np.random.Generator,
+                     max_grados: float = 15.0) -> np.ndarray:
+    """Aplica una pequeña rotación 3D aleatoria alrededor de la muñeca."""
+    angs = np.deg2rad(rng.uniform(-max_grados, max_grados, size=3))
+    cx, cy, cz = np.cos(angs)
+    sx, sy, sz = np.sin(angs)
+    Rx = np.array([[1, 0, 0], [0, cx, -sx], [0, sx, cx]])
+    Ry = np.array([[cy, 0, sy], [0, 1, 0], [-sy, 0, cy]])
+    Rz = np.array([[cz, -sz, 0], [sz, cz, 0], [0, 0, 1]])
+    R = Rz @ Ry @ Rx
+    pivote = landmarks[0]
+    return (landmarks - pivote) @ R.T + pivote
+
+
+def aumentar_muestra(landmarks: np.ndarray, rng: np.random.Generator,
+                     espejo: bool = False) -> np.ndarray:
+    """
+    Genera una variante de una muestra (21×3): rotación leve + ruido gaussiano,
+    y opcionalmente reflejo horizontal (mano contraria).
+    """
+    out = landmarks.copy()
+    if espejo:
+        out[:, 0] = -out[:, 0]  # reflejar eje X → mano zurda/diestra
+    out = _rotar_landmarks(out, rng)
+    out = out + rng.normal(0, 0.01, size=out.shape).astype(np.float32)  # ruido ~1%
+    return out.astype(np.float32)
+
+
+def aumentar_landmarks(X_raw: np.ndarray, y: np.ndarray, n_aug: int = 4,
+                       incluir_espejo: bool = True,
+                       semilla: int = 42) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Por cada muestra cruda (21×3) genera `n_aug` variantes aumentadas y las
+    concatena a las originales. Devuelve (X_raw_aumentado, y_aumentado).
+    """
+    rng = np.random.default_rng(semilla)
+    X_lista = [X_raw]
+    y_lista = [y]
+    for k in range(n_aug):
+        espejo = incluir_espejo and (k % 2 == 1)  # la mitad de las variantes en espejo
+        variantes = np.array(
+            [aumentar_muestra(lm, rng, espejo=espejo) for lm in X_raw],
+            dtype=np.float32,
+        )
+        X_lista.append(variantes)
+        y_lista.append(y)
+    return np.concatenate(X_lista, axis=0), np.concatenate(y_lista, axis=0)
 
 
 # ── Carga del dataset ─────────────────────────────────────────────────────────
@@ -87,8 +169,11 @@ def cargar_dataset(directorio: str) -> tuple[np.ndarray, np.ndarray, list[str]]:
             B/
                 ...
 
-    Devuelve:
-        X: array (N, n_features)
+    Devuelve los landmarks CRUDOS (no las características) para poder hacer el
+    split train/test ANTES de aumentar y así evitar fugas de datos (variantes
+    aumentadas de una misma muestra cayendo en train y test a la vez).
+
+        X_raw: array (N, 21, 3)
         y: array (N,) con índices de clase
         etiquetas: lista de nombres de señas
     """
@@ -107,23 +192,30 @@ def cargar_dataset(directorio: str) -> tuple[np.ndarray, np.ndarray, list[str]]:
         carpeta = os.path.join(directorio, nombre_seña)
         archivos = [f for f in os.listdir(carpeta) if f.endswith(".npy")]
 
+        cargadas = 0
         for archivo in archivos:
             landmarks = np.load(os.path.join(carpeta, archivo))
             if landmarks.shape == (21, 3):
-                caracteristicas = extraer_caracteristicas(landmarks)
-                X_lista.append(caracteristicas)
+                X_lista.append(landmarks.astype(np.float32))
                 y_lista.append(mapa_etiqueta[nombre_seña])
+                cargadas += 1
 
-        print(f"  [{nombre_seña}] {len(archivos)} muestras cargadas")
+        print(f"  [{nombre_seña}] {cargadas} muestras cargadas")
 
-    X = np.array(X_lista, dtype=np.float32)
+    X_raw = np.array(X_lista, dtype=np.float32)  # (N, 21, 3)
     y = np.array(y_lista, dtype=np.int64)
-    return X, y, etiquetas
+    return X_raw, y, etiquetas
+
+
+def _features_de_lote(X_raw: np.ndarray) -> np.ndarray:
+    """Aplica extraer_caracteristicas a cada muestra cruda de un lote (N,21,3)."""
+    return np.array([extraer_caracteristicas(lm) for lm in X_raw], dtype=np.float32)
 
 
 # ── Entrenamiento ─────────────────────────────────────────────────────────────
 
-def entrenar(directorio_datos: str, ruta_salida: str, modelo: str = "rf"):
+def entrenar(directorio_datos: str, ruta_salida: str, modelo: str = "rf",
+             n_aug: int = 4):
     """
     Entrena el clasificador y guarda el pipeline en disco.
 
@@ -131,15 +223,26 @@ def entrenar(directorio_datos: str, ruta_salida: str, modelo: str = "rf"):
         directorio_datos: carpeta con subcarpetas por seña
         ruta_salida: ruta donde guardar el .pkl
         modelo: 'rf' (RandomForest) o 'svm' (SVM con kernel RBF)
+        n_aug: variantes aumentadas por muestra de entrenamiento (0 = sin augmentation)
     """
     print(f"\n[Entrenamiento] Cargando datos de: {directorio_datos}")
-    X, y, etiquetas = cargar_dataset(directorio_datos)
-    print(f"[Entrenamiento] Total muestras: {len(X)}, Clases: {len(etiquetas)}\n")
+    X_raw, y, etiquetas = cargar_dataset(directorio_datos)
+    print(f"[Entrenamiento] Total muestras: {len(X_raw)}, Clases: {len(etiquetas)}\n")
 
-    # Separar train/test
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y
+    # Separar train/test sobre landmarks CRUDOS, antes de aumentar.
+    X_raw_train, X_raw_test, y_train, y_test = train_test_split(
+        X_raw, y, test_size=0.2, random_state=42, stratify=y
     )
+
+    # Aumentar SOLO el train (el test queda intacto para una evaluación honesta).
+    if n_aug > 0:
+        X_raw_train, y_train = aumentar_landmarks(X_raw_train, y_train, n_aug=n_aug)
+        print(f"[Entrenamiento] Train aumentado a {len(X_raw_train)} muestras "
+              f"(x{n_aug + 1} con augmentation)\n")
+
+    # Extraer características una vez hecho el split/augmentation.
+    X_train = _features_de_lote(X_raw_train)
+    X_test = _features_de_lote(X_raw_test)
 
     # Elegir clasificador
     if modelo == "svm":
@@ -168,9 +271,11 @@ def entrenar(directorio_datos: str, ruta_salida: str, modelo: str = "rf"):
     print("\n[Resultados en test set]")
     print(classification_report(y_test, y_pred, target_names=etiquetas))
 
-    # Validación cruzada adicional
-    scores = cross_val_score(pipeline, X, y, cv=5, scoring="accuracy")
-    print(f"[CV 5-fold] Accuracy: {scores.mean():.3f} ± {scores.std():.3f}")
+    # Validación cruzada sobre los datos SIN aumentar (medida honesta; aumentar
+    # dentro de CV filtraría variantes de una misma muestra entre folds).
+    X_full = _features_de_lote(X_raw)
+    scores = cross_val_score(pipeline, X_full, y, cv=5, scoring="accuracy")
+    print(f"[CV 5-fold, sin augmentation] Accuracy: {scores.mean():.3f} ± {scores.std():.3f}")
 
     # Guardar modelo
     os.makedirs(os.path.dirname(ruta_salida), exist_ok=True)
@@ -186,5 +291,7 @@ if __name__ == "__main__":
                         help="Ruta de salida del modelo .pkl")
     parser.add_argument("--modelo", choices=["rf", "svm"], default="rf",
                         help="Tipo de clasificador: rf=RandomForest, svm=SVM")
+    parser.add_argument("--aug", type=int, default=4,
+                        help="Variantes aumentadas por muestra de train (0 = desactivar)")
     args = parser.parse_args()
-    entrenar(args.datos, args.salida, args.modelo)
+    entrenar(args.datos, args.salida, args.modelo, n_aug=args.aug)

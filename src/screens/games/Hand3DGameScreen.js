@@ -7,7 +7,7 @@ import GameScreenHeader from '../../components/ui/GameScreenHeader';
 
 // ── IP del servidor Python (debe ser la IP local de tu PC en la misma WiFi) ─
 // Detectada automáticamente: 192.168.0.15. Si tu PC cambia de IP, actualízala aquí.
-const SERVIDOR_IA = 'http://192.168.0.15:8000';
+const SERVIDOR_IA = 'http://192.168.1.6:8000';
 
 // ── Señas disponibles para el modo práctica ────────────────────────────────────
 // Los landmarks deben estar en coordenadas Three.js world (mismo sistema del visor)
@@ -85,7 +85,8 @@ const SIGNS = [
 ];
 
 // ── Palabras para el modo Deletreo ──────────────────────────────────────────────
-// Solo letras estáticas (evitamos J/Z/X que el modelo estático reconoce peor).
+// Las letras estáticas las reconoce el servidor; J/Z (con movimiento) se resuelven
+// por trayectoria en el WebView (ver CONFIG_MOV), así que ya pueden incluirse.
 const PALABRAS = ['HOLA', 'AMIGO', 'MAMA', 'CASA', 'AMOR', 'GATO', 'PERA'];
 const UMBRAL_DELETREO = 0.55; // confianza mínima de la IA para dar por buena la letra
 
@@ -188,10 +189,13 @@ const HAND_HTML = `<!DOCTYPE html>
 
   const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
   renderer.setSize(W, H);
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  // pixelRatio acotado a 1.5: en pantallas densas (DPR 2-3) renderizar a full
+  // resolución cuadruplica los píxeles y es la mayor causa de lag en WebView móvil.
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
   renderer.setClearColor(0x000000, 0);
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  // Sombras desactivadas: PCFSoftShadowMap es muy costoso en GPU móvil y aquí
+  // aporta poco visualmente. Desactivarlas sube notablemente los FPS.
+  renderer.shadowMap.enabled = false;
   document.body.appendChild(renderer.domElement);
 
   // ── 2. Conexiones y radios de huesos ────────────────────────────────────────
@@ -309,18 +313,23 @@ const HAND_HTML = `<!DOCTYPE html>
 
   // ── 6. Función de actualización de malla ────────────────────────────────────
   const UP = new THREE.Vector3(0, 1, 0);
+  // Vectores temporales reutilizados: esta función corre a 60fps, así que crear
+  // ~70 Vector3 por llamada provocaba pausas de recolección de basura (lag).
+  const _vA = new THREE.Vector3(), _vB = new THREE.Vector3();
+  const _dir = new THREE.Vector3(), _mid = new THREE.Vector3();
+  const _tip = new THREE.Vector3(), _parent = new THREE.Vector3(), _ndir = new THREE.Vector3();
 
   function actualizarMano(datos, mano) {
     const { huesos, joints, palmVerts, palmNorms, palmGeo, uñas } = mano;
 
     CN.forEach(([a, b], i) => {
-      const vA  = new THREE.Vector3(...datos[a]);
-      const vB  = new THREE.Vector3(...datos[b]);
-      const dir = new THREE.Vector3().subVectors(vB, vA);
-      const len = dir.length();
-      dir.normalize();
-      huesos[i].position.copy(new THREE.Vector3().addVectors(vA, vB).multiplyScalar(0.5));
-      huesos[i].quaternion.setFromUnitVectors(UP, len > 0.001 ? dir : UP);
+      _vA.set(datos[a][0], datos[a][1], datos[a][2]);
+      _vB.set(datos[b][0], datos[b][1], datos[b][2]);
+      _dir.subVectors(_vB, _vA);
+      const len = _dir.length();
+      _dir.normalize();
+      huesos[i].position.copy(_mid.addVectors(_vA, _vB).multiplyScalar(0.5));
+      huesos[i].quaternion.setFromUnitVectors(UP, len > 0.001 ? _dir : UP);
       huesos[i].scale.y = len;
     });
 
@@ -344,11 +353,12 @@ const HAND_HTML = `<!DOCTYPE html>
     palmGeo.attributes.normal.needsUpdate   = true;
 
     uñas.forEach(({ mesh, tipIdx }) => {
-      const tip    = new THREE.Vector3(...datos[tipIdx]);
-      const parent = new THREE.Vector3(...datos[tipIdx-1]);
-      const dir    = new THREE.Vector3().subVectors(tip, parent).normalize();
-      mesh.position.copy(tip.clone().addScaledVector(dir, 0.012).add(new THREE.Vector3(0,0,0.030)));
-      mesh.quaternion.setFromUnitVectors(UP, dir.lengthSq() > 0 ? dir : UP);
+      _tip.set(datos[tipIdx][0], datos[tipIdx][1], datos[tipIdx][2]);
+      _parent.set(datos[tipIdx-1][0], datos[tipIdx-1][1], datos[tipIdx-1][2]);
+      _ndir.subVectors(_tip, _parent).normalize();
+      mesh.position.copy(_tip.addScaledVector(_ndir, 0.012));
+      mesh.position.z += 0.030;
+      mesh.quaternion.setFromUnitVectors(UP, _ndir.lengthSq() > 0 ? _ndir : UP);
     });
   }
 
@@ -449,9 +459,146 @@ const HAND_HTML = `<!DOCTYPE html>
   ];
   actualizarMano(DEMO, manoReal);
 
-  let landmarksActuales = DEMO.slice();
+  // landmarksActuales = pose RENDERIZADA (se interpola suavemente cada frame).
+  // landmarksObjetivo = última pose DETECTADA por MediaPipe (~15fps).
+  // Copia profunda para no mutar DEMO al interpolar in-place.
+  let landmarksActuales  = DEMO.map(p => p.slice());
+  let landmarksObjetivo  = DEMO.map(p => p.slice());
   let landmarksReferencia = null;
   let modoEnseñanza = false;
+
+  // ── 8b. Reconocimiento de señas con MOVIMIENTO (J, Z…) por trayectoria ───────
+  // El clasificador estático (servidor) solo ve un frame y no puede distinguir
+  // una J de una I (misma forma de mano, distinta trayectoria). Aquí mantenemos
+  // un buffer temporal y analizamos el RECORRIDO del dedo que más se mueve.
+  //
+  // Todo es geometría pura (sin red, sin entrenamiento). Los umbrales están aquí
+  // arriba para que se puedan calibrar fácilmente según la LSCh real.
+  const CONFIG_MOV = {
+    // ── Detección de inicio/fin del gesto (velocidad por frame, escala de mano) ──
+    velMovimiento:    0.06,  // velocidad que DISPARA el inicio de un gesto
+    velReposo:        0.025, // por debajo de esto la mano se considera quieta
+    duracionMaxMs:    1500,  // ventana máxima que se graba antes de clasificar (1–1.5s)
+    duracionMinMs:    400,   // gesto más corto que esto se descarta (fue un temblor)
+    framesQuietosFin: 5,     // frames seguidos quietos para dar el gesto por terminado
+    minFrames:        6,     // frames mínimos para intentar clasificar la trayectoria
+    // ── Clasificación de la forma del trayecto ──
+    // Z (zigzag): nº mínimo de reversiones horizontales y recorrido horizontal amplio
+    zigzagReversiones: 2,
+    zigzagAnchoMin:    0.8,
+    // J (gancho): baja y luego gira; descenso vertical mínimo y giro horizontal final
+    ganchoCaidaMin:    0.7,
+    ganchoGiroMin:     0.3,
+  };
+
+  const PUNTAS = [4, 8, 12, 16, 20];          // puntas de pulgar, índice, medio, anular, meñique
+
+  // Estado de la captura de gesto en curso.
+  const gesto = { activo: false, frames: [], inicio: 0, quietos: 0 };
+  let lmPrevio = null;          // último frame, para medir velocidad instantánea
+  let movimientoActivo = false; // true mientras la mano se mueve (bloquea letras estáticas)
+
+  function escalaMano(lm) {
+    return Math.hypot(lm[9][0] - lm[0][0], lm[9][1] - lm[0][1], lm[9][2] - lm[0][2]) || 1e-6;
+  }
+
+  // Velocidad instantánea = desplazamiento medio de las puntas entre dos frames,
+  // normalizado por la escala de la mano (invariante a distancia a la cámara).
+  function velocidad(lmA, lmB) {
+    const esc = escalaMano(lmB);
+    let s = 0;
+    for (const p of PUNTAS) {
+      s += Math.hypot(lmB[p][0] - lmA[p][0], lmB[p][1] - lmA[p][1], lmB[p][2] - lmA[p][2]);
+    }
+    return (s / PUNTAS.length) / esc;
+  }
+
+  // De una secuencia de frames, elige la punta de mayor recorrido y devuelve su
+  // trayectoria 2D normalizada (relativa a la muñeca, escalada, con Y hacia arriba).
+  function trayectoriaDominante(frames) {
+    if (frames.length < CONFIG_MOV.minFrames) return null;
+    const esc = escalaMano(frames[frames.length - 1]);
+    let mejorRec = -1, mejorPath = null;
+    for (const p of PUNTAS) {
+      const path = frames.map(lm => [(lm[p][0] - lm[0][0]) / esc, -(lm[p][1] - lm[0][1]) / esc]);
+      let rec = 0;
+      for (let i = 1; i < path.length; i++) {
+        rec += Math.hypot(path[i][0] - path[i - 1][0], path[i][1] - path[i - 1][1]);
+      }
+      if (rec > mejorRec) { mejorRec = rec; mejorPath = path; }
+    }
+    return mejorPath;
+  }
+
+  // Clasifica una trayectoria 2D (Y hacia arriba) en 'J' | 'Z' | null.
+  function formaTrayectoria(path) {
+    let netX = 0, netY = 0, revX = 0, signoPrev = 0;
+    let minX = Infinity, maxX = -Infinity;
+    for (let i = 1; i < path.length; i++) {
+      const dx = path[i][0] - path[i - 1][0];
+      const dy = path[i][1] - path[i - 1][1];
+      netX += dx; netY += dy;
+      if (path[i][0] < minX) minX = path[i][0];
+      if (path[i][0] > maxX) maxX = path[i][0];
+      const s = Math.sign(dx);
+      if (Math.abs(dx) > 0.05) {              // ignorar micro-temblores
+        if (signoPrev !== 0 && s !== signoPrev) revX++;
+        signoPrev = s;
+      }
+    }
+    const anchoX = maxX - minX;
+
+    // Z: varias reversiones horizontales (zigzag) en un trazo ancho
+    if (revX >= CONFIG_MOV.zigzagReversiones && anchoX >= CONFIG_MOV.zigzagAnchoMin) return 'Z';
+    // J: descenso vertical claro (netY negativo) y un giro horizontal apreciable
+    if (-netY >= CONFIG_MOV.ganchoCaidaMin && Math.abs(netX) >= CONFIG_MOV.ganchoGiroMin) return 'J';
+    return null;
+  }
+
+  // Avisa a React Native cuando un gesto completo se clasificó (evento inmediato,
+  // no espera al throttle de los landmarks estáticos).
+  function emitirSenaDinamica(sena) {
+    if (sena && window.ReactNativeWebView) {
+      window.ReactNativeWebView.postMessage(JSON.stringify({ tipo: 'sena-dinamica', sena }));
+    }
+  }
+
+  // Máquina de estados del gesto: se llama cada frame con los landmarks crudos.
+  //  reposo → (velocidad alta) → GRABANDO → (mano quieta o se acabó el tiempo) → clasifica
+  function actualizarGesto(lm) {
+    const ahora = Date.now();
+    const vel = lmPrevio ? velocidad(lmPrevio, lm) : 0;
+    lmPrevio = lm;
+    movimientoActivo = vel > CONFIG_MOV.velReposo;
+
+    if (!gesto.activo) {
+      // Esperando: arranca a grabar cuando la mano empieza a moverse rápido.
+      if (vel > CONFIG_MOV.velMovimiento) {
+        gesto.activo = true;
+        gesto.frames = [lm];
+        gesto.inicio = ahora;
+        gesto.quietos = 0;
+      }
+      return;
+    }
+
+    // Grabando la ventana del gesto.
+    gesto.frames.push(lm);
+    gesto.quietos = vel < CONFIG_MOV.velReposo ? gesto.quietos + 1 : 0;
+    const dur = ahora - gesto.inicio;
+    const terminoPorQuieto = gesto.quietos >= CONFIG_MOV.framesQuietosFin && dur >= CONFIG_MOV.duracionMinMs;
+    const terminoPorTiempo = dur >= CONFIG_MOV.duracionMaxMs;
+
+    if (terminoPorQuieto || terminoPorTiempo) {
+      if (dur >= CONFIG_MOV.duracionMinMs) {
+        const path = trayectoriaDominante(gesto.frames);
+        if (path) emitirSenaDinamica(formaTrayectoria(path));
+      }
+      gesto.activo = false;
+      gesto.frames = [];
+      gesto.quietos = 0;
+    }
+  }
 
   // ── 9. API de control desde React Native ────────────────────────────────────
   // React Native llama a estas funciones mediante injectJavaScript()
@@ -543,19 +690,27 @@ const HAND_HTML = `<!DOCTYPE html>
     });
     mpHands.setOptions({
       maxNumHands:            1,
+      // Modelo completo: rastrea mucho mejor la rotación y la oclusión de dedos.
+      // La fluidez la da la interpolación a 60fps, no rebajar el modelo, así que
+      // recuperamos precisión de landmarks (clave para la clasificación) sin lag.
       modelComplexity:        1,
-      minDetectionConfidence: 0.65,
-      minTrackingConfidence:  0.55,
+      minDetectionConfidence: 0.6,
+      minTrackingConfidence:  0.5,
     });
     mpHands.onResults(resultados => {
       if (resultados.multiHandLandmarks && resultados.multiHandLandmarks.length > 0) {
         const lmWorld = mpAWorld(resultados.multiHandLandmarks[0]);
         // Crudos de MediaPipe (x,y,z ~0-1): es el formato que espera el clasificador IA.
         const lmCrudos = resultados.multiHandLandmarks[0].map(p => [p.x, p.y, p.z]);
-        landmarksActuales = lmWorld;
-        actualizarMano(lmWorld, manoReal);
+        // Solo fijamos el objetivo; el loop de animación interpola hacia él a 60fps
+        // (esto es lo que elimina los tirones entre detecciones de MediaPipe).
+        landmarksObjetivo = lmWorld;
         liveMode = true;
         STATUS.textContent = '';
+
+        // Máquina de estados del gesto: graba la ventana completa de una seña con
+        // movimiento (~1–1.5s) y, al terminarla, emite 'sena-dinamica' (evento propio).
+        actualizarGesto(lmCrudos);
 
         // En modo práctica: feedback geométrico (colores + similitud)
         let pct = null;
@@ -566,8 +721,9 @@ const HAND_HTML = `<!DOCTYPE html>
           actualizarPuntuacionUI(pct);
         }
 
-        // Enviar landmarks CRUDOS a React Native para clasificación con la IA.
-        // Throttle a ~500ms para no saturar el servidor.
+        // Enviar landmarks CRUDOS a React Native para clasificación estática con la IA.
+        // Throttle a ~500ms para no saturar el servidor. 'movimiento' permite a RN
+        // NO aceptar una letra estática mientras la mano se está moviendo.
         const ahora = Date.now();
         if (window.ReactNativeWebView && ahora - ultimoEnvio > 500) {
           ultimoEnvio = ahora;
@@ -575,6 +731,7 @@ const HAND_HTML = `<!DOCTYPE html>
             tipo: 'landmarks',
             landmarks: lmCrudos,
             puntuacion: pct,
+            movimiento: movimientoActivo,
           }));
         }
       } else {
@@ -582,6 +739,8 @@ const HAND_HTML = `<!DOCTYPE html>
           STATUS.textContent = 'Muestra tu mano a la cámara';
           if (modoEnseñanza) resetearColoresMano();
         }
+        // Sin mano: cancelar cualquier gesto en curso para no detectar movimiento fantasma.
+        gesto.activo = false; gesto.frames = []; lmPrevio = null; movimientoActivo = false;
       }
     });
   }
@@ -616,7 +775,9 @@ const HAND_HTML = `<!DOCTYPE html>
           try { await mpHands.send({ image: VID }); }
           finally { sending = false; }
         }
-        setTimeout(() => requestAnimationFrame(procesarFrame), 66); // ~15 fps
+        // Apuntamos a ~30fps de detección; el guard !sending hace que cada equipo
+        // corra a lo que su CPU aguante (más muestras = mejor seguimiento rápido).
+        setTimeout(() => requestAnimationFrame(procesarFrame), 33);
       }
       procesarFrame();
     } catch (err) {
@@ -648,6 +809,26 @@ const HAND_HTML = `<!DOCTYPE html>
     } else {
       manoReal.grupo.rotation.set(0, 0, 0);
       manoFantasma.grupo.rotation.set(0, 0, 0);
+
+      // Interpolación ADAPTATIVA hacia la última pose detectada.
+      // Mide cuánto se alejó la mano del objetivo: en movimientos amplios (girar
+      // la mano) sube el factor K para "alcanzarla" y seguir TODO el recorrido sin
+      // rubber-band; en movimientos pequeños baja K para quedar suave. Resultado:
+      // fluido cuando está quieta, pero sin perder el gesto cuando se mueve rápido.
+      let dist = 0;
+      for (let i = 0; i < 21; i++) {
+        const a = landmarksActuales[i], o = landmarksObjetivo[i];
+        dist += Math.abs(o[0]-a[0]) + Math.abs(o[1]-a[1]) + Math.abs(o[2]-a[2]);
+      }
+      dist /= 21;
+      const K = Math.min(0.85, 0.4 + dist * 1.2);
+      for (let i = 0; i < 21; i++) {
+        const a = landmarksActuales[i], o = landmarksObjetivo[i];
+        a[0] += (o[0] - a[0]) * K;
+        a[1] += (o[1] - a[1]) * K;
+        a[2] += (o[2] - a[2]) * K;
+      }
+      actualizarMano(landmarksActuales, manoReal);
     }
 
     rimL.intensity = 0.7 + Math.sin(t * 2) * 0.22;
@@ -678,6 +859,9 @@ export default function Hand3DGameScreen({ onBack }) {
   const [iaEstado, setIaEstado] = useState(null);        // null | 'ok' | 'sin-conexion'
   const [errorCamara, setErrorCamara] = useState(null);
   const enClasificacion = useRef(false);
+  // Movimiento detectado por trayectoria en el WebView (para señas como J/Z).
+  // Ref porque cambia a ~2/s y lo lee el efecto del deletreo sin necesitar re-render.
+  const movimientoRef = useRef(false);
 
   // Estado del modo Deletreo
   const [palabraIdx, setPalabraIdx] = useState(0);
@@ -773,19 +957,35 @@ export default function Hand3DGameScreen({ onBack }) {
       const msg = JSON.parse(evento.nativeEvent.data);
       if (msg.tipo === 'landmarks') {
         if (typeof msg.puntuacion === 'number') setPuntuacion(msg.puntuacion);
+        movimientoRef.current = !!msg.movimiento;
         if (Array.isArray(msg.landmarks)) clasificarSena(msg.landmarks);
+      } else if (msg.tipo === 'sena-dinamica') {
+        // Gesto con movimiento (J/Z) ya capturado y clasificado en el WebView tras
+        // analizar la secuencia completa (~1–1.5s). Lo tratamos como reconocimiento.
+        setIaResultado({ sena: msg.sena, confianza: 1, dinamica: true });
+        setIaEstado('ok');
       } else if (msg.tipo === 'error-camara') {
         setErrorCamara(msg.mensaje);
       }
     } catch (_) {}
   }, [clasificarSena]);
 
-  // ── Avance automático del deletreo cuando la IA reconoce la letra esperada ───
+  // ── Avance automático del deletreo cuando se reconoce la letra esperada ──────
+  // Acepta tanto el resultado estático (servidor) como el dinámico (trayectoria).
+  // Para letras estáticas exige mano en reposo: así una J/Z en movimiento no se
+  // cuela como la letra estática de su misma forma de mano.
   useEffect(() => {
     if (modoActivo !== 'deletreo' || !iaResultado || palabraCompleta) return;
     const esperada = palabraActual[letraIdx];
     const reconocida = String(iaResultado.sena).toUpperCase();
-    if (reconocida === esperada && (iaResultado.confianza || 0) >= UMBRAL_DELETREO) {
+    if (reconocida !== esperada) return;
+
+    if (iaResultado.dinamica) {
+      setLetraIdx((i) => i + 1);                       // seña con movimiento confirmada
+    } else if (
+      (iaResultado.confianza || 0) >= UMBRAL_DELETREO &&
+      !movimientoRef.current                            // letra estática: solo si la mano está quieta
+    ) {
       setLetraIdx((i) => i + 1);
     }
   }, [iaResultado, modoActivo, palabraActual, letraIdx, palabraCompleta]);
@@ -807,7 +1007,7 @@ export default function Hand3DGameScreen({ onBack }) {
     <View style={styles.pantalla}>
       {/* Cabecera */}
       <View style={{ paddingTop: insets.top, paddingHorizontal: 12 }}>
-        <GameScreenHeader title="Mano 3D" onBack={onBack} />
+        <GameScreenHeader title="Mano 3D" onBack={onBack} style = {{color: '#ff0000'}} />
       </View>
 
       {/* Visor Three.js — solo cuando hay permiso de cámara */}

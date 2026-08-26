@@ -1,9 +1,11 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import SignDetailModal from '../../components/SignDetailModal';
 import FilterChip from '../../components/ui/FilterChip';
 import SectionHeader from '../../components/ui/SectionHeader';
+import SignImage from '../../components/ui/SignImage';
 import SurfaceCard from '../../components/ui/SurfaceCard';
-import { APP_FONTS } from '../../constants/fonts';
 import { fetchDictionary } from '../../../backend/dictionary';
 import { fetchSigns } from '../../../backend/signs';
 import { DICTIONARY_ENTRIES, DICTIONARY_FILTERS } from '../../data/dictionaryData';
@@ -21,6 +23,31 @@ function getBadgeColor(difficulty) {
   return '#F59E0B';
 }
 
+// Las entradas de deletreo y las señas léxicas vienen con formas distintas.
+// Se normalizan aquí para que el modal reciba siempre el mismo objeto.
+function entryToDetail(entry) {
+  return {
+    signKey: entry.sign,
+    title: entry.letter,
+    subtitle: entry.category,
+    badge: entry.difficulty,
+    badgeColor: getBadgeColor(entry.difficulty),
+    howTo: entry.description,
+  };
+}
+
+function signToDetail(sign) {
+  return {
+    signKey: sign.word,
+    title: sign.word,
+    subtitle: sign.theme,
+    badge: sign.type,
+    description: sign.meaning,
+    howTo: sign.howTo,
+    source: sign.page ? `Diccionario MINEDUC · pág. ${sign.page}` : null,
+  };
+}
+
 export default function DictionaryTabScreen() {
   const theme = useAppTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -28,6 +55,7 @@ export default function DictionaryTabScreen() {
   const [filter, setFilter] = useState('Todos');
   const [entries, setEntries] = useState(DICTIONARY_ENTRIES);
   const [signs, setSigns] = useState(REAL_SIGNS);
+  const [detail, setDetail] = useState(null);
 
   useEffect(() => {
     let mounted = true;
@@ -96,10 +124,13 @@ export default function DictionaryTabScreen() {
 
       {mode === 'deletreo' ? (
         <View style={styles.grid}>
-          {dictionaryItems.map((item) => {
-            const isMulti = item.sign.length > 1;
-            return (
-              <SurfaceCard key={`${item.letter}-${item.sign}`} style={styles.card}>
+          {dictionaryItems.map((item) => (
+            <SurfaceCard key={`${item.letter}-${item.sign}`} style={styles.card}>
+              <Pressable
+                onPress={() => setDetail(entryToDetail(item))}
+                accessibilityRole="button"
+                accessibilityLabel={`Ver la seña completa de ${item.letter}`}
+              >
                 <View style={styles.cardTopRow}>
                   <Text style={styles.letter}>{item.letter}</Text>
                   <View style={[styles.badge, { backgroundColor: getBadgeColor(item.difficulty) }]}>
@@ -107,36 +138,56 @@ export default function DictionaryTabScreen() {
                   </View>
                 </View>
                 <View style={styles.signRow}>
-                  <Text style={styles.signLabel}>Seña:</Text>
-                  <Text style={[styles.signGlyph, isMulti && styles.signGlyphSmall]}>{item.sign}</Text>
+                  <SignImage signKey={item.sign} label={item.letter} size={64} />
                 </View>
-                <Text style={styles.description}>{item.description}</Text>
-              </SurfaceCard>
-            );
-          })}
+                <Text style={styles.description} numberOfLines={3}>{item.description}</Text>
+                <View style={styles.verMasRow}>
+                  <Text style={styles.verMasTexto}>Ver seña</Text>
+                  <Ionicons name="chevron-forward" size={12} color={theme.colors.primary} />
+                </View>
+              </Pressable>
+            </SurfaceCard>
+          ))}
         </View>
       ) : (
         <View style={styles.signsList}>
           {signItems.map((item) => (
             <SurfaceCard key={item.word} style={styles.signCard}>
-              <View style={styles.cardTopRow}>
-                <Text style={styles.word}>{item.word}</Text>
-                {item.type ? (
-                  <View style={styles.typeBadge}>
-                    <Text style={styles.typeBadgeText}>{item.type}</Text>
+              <Pressable
+                onPress={() => setDetail(signToDetail(item))}
+                accessibilityRole="button"
+                accessibilityLabel={`Ver la seña completa de ${item.word}`}
+                style={styles.signCardInner}
+              >
+                <SignImage signKey={item.word} label={item.word.slice(0, 3)} size={62} />
+                <View style={styles.signCardTexts}>
+                  <View style={styles.cardTopRow}>
+                    <Text style={styles.word}>{item.word}</Text>
+                    {item.type ? (
+                      <View style={styles.typeBadge}>
+                        <Text style={styles.typeBadgeText}>{item.type}</Text>
+                      </View>
+                    ) : null}
                   </View>
-                ) : null}
-              </View>
-              {item.meaning ? <Text style={styles.meaning}>{item.meaning}</Text> : null}
-              <View style={styles.howToRow}>
-                <Text style={styles.howToLabel}>Cómo se hace</Text>
-                <Text style={styles.howToText}>{item.howTo}</Text>
-              </View>
-              {item.page ? <Text style={styles.sourceRef}>Diccionario MINEDUC · pág. {item.page}</Text> : null}
+                  {item.meaning ? (
+                    <Text style={styles.meaning} numberOfLines={2}>{item.meaning}</Text>
+                  ) : null}
+                  <View style={styles.verMasRow}>
+                    <Text style={styles.verMasTexto}>Ver seña completa</Text>
+                    <Ionicons name="chevron-forward" size={12} color={theme.colors.primary} />
+                  </View>
+                </View>
+              </Pressable>
             </SurfaceCard>
           ))}
         </View>
       )}
+
+      <SignDetailModal
+        visible={detail !== null}
+        detail={detail}
+        onClose={() => setDetail(null)}
+      />
     </View>
   );
 }
@@ -184,26 +235,19 @@ function createStyles(theme) {
       flexShrink: 1,
     },
     signRow: {
-      marginTop: 6,
+      marginTop: 8,
+      alignItems: 'center',
+    },
+    verMasRow: {
+      marginTop: 8,
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 6,
-      flexWrap: 'wrap',
+      gap: 2,
     },
-    signLabel: {
-      fontSize: 12,
-      color: theme.colors.textSecondary,
-      fontWeight: '700',
-    },
-    signGlyph: {
-      fontSize: 24,
+    verMasTexto: {
+      fontSize: 11,
+      fontWeight: '800',
       color: theme.colors.primary,
-      fontFamily: APP_FONTS.sign,
-      fontWeight: '400',
-      flexShrink: 1,
-    },
-    signGlyphSmall: {
-      fontSize: 18,
     },
     description: {
       marginTop: 6,
@@ -224,6 +268,12 @@ function createStyles(theme) {
     // Senas reales
     signsList: { gap: 10 },
     signCard: { padding: 14 },
+    signCardInner: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 12,
+    },
+    signCardTexts: { flex: 1, minWidth: 0 },
     word: {
       fontSize: 17,
       color: theme.colors.textPrimary,
@@ -246,33 +296,6 @@ function createStyles(theme) {
       fontSize: 13,
       color: theme.colors.textSecondary,
       lineHeight: 18,
-    },
-    howToRow: {
-      marginTop: 10,
-      padding: 10,
-      borderRadius: 12,
-      backgroundColor: theme.mode === 'dark' ? '#221F31' : '#F7F4FC',
-      borderWidth: 1,
-      borderColor: theme.mode === 'dark' ? '#3A3352' : '#E6DEF6',
-    },
-    howToLabel: {
-      fontSize: 11,
-      fontWeight: '800',
-      color: theme.colors.primary,
-      textTransform: 'uppercase',
-      letterSpacing: 0.5,
-      marginBottom: 4,
-    },
-    howToText: {
-      fontSize: 13,
-      color: theme.colors.textPrimary,
-      lineHeight: 19,
-    },
-    sourceRef: {
-      marginTop: 8,
-      fontSize: 11,
-      color: theme.colors.textSecondary,
-      fontStyle: 'italic',
     },
   });
 }

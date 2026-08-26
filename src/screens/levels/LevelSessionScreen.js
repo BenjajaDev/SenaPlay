@@ -12,8 +12,9 @@ import {
 import AdaptiveModal from '../../components/AdaptiveModal';
 import ActionButton from '../../components/ui/ActionButton';
 import GameScreenHeader from '../../components/ui/GameScreenHeader';
+import SignImage from '../../components/ui/SignImage';
 import SurfaceCard from '../../components/ui/SurfaceCard';
-import { APP_FONTS } from '../../constants/fonts';
+import { normalizeHint } from '../../data/signDescription';
 import { useAppTheme } from '../../theme/ThemeProvider';
 
 function shuffle(items) {
@@ -94,7 +95,9 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
   const [feedback, setFeedback] = useState(null);
   const [gameOverVisible, setGameOverVisible] = useState(false);
   const [finishVisible, setFinishVisible] = useState(false);
-  const [hintText, setHintText] = useState('');
+  // Pista normalizada: { texto } para las de levelsConfig, o { parametros }
+  // cuando se deduce de la descripción fonológica de la seña.
+  const [hint, setHint] = useState(null);
   const [hintsUsed, setHintsUsed] = useState(0);
   const [lostHeartIndex, setLostHeartIndex] = useState(-1);
 
@@ -126,7 +129,7 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
       return;
     }
 
-    setHintText('');
+    setHint(null);
     setChoiceSelected('');
     setTypingValue('');
     setRecognitionSelected([]);
@@ -197,8 +200,18 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
     });
   };
 
-  const revealHint = (text) => {
-    setHintText(text);
+  /**
+   * Muestra una pista.
+   *
+   * `fuente` puede ser la pista del ejercicio (texto o parámetros) y `signKey`
+   * la seña sobre la que se pidió. Si el ejercicio no trae pista propia, se
+   * deduce de la descripción fonológica de esa seña — así mantener presionada
+   * cualquier casilla da ayuda útil, no solo los ejercicios que la definieron.
+   */
+  const revealHint = (fuente, signKey) => {
+    const normalizada = normalizeHint(fuente, signKey);
+    if (!normalizada) return;
+    setHint(normalizada);
     setHintsUsed((prev) => prev + 1);
     hintAnim.setValue(0);
     Animated.timing(hintAnim, {
@@ -442,22 +455,25 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
                     active && styles.matchCardActive,
                     matched && styles.matchCardDone,
                   ]}
+                  // Mantener presionada una casilla de SEÑA da su pista.
                   onLongPress={() => {
-                    if (card.type === 'sign') {
-                      setHintText(`Pista de SEÑA: ${card.value}`);
-                    }
+                    if (isSign) revealHint(null, card.value);
                   }}
+                  delayLongPress={400}
                   onPress={() => handleMatchingCard(card)}
                 >
-                  <Text
-                    style={[
-                      textStyle,
-                      matched && styles.matchTextDone,
-                      isSign && styles.signText,
-                    ]}
-                  >
-                    {displayValue}
-                  </Text>
+                  {isSign ? (
+                    <SignImage
+                      signKey={card.value}
+                      label={displayValue.toLocaleUpperCase('es')}
+                      size={isDense ? 40 : 52}
+                      rounded={10}
+                    />
+                  ) : (
+                    <Text style={[textStyle, matched && styles.matchTextDone]}>
+                      {displayValue}
+                    </Text>
+                  )}
                   <Text style={[typeStyle, matched && styles.matchTextDone]}>
                     {card.type === 'sign' ? 'SEÑA' : 'LETRA'}
                   </Text>
@@ -473,8 +489,14 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
       return (
         <View style={styles.exerciseBlock}>
           <SurfaceCard style={styles.signCard}>
-            <Text style={[styles.signLarge, styles.signText]}>{exercise.sign}</Text>
-            <Text style={styles.signLabel}>SEÑA mostrada</Text>
+            <Pressable
+              onLongPress={() => revealHint(exercise.hint, exercise.sign)}
+              delayLongPress={400}
+              style={styles.signCardInner}
+            >
+              <SignImage signKey={exercise.sign} size={110} rounded={16} />
+              <Text style={styles.signLabel}>SEÑA mostrada · mantén presionado para la pista</Text>
+            </Pressable>
           </SurfaceCard>
           <View style={styles.optionList}>
             {exercise.options.map((option) => (
@@ -505,7 +527,7 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
                 onPress={() => removeOrderingSlot(index)}
               >
                 {item ? (
-                  <Text style={[styles.slotSign, styles.signText]}>{displaySign(item)}</Text>
+                  <SignImage signKey={displaySign(item)} size={44} rounded={8} />
                 ) : (
                   <Text style={styles.slotPlaceholder}>{index + 1}</Text>
                 )}
@@ -517,9 +539,11 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
               <Pressable
                 key={`pool-${item}-${index}`}
                 style={styles.poolChipLargeSign}
+                onLongPress={() => revealHint(null, item)}
+                delayLongPress={400}
                 onPress={() => addOrderingLetter(item)}
               >
-                <Text style={[styles.poolChipSignText, styles.signText]}>{displaySign(item)}</Text>
+                <SignImage signKey={displaySign(item)} size={44} rounded={8} />
               </Pressable>
             ))}
           </View>
@@ -531,8 +555,14 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
       return (
         <View style={styles.exerciseBlock}>
           <SurfaceCard style={styles.signCard}>
-            <Text style={[styles.signLarge, styles.signText]}>{exercise.sign}</Text>
-            <Text style={styles.signLabel}>Escribe la letra</Text>
+            <Pressable
+              onLongPress={() => revealHint(exercise.hint, exercise.sign)}
+              delayLongPress={400}
+              style={styles.signCardInner}
+            >
+              <SignImage signKey={exercise.sign} size={110} rounded={16} />
+              <Text style={styles.signLabel}>Escribe la letra · mantén presionado para la pista</Text>
+            </Pressable>
           </SurfaceCard>
           <TextInput
             value={typingValue}
@@ -551,8 +581,14 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
         <View style={styles.exerciseBlock}>
           <Text style={styles.exerciseHint}>Selecciona las letras que representan estas SEÑAS.</Text>
           <SurfaceCard style={styles.signStrip}>
-            {exercise.signs.map((sign) => (
-              <Text key={sign} style={[styles.signStripText, styles.signText]}>{sign}</Text>
+            {exercise.signs.map((sign, idx) => (
+              <Pressable
+                key={`rec-sign-${idx}`}
+                onLongPress={() => revealHint(null, sign)}
+                delayLongPress={400}
+              >
+                <SignImage signKey={sign} size={54} rounded={10} />
+              </Pressable>
             ))}
           </SurfaceCard>
           <View style={styles.poolRow}>
@@ -581,7 +617,13 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
               <Text style={styles.exerciseHint}>Interpreta las SEÑAS y forma la palabra correcta.</Text>
               <SurfaceCard style={styles.signStrip}>
                 {exercise.signs.map((sign, idx) => (
-                  <Text key={`sign-${idx}`} style={[styles.signStripText, styles.signText]}>{sign}</Text>
+                  <Pressable
+                    key={`sign-${idx}`}
+                    onLongPress={() => revealHint(null, sign)}
+                    delayLongPress={400}
+                  >
+                    <SignImage signKey={sign} size={54} rounded={10} />
+                  </Pressable>
                 ))}
               </SurfaceCard>
             </>
@@ -614,7 +656,13 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
           <Text style={styles.exerciseHint}>Lee las SEÑAS y elige el significado correcto.</Text>
           <SurfaceCard style={styles.signStrip}>
             {exercise.signs.map((sign, idx) => (
-              <Text key={`wm-sign-${idx}`} style={[styles.signStripText, styles.signText]}>{sign}</Text>
+              <Pressable
+                key={`wm-sign-${idx}`}
+                onLongPress={() => revealHint(null, sign)}
+                delayLongPress={400}
+              >
+                <SignImage signKey={sign} size={54} rounded={10} />
+              </Pressable>
             ))}
           </SurfaceCard>
           <View style={styles.optionList}>
@@ -724,7 +772,7 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
       <SurfaceCard style={styles.exerciseCard}>
         <Text style={styles.exerciseTitle}>{exercise?.title}</Text>
 
-        {hintText ? (
+        {hint ? (
           <Animated.View
             style={[
               styles.hintBox,
@@ -741,18 +789,33 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
               },
             ]}
           >
-            <Ionicons name="bulb" size={16} color="#B45309" />
-            <Text style={styles.hintBoxText}>{hintText}</Text>
+            <View style={styles.hintHeader}>
+              <Ionicons name="bulb" size={16} color="#B45309" />
+              {hint.texto ? <Text style={styles.hintBoxText}>{hint.texto}</Text> : null}
+            </View>
+
+            {/* Pista por parámetros fonológicos (configuración, ubicación, …) */}
+            {hint.parametros?.length ? (
+              <View style={styles.hintParams}>
+                {hint.parametros.map((p) => (
+                  <View key={p.label} style={styles.hintParamRow}>
+                    <Ionicons name={p.icon} size={13} color="#B45309" />
+                    <Text style={styles.hintParamLabel}>{p.label}:</Text>
+                    <Text style={styles.hintParamValue}>{p.valor}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
           </Animated.View>
         ) : null}
 
-        {exercise?.hint && !hintText ? (
+        {!hint && (exercise?.hint || exercise?.sign) ? (
           <Pressable
             style={styles.hintBtn}
-            onPress={() => revealHint(exercise.hint)}
+            onPress={() => revealHint(exercise.hint, exercise.sign)}
           >
             <Ionicons name="bulb-outline" size={14} color={theme.colors.primary} />
-            <Text style={styles.hintBtnText}>Pedir pista</Text>
+            <Text style={styles.hintBtnText}>Obtener pista</Text>
           </Pressable>
         ) : null}
 
@@ -896,8 +959,7 @@ function createStyles(theme) {
     fontWeight: '700',
   },
   hintBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'column',
     gap: 8,
     backgroundColor: isDark ? '#3A2E12' : '#FEF3C7',
     borderLeftWidth: 3,
@@ -911,6 +973,30 @@ function createStyles(theme) {
     fontSize: 12,
     color: isDark ? '#F5E7B2' : '#92400E',
     fontWeight: '600',
+  },
+  hintHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  hintParams: {
+    gap: 5,
+  },
+  hintParamRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 5,
+  },
+  hintParamLabel: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: isDark ? '#FBBF24' : '#B45309',
+  },
+  hintParamValue: {
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 17,
+    color: isDark ? '#FDE68A' : '#78350F',
   },
   hintBtn: {
     flexDirection: 'row',
@@ -1052,14 +1138,9 @@ function createStyles(theme) {
     justifyContent: 'center',
     paddingVertical: 24,
   },
-  signLarge: {
-    fontSize: 84,
-    color: theme.colors.primary,
-    fontWeight: '900',
-  },
-  signText: {
-    fontFamily: APP_FONTS.sign,
-    fontWeight: '400',
+  signCardInner: {
+    alignItems: 'center',
+    gap: 10,
   },
   signLabel: {
     fontSize: 13,
@@ -1074,10 +1155,6 @@ function createStyles(theme) {
     gap: 14,
     paddingVertical: 18,
     paddingHorizontal: 10,
-  },
-  signStripText: {
-    fontSize: 44,
-    color: theme.colors.primary,
   },
   optionList: {
     gap: 10,
@@ -1173,10 +1250,6 @@ function createStyles(theme) {
     borderColor: theme.colors.primary,
     backgroundColor: isDark ? '#2A2341' : '#F5F3FF',
   },
-  slotSign: {
-    fontSize: 44,
-    color: theme.colors.primary,
-  },
   slotPlaceholder: {
     fontSize: 22,
     fontWeight: '900',
@@ -1198,10 +1271,6 @@ function createStyles(theme) {
     backgroundColor: isDark ? '#221C35' : '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  poolChipSignText: {
-    fontSize: 44,
-    color: theme.colors.primary,
   },
   input: {
     borderRadius: 12,

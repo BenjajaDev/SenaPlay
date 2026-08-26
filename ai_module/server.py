@@ -39,7 +39,12 @@ _DIRECTORIO = os.path.dirname(__file__)
 _RUTA_REFERENCIA = os.path.join(_DIRECTORIO, "signs_reference.json")
 
 with open(_RUTA_REFERENCIA, "r", encoding="utf-8") as _archivo:
-    SEÑAS_REFERENCIA: dict = json.load(_archivo)
+    # Las claves que empiezan con "_" son comentarios del archivo, no señas
+    SEÑAS_REFERENCIA: dict = {
+        clave: datos
+        for clave, datos in json.load(_archivo).items()
+        if not clave.startswith("_")
+    }
 
 # Los modelos se cargan solo cuando se necesitan para no bloquear el arranque
 _modelo_estatico = None

@@ -3,7 +3,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -23,12 +22,22 @@ import ProgressTabScreen from './tabs/ProgressTabScreen';
 import ProfileTabScreen from './tabs/ProfileTabScreen';
 import MemoryGameScreen from './games/MemoryGameScreen';
 import QuickQuizGameScreen from './games/QuickQuizGameScreen';
-import Hand3DGameScreen from './games/Hand3DGameScreen';
+import SignPracticeScreen from './games/SignPracticeScreen';
+import SpellingGameScreen from './games/SpellingGameScreen';
+import CameraTranslationScreen from './games/CameraTranslationScreen';
 import LevelSessionScreen from './levels/LevelSessionScreen';
 import { useCatalog } from '../data/CatalogContext';
 import { useAppTheme } from '../theme/ThemeProvider';
 
 const DEFAULT_LEVEL_PROGRESS = { unlocked: [1], completed: {} };
+
+// Juegos que usan la cámara: se montan a pantalla completa, fuera del contenedor
+// con insets, porque el visor ocupa todo y gestiona sus propios márgenes.
+const CAMERA_GAMES = {
+  practice: SignPracticeScreen,
+  spelling: SpellingGameScreen,
+  'camera-translation': CameraTranslationScreen,
+};
 
 export default function MainAppScreen({ onLogout }) {
   const insets = useSafeAreaInsets();
@@ -101,7 +110,9 @@ export default function MainAppScreen({ onLogout }) {
     if (activeLevelId) return `Nivel ${activeLevelId}`;
     if (activeGame === 'memory') return 'Juego Memoria';
     if (activeGame === 'quiz') return 'Juego Quiz';
-    if (activeGame === 'hand3d') return 'Juego Mano 3D';
+    if (activeGame === 'practice') return 'Práctica de señas';
+    if (activeGame === 'spelling') return 'Deletreo';
+    if (activeGame === 'camera-translation') return 'Traducción en vivo';
     if (activeTab === 'dictionary') return 'Diccionario';
     if (activeTab === 'videos') return 'Videos';
     if (activeTab === 'games') return 'Juegos';
@@ -167,7 +178,7 @@ export default function MainAppScreen({ onLogout }) {
       );
     }
 
-    if (activeGame === 'hand3d') return null;
+    if (CAMERA_GAMES[activeGame]) return null; // se montan aparte, a pantalla completa
     if (activeGame === 'memory') return <MemoryGameScreen onBack={closeGame} />;
     if (activeGame === 'quiz') return <QuickQuizGameScreen onBack={closeGame} />;
     if (activeTab === 'dictionary') return <DictionaryTabScreen />;
@@ -199,7 +210,11 @@ export default function MainAppScreen({ onLogout }) {
 
   return (
     <>
-      <SafeAreaView style={styles.screen}>
+      {/* View plano, NO SafeAreaView: el de react-native solo actúa en iOS y ahí
+          duplicaba el inset superior (se sumaba al paddingTop manual del header),
+          dejando el contenido descolgado. Los insets se aplican una sola vez, a
+          mano, en el header / el contenido / la barra inferior. */}
+      <View style={styles.screen}>
         <StatusBar style={theme.mode === 'dark' ? 'light' : 'dark'} />
         {!activeGame && !activeLevelId ? (
           <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
@@ -264,13 +279,18 @@ export default function MainAppScreen({ onLogout }) {
           onPrimaryPress={() => setFeedbackModal((prev) => ({ ...prev, visible: false }))}
           onRequestClose={() => setFeedbackModal((prev) => ({ ...prev, visible: false }))}
         />
-      </SafeAreaView>
+      </View>
 
-      {activeGame === 'hand3d' && (
-        <View style={StyleSheet.absoluteFill}>
-          <Hand3DGameScreen onBack={closeGame} />
-        </View>
-      )}
+      {CAMERA_GAMES[activeGame]
+        ? (() => {
+            const CameraGame = CAMERA_GAMES[activeGame];
+            return (
+              <View style={StyleSheet.absoluteFill}>
+                <CameraGame onBack={closeGame} />
+              </View>
+            );
+          })()
+        : null}
     </>
   );
 }

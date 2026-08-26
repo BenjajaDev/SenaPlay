@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import AdaptiveModal from '../../components/AdaptiveModal';
 import ActionButton from '../../components/ui/ActionButton';
 import GameScreenHeader from '../../components/ui/GameScreenHeader';
-import { APP_FONTS } from '../../constants/fonts';
+import SignImage from '../../components/ui/SignImage';
 import { useAppTheme } from '../../theme/ThemeProvider';
 
 const QUESTIONS = [
@@ -119,7 +119,7 @@ export default function QuickQuizGameScreen({ onBack }) {
 
           <View style={styles.questionCard}>
             <Text style={styles.questionText}>Que letra representa esta SEÑA?</Text>
-            <Text style={styles.signText}>{question.sign}</Text>
+            <SignImage signKey={question.sign} size={96} rounded={16} />
           </View>
 
           <View style={styles.optionsList}>
@@ -226,12 +226,6 @@ function createStyles(theme) {
       color: isDark ? '#E6DDBB' : '#334155',
       fontWeight: '700',
       marginBottom: 8,
-    },
-    signText: {
-      fontSize: 56,
-      color: theme.colors.primary,
-      fontFamily: APP_FONTS.sign,
-      fontWeight: '400',
     },
     optionsList: {
       gap: 8,

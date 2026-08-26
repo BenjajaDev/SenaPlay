@@ -10,8 +10,8 @@ import {
 import AdaptiveModal from '../../components/AdaptiveModal';
 import ActionButton from '../../components/ui/ActionButton';
 import GameScreenHeader from '../../components/ui/GameScreenHeader';
+import SignImage from '../../components/ui/SignImage';
 import SurfaceCard from '../../components/ui/SurfaceCard';
-import { APP_FONTS } from '../../constants/fonts';
 import { useAppTheme } from '../../theme/ThemeProvider';
 
 const BASE_PAIRS = [
@@ -131,7 +131,16 @@ export default function MemoryGameScreen({ onBack }) {
       >
         {isFaceUp ? (
           <>
-            <Text style={[styles.cardValue, isSign && styles.signCardText]}>{displayValue}</Text>
+            {isSign ? (
+              <SignImage
+                signKey={item.value}
+                label={item.value.toUpperCase()}
+                size={46}
+                rounded={10}
+              />
+            ) : (
+              <Text style={styles.cardValue}>{displayValue}</Text>
+            )}
             <Text style={styles.cardType}>{item.type === 'sign' ? 'SEÑA' : 'LETRA'}</Text>
           </>
         ) : (
@@ -251,10 +260,6 @@ function createStyles(theme) {
       color: isDark ? '#FFF8E6' : '#0F172A',
       fontSize: 28,
       fontWeight: '800',
-    },
-    signCardText: {
-      fontFamily: APP_FONTS.sign,
-      fontWeight: '400',
     },
     cardType: {
       marginTop: 4,

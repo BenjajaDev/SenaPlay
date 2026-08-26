@@ -23,9 +23,9 @@ const GAMES = [
     available: true,
   },
   {
-    id: 'hand3d',
-    title: 'Mano 3D',
-    description: 'Proximamente',
+    id: 'practice',
+    title: 'Práctica de señas',
+    description: 'La IA te corrige la seña frente a la cámara',
     icon: 'hand-left-outline',
     color: '#1CB0F6',
     available: true,
@@ -33,18 +33,18 @@ const GAMES = [
   {
     id: 'spelling',
     title: 'Deletreo',
-    description: 'Proximamente',
+    description: 'Escribe palabras haciendo una seña por letra',
     icon: 'text-outline',
     color: '#FF4B4B',
-    available: false,
+    available: true,
   },
   {
     id: 'camera-translation',
-    title: 'Traducción con cámara',
-    description: 'Proximamente',
+    title: 'Traducción en vivo',
+    description: 'Traduce tus señas a texto en tiempo real',
     icon: 'camera-outline',
     color: '#0EA5E9',
-    available: false,
+    available: true,
   },
 ];
 

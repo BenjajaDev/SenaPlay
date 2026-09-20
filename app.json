@@ -18,7 +18,7 @@
       "permissions": [
         "android.permission.CAMERA"
       ],
-      "package": "com.anonymous.oratioLingoRN"
+      "package": "com.benjajadev.oratiolingo"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -44,7 +44,8 @@
         {
           "cameraPermission": "OratioLingo necesita la cámara para reconocer tus señas con la mano."
         }
-      ]
+      ],
+      "expo-font"
     ]
   }
 }

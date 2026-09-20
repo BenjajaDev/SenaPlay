@@ -65,12 +65,12 @@ def _obtener_modelo_estatico():
 
 
 def _obtener_modelo_dinamico():
-    """Carga el clasificador dinámico (LSTM) si aún no está en memoria."""
+    """Carga el clasificador dinámico (TCN) si aún no está en memoria."""
     global _modelo_dinamico
     if _modelo_dinamico is None:
         try:
             from model.predict import ClasificadorDinamico
-            ruta = os.path.join(_DIRECTORIO, "models_saved", "dinamico.pt")
+            ruta = os.path.join(_DIRECTORIO, "data", "models", "dinamico_tcn.pt")
             _modelo_dinamico = ClasificadorDinamico(ruta)
         except Exception as e:
             print(f"[IA] No se pudo cargar el modelo dinámico: {e}")
@@ -86,8 +86,12 @@ class FrameMano(BaseModel):
 
 
 class SecuenciaMano(BaseModel):
-    # Para señas con movimiento: N frames de 21 landmarks CRUDOS de MediaPipe
-    frames: list[list[list[float]]]
+    # Para señas con movimiento: N frames YA VECTORIZADOS con
+    # scripts.holistic_pipeline.frame_a_vector (manos + pose superior + cara
+    # reducida, 527 valores/frame) — NO landmarks crudos de mano. La app
+    # todavía no arma este vector en vivo (ver ai_module/README.md); este
+    # endpoint queda listo para cuando el WebView capture holístico también.
+    frames: list[list[float]]
     fps: Optional[float] = 15.0  # Cuadros por segundo de la captura
 
 
@@ -166,15 +170,16 @@ def clasificar_seña_estatica(req: FrameMano):
 @app.post("/clasificar_secuencia")
 def clasificar_seña_dinamica(req: SecuenciaMano):
     """
-    Clasifica una seña con movimiento a partir de una secuencia de frames de mano.
-    Requiere haber entrenado el modelo: python model/train_dynamic.py
+    Clasifica una seña con movimiento a partir de una secuencia de vectores
+    holísticos (ver SecuenciaMano). Requiere haber entrenado el modelo:
+    python scripts/train_model.py
     """
     modelo = _obtener_modelo_dinamico()
     if modelo is None:
         raise HTTPException(
             503,
             "Modelo dinámico no disponible. "
-            "Primero entrénalo ejecutando: python model/train_dynamic.py"
+            "Primero entrénalo ejecutando: python scripts/train_model.py"
         )
 
     frames = np.array(req.frames, dtype=np.float32)

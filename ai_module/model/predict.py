@@ -1,11 +1,14 @@
 """
 Módulo de inferencia (predicción) para señas estáticas y dinámicas.
 
-ClasificadorEstatico  → usa un modelo scikit-learn (RandomForest/SVM) guardado en .pkl
-ClasificadorDinamico  → usa un modelo PyTorch LSTM guardado en .pt
-
-Ambas clases reciben landmarks ya normalizados en coordenadas Three.js world
-y devuelven (nombre_seña, confianza_0_a_1).
+ClasificadorEstatico  → modelo scikit-learn (RandomForest/SVM) guardado en .pkl.
+                        Recibe 21 landmarks CRUDOS de MediaPipe (x,y,z ~0-1).
+ClasificadorDinamico  → TCN de PyTorch (model/tcn.py) guardado en .pt.
+                        Recibe una secuencia YA VECTORIZADA por
+                        scripts/holistic_pipeline.frame_a_vector (T, 527) —
+                        NO landmarks crudos. Ver ai_module/README.md, sección
+                        "De captura en vivo a clasificación dinámica", para
+                        por qué esto todavía no está conectado a la app.
 """
 
 import numpy as np
@@ -62,10 +65,9 @@ class ClasificadorEstatico:
 
 class ClasificadorDinamico:
     """
-    Carga un modelo LSTM PyTorch entrenado con train_dynamic.py
-    y lo usa para predecir señas que involucran movimiento.
-
-    Recibe una secuencia de N frames de 21 landmarks y devuelve la seña.
+    Carga el TCN entrenado con scripts/train_model.py y lo usa para predecir
+    señas dinámicas a partir de una secuencia YA VECTORIZADA (ver
+    scripts/holistic_pipeline.frame_a_vector), no de landmarks crudos.
     """
 
     def __init__(self, ruta_modelo: str):
@@ -76,56 +78,31 @@ class ClasificadorDinamico:
         payload = torch.load(ruta_modelo, map_location="cpu")
         self._etiquetas: list[str] = payload["etiquetas"]
         self._longitud_secuencia: int = payload["longitud_secuencia"]
+        self._entrada: int = payload["entrada"]
 
-        from model.train_dynamic import ModeloLSTM
-        self._modelo = ModeloLSTM(
-            entrada=63,
-            oculto=payload["oculto"],
-            capas=payload["capas"],
-            clases=len(self._etiquetas),
-        )
+        from model.tcn import ModeloTCN
+        self._modelo = ModeloTCN(entrada=self._entrada, clases=len(self._etiquetas))
         self._modelo.load_state_dict(payload["estado"])
         self._modelo.eval()
         print(f"[ClasificadorDinamico] Cargado. Clases: {self._etiquetas}")
 
-    def _normalizar_secuencia(self, frames: np.ndarray) -> np.ndarray:
+    def _ajustar_longitud(self, secuencia: np.ndarray) -> np.ndarray:
+        """Interpola/trunca la secuencia (T, F) a la longitud que espera el modelo."""
+        from scripts.holistic_pipeline import remuestrear_temporal
+        return remuestrear_temporal(secuencia, self._longitud_secuencia)
+
+    def predecir(self, secuencia_features: np.ndarray) -> tuple[str, float]:
         """
-        frames: (N, 21, 3)
-        Normaliza cada frame relativo a su propia muñeca y escala,
-        luego interpola/trunca a la longitud esperada por el modelo.
-        """
-        normalizados = []
-        for frame in frames:
-            centrado = frame - frame[0]
-            escala = np.linalg.norm(centrado[9])
-            if escala > 1e-6:
-                centrado = centrado / escala
-            normalizados.append(centrado.flatten())
-
-        secuencia = np.array(normalizados, dtype=np.float32)  # (N, 63)
-
-        # Interpolar a la longitud que espera el modelo
-        n_actual = len(secuencia)
-        n_objetivo = self._longitud_secuencia
-        if n_actual != n_objetivo:
-            indices = np.linspace(0, n_actual - 1, n_objetivo)
-            secuencia = np.array([
-                secuencia[int(i)] * (1 - (i % 1)) + secuencia[min(int(i) + 1, n_actual - 1)] * (i % 1)
-                for i in indices
-            ], dtype=np.float32)
-
-        return secuencia  # (longitud_secuencia, 63)
-
-    def predecir(self, frames: np.ndarray) -> tuple[str, float]:
-        """
-        frames: array (N, 21, 3) con N frames de la seña
+        secuencia_features: array (T, entrada) ya producido por
+        scripts.holistic_pipeline.frame_a_vector / secuencia_a_matriz para
+        cada frame de la seña (NO landmarks crudos de mano).
         Devuelve: (nombre_seña, confianza)
         """
         import torch
         import torch.nn.functional as F
 
-        secuencia = self._normalizar_secuencia(frames)
-        tensor = torch.tensor(secuencia).unsqueeze(0)  # (1, T, 63)
+        secuencia = self._ajustar_longitud(secuencia_features)
+        tensor = torch.tensor(secuencia, dtype=torch.float32).unsqueeze(0)  # (1, T, entrada)
 
         with torch.no_grad():
             logits = self._modelo(tensor)

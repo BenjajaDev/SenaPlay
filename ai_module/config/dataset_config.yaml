@@ -1,0 +1,61 @@
+# ============================================================================
+# Configuración del dataset de señas dinámicas (LSCh).
+#
+# Fuente única de verdad que leen scripts/extract_landmarks.py,
+# scripts/train_model.py y scripts/add_new_signs.py. Para agregar una seña
+# nueva, ver el README de ai_module/ — normalmente NO hay que tocar este
+# archivo a mano, `add_new_signs.py` lo actualiza solo.
+# ============================================================================
+
+version: 1
+
+extraccion:
+  # Extensiones de video aceptadas dentro de data/raw_videos/<seña>/
+  formatos_video: [".mp4", ".mov", ".MP4", ".MOV"]
+  # FPS al que se muestrean los videos al extraer landmarks. Si el video
+  # fuente tiene más fps, se descartan frames intermedios; si tiene menos,
+  # se usan todos los frames disponibles (no se inventan frames aquí — el
+  # remuestreo a longitud fija ocurre después, en entrenamiento).
+  fps_muestreo: 30
+  confianza_deteccion: 0.5
+  confianza_landmarks: 0.5
+
+entrenamiento:
+  # Longitud fija (frames) a la que se interpola cada secuencia antes de
+  # entrenar. Con videos ~1-2s a 30fps, 60 frames cubre la mayoría sin
+  # recortar señas más lentas.
+  longitud_secuencia: 60
+  batch_size: 8
+  epocas: 80
+  learning_rate: 0.001
+  # Split estratificado por clase. Se agrupa por signante cuando el nombre
+  # de archivo sigue la convención <seña>_<signante>_<numero>.ext, para no
+  # filtrar el mismo signante entre train/val/test.
+  split_train: 0.70
+  split_val: 0.15
+  split_test: 0.15
+  semilla: 42
+
+augmentacion:
+  # Nº de variaciones sintéticas generadas por muestra de TRAIN (no se
+  # aumenta val/test, para no inflar la métrica).
+  variaciones_por_muestra: 4
+  rotacion_max_grados: 15
+  escalado_min: 0.9
+  escalado_max: 1.1
+  probabilidad_espejo: 0.3
+  ruido_gaussiano_sigma: 0.01
+
+# ── Repertorio de señas ──────────────────────────────────────────────────
+# Cada entrada corresponde a una subcarpeta de data/raw_videos/ y
+# data/processed_landmarks/. `activa: false` permite dejar una seña
+# registrada pero fuera del próximo entrenamiento (dataset incompleto, en
+# revisión, etc.) sin borrar sus videos.
+señas:
+  # Ejemplo — reemplaza/agrega según tu repertorio real de 25 videos c/u:
+  # hola:
+  #   nombre_visible: "Hola"
+  #   descripcion: "Saludo con movimiento de mano abierta"
+  #   dificultad: 1
+  #   activa: true
+  {}

@@ -18,12 +18,14 @@ entrenamiento:
   split_test: 0.15
   semilla: 42
 augmentacion:
-  variaciones_por_muestra: 4
-  rotacion_max_grados: 15
-  escalado_min: 0.9
-  escalado_max: 1.1
+  variaciones_por_muestra: 8
+  rotacion_max_grados: 20
+  escalado_min: 0.85
+  escalado_max: 1.15
   probabilidad_espejo: 0.3
-  ruido_gaussiano_sigma: 0.01
+  ruido_gaussiano_sigma: 0.015
+  time_warp_min: 0.8
+  time_warp_max: 1.25
 señas:
   G:
     nombre_visible: G

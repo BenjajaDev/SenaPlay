@@ -215,7 +215,7 @@ def entrenar(config: dict, señas_filtro: list[str] | None = None,
 
     modelo = ModeloTCN(entrada=N_FEATURES_FRAME, clases=len(etiquetas)).to(dispositivo)
     optimizador = torch.optim.Adam(modelo.parameters(),
-                                    lr=cfg_entrenamiento["learning_rate"], weight_decay=1e-4)
+                                    lr=cfg_entrenamiento["learning_rate"], weight_decay=2e-4)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizador, patience=6, factor=0.5)
     criterio = nn.CrossEntropyLoss()
 

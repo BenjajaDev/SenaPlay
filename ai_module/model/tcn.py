@@ -70,7 +70,7 @@ class ModeloTCN(nn.Module):
 
     def __init__(self, entrada: int, clases: int,
                  canales: tuple[int, ...] = (64, 64, 96, 96),
-                 kernel_size: int = 3, dropout: float = 0.3):
+                 kernel_size: int = 3, dropout: float = 0.4):
         super().__init__()
         bloques = []
         canales_in = entrada

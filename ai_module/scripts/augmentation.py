@@ -37,6 +37,7 @@ from scripts.holistic_pipeline import (
     SLICE_MANO_IZQ,
     SLICE_POSE,
     SLICE_PRESENCIA,
+    remuestrear_temporal,
 )
 
 
@@ -76,6 +77,18 @@ def _espejar_secuencia(secuencia: np.ndarray) -> np.ndarray:
     return seq
 
 
+def _time_warp(secuencia: np.ndarray, factor: float) -> np.ndarray:
+    """
+    Simula firmar más rápido/lento: remuestrea a T*factor frames y de vuelta a
+    T. Compensa que el dataset actual es de una sola sesión/signante — la
+    velocidad de ejecución de la seña es una de las cosas que más varía entre
+    personas distintas, y hoy no hay ninguna variación de eso en el dataset.
+    """
+    T = secuencia.shape[0]
+    t_intermedio = max(4, round(T * factor))
+    return remuestrear_temporal(remuestrear_temporal(secuencia, t_intermedio), T)
+
+
 def aumentar_secuencia(secuencia: np.ndarray, config_aug: dict) -> np.ndarray:
     """
     Genera UNA variación aumentada de `secuencia` (T, 527) según los
@@ -83,6 +96,10 @@ def aumentar_secuencia(secuencia: np.ndarray, config_aug: dict) -> np.ndarray:
     """
     seq = secuencia.copy()
     T = seq.shape[0]
+
+    # ── Time-warp (velocidad de ejecución) ──
+    factor = np.random.uniform(config_aug["time_warp_min"], config_aug["time_warp_max"])
+    seq = _time_warp(seq, factor)
 
     # ── Rotación (aplicada solo a los bloques de coordenadas x,y,z) ──
     angulo_max = np.radians(config_aug["rotacion_max_grados"])

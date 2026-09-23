@@ -6,9 +6,17 @@ import { HAND_HTML } from './handTrackingHtml';
 
 // ── IP del servidor Python (debe ser la IP local de tu PC en la misma WiFi) ─
 // Si tu PC cambia de IP, actualízala aquí.
-export const SERVIDOR_IA = 'http://10.10.48.49:8000';
+export const SERVIDOR_IA = 'http://10.180.72.177:8000';
 
 // Comando para levantar la IA: python -m uvicorn server:app --host 0.0.0.0 --port 8000
+
+// Confianza mínima para MOSTRAR un resultado en el banner (ver IaBanner). Por
+// debajo de esto se muestra "No estoy seguro" en vez de una seña al azar —
+// el modelo siempre devuelve alguna clase aunque no reconozca nada, así que
+// sin este filtro el banner se siente errático. Mismo orden de magnitud que
+// los umbrales de juego ya existentes (UMBRAL_DELETREO=0.55, UMBRAL_CONFIANZA
+// de CameraTranslationScreen=0.6).
+export const UMBRAL_CONFIANZA_MOSTRAR = 0.55;
 /**
  * Lógica compartida de las pantallas que usan la cámara para reconocer señas:
  * permiso de cámara, puente con el WebView de MediaPipe y clasificación contra
@@ -222,10 +230,13 @@ export function CameraStage({ recog }) {
 }
 
 /** Banner con lo que la IA está reconociendo. Compartido por las tres pantallas. */
-export function IaBanner({ recog, objetivo, textoInactivo }) {
+export function IaBanner({ recog, objetivo, textoInactivo, umbral = UMBRAL_CONFIANZA_MOSTRAR }) {
   const { iaResultado, iaEstado } = recog;
+  // Las señas dinámicas resueltas por trayectoria (J/Z) llegan con confianza=1
+  // fija, así que siempre pasan el umbral igual.
+  const confiable = iaResultado && (iaResultado.confianza || 0) >= umbral;
   const acierto =
-    iaResultado &&
+    confiable &&
     objetivo &&
     String(iaResultado.sena).toUpperCase() === String(objetivo).toUpperCase();
 
@@ -237,7 +248,7 @@ export function IaBanner({ recog, objetivo, textoInactivo }) {
         </Text>
       ) : iaEstado === 'procesando' ? (
         <Text style={estilos.iaTextoTenue}>Procesando seña…</Text>
-      ) : iaResultado ? (
+      ) : confiable ? (
         <Text style={estilos.iaTexto}>
           {'IA reconoce: '}
           <Text style={[estilos.iaLetra, { color: acierto ? '#22C55E' : '#1CB0F6' }]}>
@@ -245,6 +256,10 @@ export function IaBanner({ recog, objetivo, textoInactivo }) {
           </Text>
           {`  (${Math.round((iaResultado.confianza || 0) * 100)}%)`}
           {acierto ? '  ✓' : ''}
+        </Text>
+      ) : iaResultado ? (
+        <Text style={estilos.iaTextoTenue}>
+          {`No estoy seguro… (${Math.round((iaResultado.confianza || 0) * 100)}%)`}
         </Text>
       ) : (
         <Text style={estilos.iaTextoTenue}>

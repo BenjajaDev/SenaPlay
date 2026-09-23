@@ -16,7 +16,8 @@
         "backgroundColor": "#ffffff"
       },
       "permissions": [
-        "android.permission.CAMERA"
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
       ],
       "package": "com.benjajadev.oratiolingo"
     },
@@ -46,6 +47,12 @@
         }
       ],
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "357196ba-4ea4-422e-875e-bca874c3701a"
+      }
+    },
+    "owner": "benjajadev"
   }
 }

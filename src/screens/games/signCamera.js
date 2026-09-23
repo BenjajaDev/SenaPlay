@@ -6,7 +6,9 @@ import { HAND_HTML } from './handTrackingHtml';
 
 // ── IP del servidor Python (debe ser la IP local de tu PC en la misma WiFi) ─
 // Detectada automáticamente: 172.20.10.3. Si tu PC cambia de IP, actualízala aquí.
-export const SERVIDOR_IA = 'http://192.168.1.6:8000';
+export const SERVIDOR_IA = 'http://192.168.0.18:8000';
+
+// COMANDO PARA ABRIR LA IA: python -m uvicorn server:app --host 0.0.0.0 --port 8000
 
 /**
  * Lógica compartida de las pantallas que usan la cámara para reconocer señas:

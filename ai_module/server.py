@@ -14,14 +14,19 @@ Usar 0.0.0.0 en lugar de localhost permite que el celular
 conecte al servidor a través de la red local (WiFi compartida).
 """
 
+import base64
 import json
 import os
+import tempfile
 
 import numpy as np
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
+
+from scripts.dataset_config_utils import cargar_config
+from scripts.extract_landmarks import _extraer_video
 
 app = FastAPI(title="OratioLingo IA de Señas", version="0.2.0")
 
@@ -93,6 +98,15 @@ class SecuenciaMano(BaseModel):
     # endpoint queda listo para cuando el WebView capture holístico también.
     frames: list[list[float]]
     fps: Optional[float] = 15.0  # Cuadros por segundo de la captura
+
+
+class VideoSena(BaseModel):
+    # Clip corto grabado en el WebView (MediaRecorder) con la misma cámara que
+    # ya usa el visor de manos. Se procesa con el mismo pipeline Python que
+    # generó el dataset de entrenamiento (holistic_pipeline / extract_landmarks),
+    # así que no hay riesgo de desajuste entre captura en vivo y entrenamiento.
+    video_base64: str
+    mime: str = "video/webm"
 
 
 class SolicitudComparacion(BaseModel):
@@ -185,6 +199,55 @@ def clasificar_seña_dinamica(req: SecuenciaMano):
     frames = np.array(req.frames, dtype=np.float32)
     seña, confianza = modelo.predecir(frames)
     return {"seña": seña, "confianza": round(float(confianza), 4)}
+
+
+@app.post("/clasificar_video")
+def clasificar_seña_video(req: VideoSena):
+    """
+    Clasifica una seña con movimiento a partir de un clip de video (grabado en
+    el WebView). Extrae los landmarks holísticos con el mismo pipeline que
+    generó el dataset de entrenamiento (scripts.extract_landmarks) y clasifica
+    con el modelo dinámico. Requiere haberlo entrenado: python scripts/train_model.py
+    """
+    modelo = _obtener_modelo_dinamico()
+    if modelo is None:
+        raise HTTPException(
+            503,
+            "Modelo dinámico no disponible. "
+            "Primero entrénalo ejecutando: python scripts/train_model.py"
+        )
+
+    sufijo = ".webm" if "webm" in req.mime else ".mp4"
+    ruta_temp = None
+    try:
+        with tempfile.NamedTemporaryFile(suffix=sufijo, delete=False) as archivo_temp:
+            archivo_temp.write(base64.b64decode(req.video_base64))
+            ruta_temp = archivo_temp.name
+
+        config = cargar_config()
+        cfg_extraccion = config["extraccion"]
+        matriz, stats = _extraer_video(
+            ruta_temp,
+            fps_muestreo=cfg_extraccion["fps_muestreo"],
+            confianza_deteccion=cfg_extraccion["confianza_deteccion"],
+            confianza_landmarks=cfg_extraccion["confianza_landmarks"],
+        )
+    except Exception as e:
+        raise HTTPException(422, f"No se pudo procesar el video: {e}")
+    finally:
+        if ruta_temp and os.path.exists(ruta_temp):
+            os.remove(ruta_temp)
+
+    if matriz.shape[0] == 0:
+        raise HTTPException(422, "No se detectaron frames válidos en el video")
+
+    seña, confianza = modelo.predecir(matriz)
+    return {
+        "seña": seña,
+        "confianza": round(float(confianza), 4),
+        "frames_procesados": stats["frames"],
+        "ratio_con_mano": stats["ratio_con_mano"],
+    }
 
 
 @app.post("/comparar")

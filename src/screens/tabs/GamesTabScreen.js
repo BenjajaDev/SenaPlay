@@ -46,6 +46,14 @@ const GAMES = [
     color: '#0EA5E9',
     available: true,
   },
+  {
+    id: 'dynamic-monitor',
+    title: 'Señas dinámicas (beta)',
+    description: 'Graba una seña con movimiento y prueba el modelo nuevo',
+    icon: 'videocam-outline',
+    color: '#8B5CF6',
+    available: true,
+  },
 ];
 
 export default function GamesTabScreen({ onOpenGame }) {

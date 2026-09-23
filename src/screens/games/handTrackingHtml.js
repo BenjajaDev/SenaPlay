@@ -15,11 +15,16 @@
 // globales, invocables desde RN con `injectJavaScript`:
 //   activarModoLibre()
 //   activarModoPractica(landmarks, nombre, instruccion)
+//   iniciarGrabacion()   ← graba un clip corto (MediaRecorder) de la misma
+//                           cámara, para el modelo dinámico (TCN) del backend
+//   detenerGrabacion()
 //
 // Mensajes que emite hacia RN:
 //   { tipo:'landmarks',     landmarks, puntuacion?, dedos?, movimiento }
 //   { tipo:'sena-dinamica', sena }     ← gesto con movimiento ya resuelto (J/Z)
 //   { tipo:'error-camara',  mensaje }
+//   { tipo:'video-grabado', datosBase64, mime }  ← clip listo para subir
+//   { tipo:'error-grabacion', mensaje }
 
 export const HAND_HTML = `<!DOCTYPE html>
 <html>
@@ -337,6 +342,7 @@ export const HAND_HTML = `<!DOCTYPE html>
   let landmarksReferencia = null;       // pose objetivo en coords "world" (signs_reference.json)
   let formaReferenciaNormalizada = null; // normalizarMano(landmarksReferencia), cacheada
   let modoEnseñanza = false;
+  let streamActual = null; // MediaStream de la cámara, para poder grabarla (sección 9)
 
   // ── 6a. Suavizado del dibujo (independiente de la tasa de detección) ────────
   // MediaPipe entrega detecciones a lo sumo a ~30fps (y en un WebView de gama
@@ -634,6 +640,74 @@ export const HAND_HTML = `<!DOCTYPE html>
     }
   }
 
+  // ── 9. Grabación de clip para el modelo dinámico (TCN) ──────────────────────
+  // Graba un clip corto de la MISMA stream que ya usa el visor (streamActual),
+  // sin pedir un segundo permiso de cámara. El servidor procesa el video con
+  // el mismo pipeline Python que generó el dataset de entrenamiento, así que
+  // acá no se intenta reproducir esa lógica en JS — solo se manda el video.
+  const DURACION_MAX_GRABACION_MS = 4000;
+  let grabador = null;
+  let chunksGrabacion = [];
+  let timerAutoStop = null;
+
+  function reportarErrorGrabacion(msg) {
+    STATUS.textContent = 'Grabación: ' + msg;
+    if (window.ReactNativeWebView) {
+      window.ReactNativeWebView.postMessage(JSON.stringify({ tipo: 'error-grabacion', mensaje: msg }));
+    }
+  }
+
+  window.iniciarGrabacion = function() {
+    if (grabador && grabador.state === 'recording') return; // ya grabando
+    if (typeof MediaRecorder === 'undefined') {
+      reportarErrorGrabacion('no soportada en este dispositivo');
+      return;
+    }
+    if (!streamActual) {
+      reportarErrorGrabacion('la cámara todavía no está lista');
+      return;
+    }
+
+    let mimeType = 'video/webm;codecs=vp8';
+    if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm';
+    if (!MediaRecorder.isTypeSupported(mimeType)) {
+      reportarErrorGrabacion('ningún formato de video soportado');
+      return;
+    }
+
+    try {
+      chunksGrabacion = [];
+      grabador = new MediaRecorder(streamActual, { mimeType });
+      grabador.ondataavailable = e => { if (e.data && e.data.size > 0) chunksGrabacion.push(e.data); };
+      grabador.onstop = () => {
+        clearTimeout(timerAutoStop);
+        const blob = new Blob(chunksGrabacion, { type: mimeType });
+        chunksGrabacion = [];
+        const lector = new FileReader();
+        lector.onloadend = () => {
+          // readAsDataURL da "data:video/webm;base64,AAAA..." — solo interesa la parte base64.
+          const datosBase64 = String(lector.result).split(',')[1] || '';
+          if (window.ReactNativeWebView) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              tipo: 'video-grabado', datosBase64, mime: mimeType,
+            }));
+          }
+        };
+        lector.readAsDataURL(blob);
+      };
+      grabador.start();
+      STATUS.textContent = 'Grabando…';
+      timerAutoStop = setTimeout(() => window.detenerGrabacion(), DURACION_MAX_GRABACION_MS);
+    } catch (err) {
+      reportarErrorGrabacion((err && err.message) || String(err));
+    }
+  };
+
+  window.detenerGrabacion = function() {
+    clearTimeout(timerAutoStop);
+    if (grabador && grabador.state === 'recording') grabador.stop();
+  };
+
   async function iniciarCamara() {
     STATUS.textContent = 'Solicitando acceso a la cámara…';
     try {
@@ -644,6 +718,7 @@ export const HAND_HTML = `<!DOCTYPE html>
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode:'user', width:{ideal:640}, height:{ideal:480} },
       });
+      streamActual = stream;
       VID.srcObject = stream;
       await new Promise(resolve => { VID.onloadedmetadata = resolve; });
       VID.play();

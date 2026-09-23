@@ -25,6 +25,7 @@ import QuickQuizGameScreen from './games/QuickQuizGameScreen';
 import SignPracticeScreen from './games/SignPracticeScreen';
 import SpellingGameScreen from './games/SpellingGameScreen';
 import CameraTranslationScreen from './games/CameraTranslationScreen';
+import DynamicSignMonitorScreen from './games/DynamicSignMonitorScreen';
 import LevelSessionScreen from './levels/LevelSessionScreen';
 import { useCatalog } from '../data/CatalogContext';
 import { useAppTheme } from '../theme/ThemeProvider';
@@ -37,6 +38,7 @@ const CAMERA_GAMES = {
   practice: SignPracticeScreen,
   spelling: SpellingGameScreen,
   'camera-translation': CameraTranslationScreen,
+  'dynamic-monitor': DynamicSignMonitorScreen,
 };
 
 export default function MainAppScreen({ onLogout }) {

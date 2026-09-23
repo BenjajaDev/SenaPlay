@@ -6,7 +6,7 @@ import { HAND_HTML } from './handTrackingHtml';
 
 // ── IP del servidor Python (debe ser la IP local de tu PC en la misma WiFi) ─
 // Si tu PC cambia de IP, actualízala aquí.
-export const SERVIDOR_IA = 'http://192.168.0.18:8000';
+export const SERVIDOR_IA = 'http://10.10.48.49:8000';
 
 // Comando para levantar la IA: python -m uvicorn server:app --host 0.0.0.0 --port 8000
 /**
@@ -27,12 +27,15 @@ export function useSignRecognition() {
   // pausas (mano fuera de cuadro) y separar palabras.
   const ultimaDeteccionRef = useRef(0);
 
-  const [iaResultado, setIaResultado] = useState(null); // { sena, confianza, dinamica? }
+  const [iaResultado, setIaResultado] = useState(null); // { sena, confianza, dinamica?, framesProcesados?, ratioConMano? }
   const [iaEstado, setIaEstado] = useState(null);       // null | 'ok' | 'sin-conexion'
   const [errorCamara, setErrorCamara] = useState(null);
   const [puntuacion, setPuntuacion] = useState(null);
   // Desglose por dedo (0–1 c/u) que manda el visor en modo práctica.
   const [puntuacionDedos, setPuntuacionDedos] = useState(null);
+  // Grabación de clip para el modelo dinámico (TCN) — ver DynamicSignMonitorScreen.
+  const [grabando, setGrabando] = useState(false);
+  const subiendoVideo = useRef(false);
 
   const [permisoCamara, pedirPermisoCamara] = useCameraPermissions();
 
@@ -61,6 +64,41 @@ export function useSignRecognition() {
     }
   }, []);
 
+  // ── Clip de video → clasificación dinámica (TCN) contra el servidor ──
+  const subirVideo = useCallback(async (datosBase64, mime) => {
+    if (subiendoVideo.current) return;
+    subiendoVideo.current = true;
+    setIaResultado(null);
+    setIaEstado('procesando');
+    try {
+      const ctrl = new AbortController();
+      // Timeout más largo que clasificarSena: el servidor tiene que abrir el
+      // video y correr MediaPipe Holistic frame por frame antes de responder.
+      const timeout = setTimeout(() => ctrl.abort(), 15000);
+      const resp = await fetch(`${SERVIDOR_IA}/clasificar_video`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ video_base64: datosBase64, mime }),
+        signal: ctrl.signal,
+      });
+      clearTimeout(timeout);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = await resp.json();
+      setIaResultado({
+        sena: data['seña'],
+        confianza: data.confianza,
+        dinamica: true,
+        framesProcesados: data.frames_procesados,
+        ratioConMano: data.ratio_con_mano,
+      });
+      setIaEstado('ok');
+    } catch (_) {
+      setIaEstado('sin-conexion');
+    } finally {
+      subiendoVideo.current = false;
+    }
+  }, []);
+
   // ── Mensajes del WebView → RN ──
   const manejarMensaje = useCallback((evento) => {
     try {
@@ -78,11 +116,17 @@ export function useSignRecognition() {
         // tras analizar la secuencia completa (~1–1.5s).
         setIaResultado({ sena: msg.sena, confianza: 1, dinamica: true });
         setIaEstado('ok');
+      } else if (msg.tipo === 'video-grabado') {
+        setGrabando(false);
+        subirVideo(msg.datosBase64, msg.mime);
+      } else if (msg.tipo === 'error-grabacion') {
+        setGrabando(false);
+        setErrorCamara(msg.mensaje);
       } else if (msg.tipo === 'error-camara') {
         setErrorCamara(msg.mensaje);
       }
     } catch (_) {}
-  }, [clasificarSena]);
+  }, [clasificarSena, subirVideo]);
 
   // ── Comandos hacia el WebView ──
   const activarModoLibre = useCallback(() => {
@@ -100,12 +144,20 @@ export function useSignRecognition() {
     );
   }, []);
 
+  const iniciarGrabacion = useCallback(() => {
+    setIaResultado(null);
+    setGrabando(true);
+    webRef.current?.injectJavaScript('iniciarGrabacion(); true;');
+  }, []);
+
   return {
     webRef,
     permisoCamara,
     pedirPermisoCamara,
     iaResultado,
     iaEstado,
+    grabando,
+    iniciarGrabacion,
     errorCamara,
     puntuacion,
     puntuacionDedos,
@@ -183,6 +235,8 @@ export function IaBanner({ recog, objetivo, textoInactivo }) {
         <Text style={estilos.iaTextoError}>
           IA no conectada · revisa el servidor ({SERVIDOR_IA})
         </Text>
+      ) : iaEstado === 'procesando' ? (
+        <Text style={estilos.iaTextoTenue}>Procesando seña…</Text>
       ) : iaResultado ? (
         <Text style={estilos.iaTexto}>
           {'IA reconoce: '}

@@ -46,3 +46,11 @@ __pycache__/
 
 # logs
 *.log
+
+# ai_module: dataset y checkpoints de señas dinámicas (binarios locales, no van a git)
+ai_module/data/raw_videos/*
+!ai_module/data/raw_videos/.gitkeep
+ai_module/data/processed_landmarks/*
+!ai_module/data/processed_landmarks/.gitkeep
+ai_module/data/models/*
+!ai_module/data/models/.gitkeep

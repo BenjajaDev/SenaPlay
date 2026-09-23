@@ -5,12 +5,10 @@ import { useCameraPermissions } from 'expo-camera';
 import { HAND_HTML } from './handTrackingHtml';
 
 // ── IP del servidor Python (debe ser la IP local de tu PC en la misma WiFi) ─
-// Detectada automáticamente: 172.20.10.3. Si tu PC cambia de IP, actualízala aquí.
-export const SERVIDOR_IA = 'http://10.98.184.177:8000';
+// Si tu PC cambia de IP, actualízala aquí.
+export const SERVIDOR_IA = 'http://192.168.0.18:8000';
 
-
-//encender la ia:
-// python -m uvicorn server:app --host 0.0.0.0 --port 8000
+// Comando para levantar la IA: python -m uvicorn server:app --host 0.0.0.0 --port 8000
 /**
  * Lógica compartida de las pantallas que usan la cámara para reconocer señas:
  * permiso de cámara, puente con el WebView de MediaPipe y clasificación contra

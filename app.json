@@ -2,18 +2,11 @@
   "expo": {
     "name": "oratioLingoRN",
     "slug": "oratioLingoRN",
-    "sdkVersion": "54.0.0",
     "scheme": "oratiolingo",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
     "ios": {
       "supportsTablet": true
     },
@@ -22,17 +15,25 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
       "permissions": [
-        "android.permission.CAMERA"
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
       ],
-      "package": "com.anonymous.oratioLingoRN"
+      "package": "com.benjajadev.oratiolingo"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-web-browser",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ],
       [
         "expo-image-picker",
         {
@@ -44,7 +45,14 @@
         {
           "cameraPermission": "OratioLingo necesita la cámara para reconocer tus señas con la mano."
         }
-      ]
-    ]
+      ],
+      "expo-font"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "357196ba-4ea4-422e-875e-bca874c3701a"
+      }
+    },
+    "owner": "benjajadev"
   }
 }

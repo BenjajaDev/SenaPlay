@@ -1,0 +1,38 @@
+{
+  "name": "senaplay-web",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Portal web de SeñaPlay: landing pública y panel de administración (contenido, medios y configuración remota).",
+  "scripts": {
+    "tokens": "node scripts/syncTokens.mjs",
+    "predev": "node scripts/syncTokens.mjs",
+    "dev": "vite",
+    "prebuild": "node scripts/syncTokens.mjs",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -b --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.117.1",
+    "lucide-react": "^1.48.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-router-dom": "^7.18.4"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "jsdom": "^30.1.1",
+    "typescript": "~5.9.3",
+    "vite": "^8.3.1",
+    "vitest": "^5.0.1"
+  }
+}

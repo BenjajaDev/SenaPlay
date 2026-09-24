@@ -20,7 +20,7 @@ import { AppThemeProvider } from '../../shared/theme/ThemeProvider';
 import { FeedbackProvider } from '../../shared/ui';
 
 jest.mock('expo-web-browser', () => ({ maybeCompleteAuthSession: jest.fn(), openBrowserAsync: jest.fn() }));
-jest.mock('expo-linking', () => ({ createURL: jest.fn(() => 'oratiolingo://auth/callback') }));
+jest.mock('expo-linking', () => ({ createURL: jest.fn(() => 'senaplay://auth/callback') }));
 jest.mock('expo-image-picker', () => ({}));
 
 const metrics = { frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } };

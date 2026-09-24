@@ -1,5 +1,5 @@
 -- ============================================================
--- Diccionario de senas de OratioLingo (generado automaticamente)
+-- Diccionario de senas de SeñaPlay (generado automaticamente)
 -- Generado el: 2026-06-06T19:59:29.199Z
 -- Pegar completo en Supabase -> SQL Editor -> Run
 -- ============================================================

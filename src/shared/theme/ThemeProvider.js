@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { useColorScheme } from 'react-native';
 import { getThemeByMode } from './palette';
 
-const THEME_STORAGE_KEY = 'oratiolingo.theme.mode.v1';
+const THEME_STORAGE_KEY = 'senaplay.theme.mode.v1';
 
 const ThemeContext = createContext({
   ...getThemeByMode('light'),

@@ -6,7 +6,7 @@
 # Requiere un Postgres 15+ local (no toca tu proyecto real de Supabase).
 set -euo pipefail
 cd "$(dirname "$0")/.."
-DB="${TEST_DB:-oratio_migrations_test}"
+DB="${TEST_DB:-senaplay_migrations_test}"
 PSQL="psql -v ON_ERROR_STOP=1 -q"
 
 $PSQL -c "drop database if exists $DB" -c "create database $DB"

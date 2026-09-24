@@ -34,7 +34,7 @@ const sqlJson = (obj) => `$j$${JSON.stringify(obj)}$j$::jsonb`;
 
 const lines = [];
 lines.push('-- ============================================================');
-lines.push('-- Catalogo de niveles de OratioLingo (generado automaticamente)');
+lines.push('-- Catalogo de niveles de SeñaPlay (generado automaticamente)');
 lines.push('-- Generado el: ' + new Date().toISOString());
 lines.push('-- Pegar completo en Supabase -> SQL Editor -> Run');
 lines.push('-- ============================================================');

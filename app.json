@@ -1,14 +1,15 @@
 {
   "expo": {
     "name": "SeñaPlay",
-    "slug": "oratioLingoRN",
-    "scheme": "oratiolingo",
+    "slug": "senaplay",
+    "scheme": "senaplay",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.benjajadev.senaplay"
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +20,7 @@
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
       ],
-      "package": "com.benjajadev.oratiolingo"
+      "package": "com.benjajadev.senaplay"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -48,11 +49,6 @@
       ],
       "expo-font"
     ],
-    "extra": {
-      "eas": {
-        "projectId": "357196ba-4ea4-422e-875e-bca874c3701a"
-      }
-    },
     "owner": "benjajadev"
   }
 }

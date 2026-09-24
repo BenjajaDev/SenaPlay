@@ -1,4 +1,4 @@
-# Documentación técnica — SeñaPlay / OratioLingo
+# Documentación técnica — SeñaPlay
 
 SeñaPlay es una plataforma para aprender **Lengua de Señas Chilena (LSCh)**, compuesta por tres piezas:
 

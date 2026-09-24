@@ -1,5 +1,5 @@
 """
-Servidor FastAPI para el módulo de IA de OratioLingo.
+Servidor FastAPI para el módulo de IA de SeñaPlay.
 
 Ofrece:
   - Clasificación de señas estáticas (foto instantánea de mano)
@@ -28,7 +28,7 @@ from typing import Optional
 from scripts.dataset_config_utils import cargar_config
 from scripts.extract_landmarks import _extraer_video
 
-app = FastAPI(title="OratioLingo IA de Señas", version="0.2.0")
+app = FastAPI(title="SeñaPlay IA de Señas", version="0.2.0")
 
 # Permitir peticiones desde cualquier origen (WebView de React Native incluida)
 app.add_middleware(
@@ -131,7 +131,7 @@ HUESOS_POR_DEDO = {
 def inicio():
     """Estado general del servidor y modelos."""
     return {
-        "app": "OratioLingo IA de Señas",
+        "app": "SeñaPlay IA de Señas",
         "modelo_estatico_listo": _obtener_modelo_estatico() is not None,
         "modelo_dinamico_listo": _obtener_modelo_dinamico() is not None,
         "total_señas": len(SEÑAS_REFERENCIA),

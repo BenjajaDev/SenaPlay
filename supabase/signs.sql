@@ -1,5 +1,5 @@
 -- ============================================================
--- Senas lexicas reales de OratioLingo (generado automaticamente)
+-- Senas lexicas reales de SeñaPlay (generado automaticamente)
 -- Fuente: Diccionario Bilingue LSCh-Espanol, MINEDUC
 -- Generado el: 2026-06-06T20:12:38.984Z
 -- Pegar completo en Supabase -> SQL Editor -> Run

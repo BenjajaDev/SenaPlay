@@ -1,4 +1,4 @@
-// Tokens de color de SeñaPlay / OratioLingo.
+// Tokens de color de SeñaPlay.
 //
 // Tono claro: violeta‑magenta. Tono oscuro: dorado‑ámbar.
 //

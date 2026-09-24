@@ -31,7 +31,7 @@ export default function AuthLayout({ title, subtitle, children, footer }) {
           <LinearGradient {...theme.gradients.header} style={[styles.hero, { paddingTop: insets.top + theme.spacing.xxl }]}>
             <View style={styles.logoWrap}>
               <Image
-                source={require('../../../../../assets/OratioLingo_png.png')}
+                source={require('../../../../../assets/senaplay-logo.png')}
                 style={styles.logo}
                 resizeMode="contain"
                 accessibilityIgnoresInvertColors

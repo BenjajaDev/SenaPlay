@@ -31,7 +31,7 @@ const sqlText = (value) => {
 
 const lines = [];
 lines.push('-- ============================================================');
-lines.push('-- Diccionario de senas de OratioLingo (generado automaticamente)');
+lines.push('-- Diccionario de senas de SeñaPlay (generado automaticamente)');
 lines.push('-- Generado el: ' + new Date().toISOString());
 lines.push('-- Pegar completo en Supabase -> SQL Editor -> Run');
 lines.push('-- ============================================================');

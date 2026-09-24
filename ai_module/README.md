@@ -1,4 +1,4 @@
-# ai_module — IA de señas de ENseña (OratioLingo)
+# ai_module — IA de señas de SeñaPlay
 
 Dos pipelines independientes conviven acá:
 

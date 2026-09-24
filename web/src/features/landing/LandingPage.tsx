@@ -182,7 +182,7 @@ export function LandingPage() {
         <div className="row" style={{ gap: 8 }}>
           <Users size={16} aria-hidden /> Hecho con la comunidad Sorda de Chile
         </div>
-        <span>© {new Date().getFullYear()} SeñaPlay · OratioLingo</span>
+        <span>© {new Date().getFullYear()} SeñaPlay</span>
       </footer>
     </>
   );

@@ -1,5 +1,5 @@
 -- ============================================================
--- Catalogo de niveles de OratioLingo (generado automaticamente)
+-- Catalogo de niveles de SeñaPlay (generado automaticamente)
 -- Generado el: 2026-06-06T19:28:16.147Z
 -- Pegar completo en Supabase -> SQL Editor -> Run
 -- ============================================================

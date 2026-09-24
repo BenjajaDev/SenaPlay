@@ -8,10 +8,11 @@ import {
 } from '@expo-google-fonts/poppins';
 import { useFonts } from 'expo-font';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useEffect } from 'react';
-import { ActivityIndicator, StyleSheet } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ServicesProvider } from '../core/di/ServicesProvider';
+import migrateLegacyStorage from '../core/storage/migrateLegacyStorage';
 import { SessionProvider, useSession } from '../features/auth/presentation/SessionProvider';
 import { CatalogProvider } from '../features/levels/presentation/CatalogContext';
 import { hydratePreferences } from '../features/profile/presentation/usePreferences';
@@ -62,10 +63,17 @@ function FontGate({ children }) {
  *   Sesión → Config remota → Catálogo → Navegación
  */
 export default function AppRoot() {
-  // Preferencias locales (ej. vibración) antes del primer toque.
+  // Antes de montar cualquier provider que lea el almacenamiento local:
+  // 1) migra las claves antiguas oratiolingo.* → senaplay.* (conserva el
+  //    progreso de quienes ya usaban la app), 2) carga preferencias.
+  const [storageReady, setStorageReady] = useState(false);
   useEffect(() => {
-    hydratePreferences();
+    migrateLegacyStorage()
+      .then(hydratePreferences)
+      .finally(() => setStorageReady(true));
   }, []);
+
+  if (!storageReady) return <View style={styles.boot} />;
 
   return (
     <SafeAreaProvider>
@@ -87,5 +95,7 @@ export default function AppRoot() {
 }
 
 const styles = StyleSheet.create({
+  // Fondo neutro durante los milisegundos de la migración (antes del tema).
+  boot: { flex: 1, backgroundColor: '#120F1D' },
   loader: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });

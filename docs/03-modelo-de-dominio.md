@@ -252,14 +252,16 @@ erDiagram
 
 ## 3.3 Datos locales de la app (AsyncStorage)
 
+Las claves antiguas `oratiolingo.*` (nombre interno anterior de la app) se migran automáticamente a `senaplay.*` al iniciar (`core/storage/migrateLegacyStorage.js`).
+
 | Clave | Contenido |
 |---|---|
-| `oratiolingo.level.progress.v1.<uid>` | `LevelProgress` |
-| `oratiolingo.stats.v1.<uid>` | `Stats` (racha) |
-| `oratiolingo.lives.v1.<uid>` | `LivesState` (modo pool) |
-| `oratiolingo.catalog.v2` | último catálogo remoto válido |
-| `oratiolingo.dictionary.v1`, `oratiolingo.vocabulary.v1`, `oratiolingo.media.v1` | cachés de contenido |
-| `oratiolingo.remoteConfig.v1` | última configuración remota |
-| `oratiolingo.preferences.v1` | preferencias (vibración) |
-| `oratiolingo.theme.mode.v1` | tema claro u oscuro |
-| `oratiolingo.announcements.dismissed.v1` | avisos descartados |
+| `senaplay.level.progress.v1.<uid>` | `LevelProgress` |
+| `senaplay.stats.v1.<uid>` | `Stats` (racha) |
+| `senaplay.lives.v1.<uid>` | `LivesState` (modo pool) |
+| `senaplay.catalog.v2` | último catálogo remoto válido |
+| `senaplay.dictionary.v1`, `senaplay.vocabulary.v1`, `senaplay.media.v1` | cachés de contenido |
+| `senaplay.remoteConfig.v1` | última configuración remota |
+| `senaplay.preferences.v1` | preferencias (vibración) |
+| `senaplay.theme.mode.v1` | tema claro u oscuro |
+| `senaplay.announcements.dismissed.v1` | avisos descartados |

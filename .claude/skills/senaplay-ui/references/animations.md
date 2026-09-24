@@ -1,4 +1,4 @@
-# Animaciones en OratioLingo
+# Animaciones en SeñaPlay
 
 La app anima con la API `Animated` de React Native. Ejemplos reales para copiar el estilo:
 - `src/shared/ui/motion/FadeInView.js` y `StaggerItem.js` — entrada fade + slide y escalonada.

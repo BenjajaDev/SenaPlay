@@ -188,7 +188,7 @@ def mostrar_info_todos():
         print(f"  Más info: {info['url_info']}")
 
     print("\n" + "="*70)
-    print("  RECOMENDACIÓN para OratioLingo (LSE/LSA):")
+    print("  RECOMENDACIÓN para SeñaPlay (LSE/LSA):")
     print("  1. LSA64  → Empezar aquí (64 señas, español, movimiento+estático)")
     print("  2. HaGRID → Para señas estáticas adicionales (18 gestos, fácil)")
     print("  3. WLASL  → Para ampliar vocabulario (2000 palabras, más trabajo)")

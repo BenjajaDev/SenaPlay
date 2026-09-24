@@ -1,9 +1,9 @@
 ---
-name: oratiolingo-frontend
-description: Guía de desarrollo para OratioLingo / SeñaPlay — app móvil (Expo SDK 57 + React Native 0.86, JavaScript, arquitectura feature-first con capas domain/data/presentation), portal web (web/: Vite + React + TypeScript) y Supabase (migraciones + RLS). Úsala SIEMPRE que escribas, refactorices o depures código del proyecto — pantallas, hooks, repositorios, dominio, navegación, Supabase, AsyncStorage, config remota, feature flags, panel de administración, migraciones SQL, cámara/IA, dependencias o builds — aunque el pedido no diga "frontend" (ej. "agrega un juego", "el progreso no guarda", "nuevo tipo de ejercicio", "agrega un flag", "sección nueva en el panel", "instala X", "arregla este bug"). Para look & feel y animaciones, combínala con oratiolingo-ui.
+name: senaplay-frontend
+description: Guía de desarrollo para SeñaPlay — app móvil (Expo SDK 57 + React Native 0.86, JavaScript, arquitectura feature-first con capas domain/data/presentation), portal web (web/: Vite + React + TypeScript) y Supabase (migraciones + RLS). Úsala SIEMPRE que escribas, refactorices o depures código del proyecto — pantallas, hooks, repositorios, dominio, navegación, Supabase, AsyncStorage, config remota, feature flags, panel de administración, migraciones SQL, cámara/IA, dependencias o builds — aunque el pedido no diga "frontend" (ej. "agrega un juego", "el progreso no guarda", "nuevo tipo de ejercicio", "agrega un flag", "sección nueva en el panel", "instala X", "arregla este bug"). Para look & feel y animaciones, combínala con senaplay-ui.
 ---
 
-# OratioLingo — desarrollo
+# SeñaPlay — desarrollo
 
 Documentación completa en `docs/` (arquitectura, patrones, modelo, casos de uso, despliegue, trazabilidad, design system, config remota, guía). Léela antes de cambios estructurales.
 
@@ -21,7 +21,7 @@ Documentación completa en `docs/` (arquitectura, patrones, modelo, casos de uso
 ```
 src/app/                 AppRoot (providers), RootNavigator (máquina de estados de auth), MainAppScreen (tabs/juegos/niveles)
 src/core/                config/env · di/ServicesProvider · events/EventBus · storage/jsonStorage · supabase/client · feedback/haptics · a11y · result
-src/shared/theme|ui/     tokens + ThemeProvider · design system (ver skill oratiolingo-ui)
+src/shared/theme|ui/     tokens + ThemeProvider · design system (ver skill senaplay-ui)
 src/features/<módulo>/
   domain/                JS PURO: reglas y entidades (sin React, sin Supabase) — testeado con Jest
   data/                  repositorios: remoto → caché → local; devuelven Result {ok, value, error} o datos con `source`
@@ -60,7 +60,7 @@ Por estado (sin React Navigation): `RootNavigator` (loading/login/register/verif
 ## Convenciones
 
 - Código en inglés; textos de UI y comentarios en español de Chile (tildes y ñ). Comentarios explican el **por qué**.
-- Componentes función, default export; estilos con `createStyles(theme)` (ver oratiolingo-ui).
+- Componentes función, default export; estilos con `createStyles(theme)` (ver senaplay-ui).
 - Efectos async con bandera `mounted` y cleanup; listeners siempre desuscritos.
 - Claves públicas solamente (`EXPO_PUBLIC_*`, `VITE_*`); nunca service key en clientes.
 - Dependencias: `pnpm add <pkg>@~<versión SDK 57>` (el proxy bloquea la API de `expo install`; elegir la línea 57.x para módulos expo-*). Módulo nativo nuevo ⇒ avisar que hay que regenerar el dev client.

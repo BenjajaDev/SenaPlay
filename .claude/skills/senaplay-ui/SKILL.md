@@ -1,9 +1,9 @@
 ---
-name: oratiolingo-ui
-description: Sistema de diseño, UX, accesibilidad y animaciones de OratioLingo / SeñaPlay (app React Native para aprender Lengua de Señas Chilena y su portal web). Úsala SIEMPRE que se cree o modifique cualquier pantalla, componente visual, estilo, color, degradé, tipografía, modal/diálogo, confirmación, botón, tarjeta, input, carga (spinner/skeleton), feedback de acierto/error, vibración, transición o animación — en la app o en web/ — aunque el usuario no diga "diseño" ni "UI" (ej. "haz que el quiz se vea mejor", "agrega una celebración", "el botón se ve feo en modo oscuro", "pide confirmación antes de borrar", "anima las vidas", "muestra que está cargando"). También para revisar accesibilidad o consistencia visual.
+name: senaplay-ui
+description: Sistema de diseño, UX, accesibilidad y animaciones de SeñaPlay (app React Native para aprender Lengua de Señas Chilena y su portal web). Úsala SIEMPRE que se cree o modifique cualquier pantalla, componente visual, estilo, color, degradé, tipografía, modal/diálogo, confirmación, botón, tarjeta, input, carga (spinner/skeleton), feedback de acierto/error, vibración, transición o animación — en la app o en web/ — aunque el usuario no diga "diseño" ni "UI" (ej. "haz que el quiz se vea mejor", "agrega una celebración", "el botón se ve feo en modo oscuro", "pide confirmación antes de borrar", "anima las vidas", "muestra que está cargando"). También para revisar accesibilidad o consistencia visual.
 ---
 
-# OratioLingo UI / UX / Animaciones
+# SeñaPlay UI / UX / Animaciones
 
 SeñaPlay enseña LSCh. Muchos usuarios son personas Sordas: la interfaz es **visual primero** y todo feedback es **multimodal** (color + icono + texto + vibración + anuncio al lector de pantalla), nunca solo audio ni solo color.
 

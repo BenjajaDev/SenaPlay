@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import env from '../config/env';
 
 // Envoltorio JSON sobre AsyncStorage con claves versionadas:
-//   storageKey('level.progress', 'v1', userId) → 'oratiolingo.level.progress.v1.<userId>'
+//   storageKey('level.progress', 'v1', userId) → 'senaplay.level.progress.v1.<userId>'
 // Nunca lanza: si el dato está corrupto o el almacenamiento falla devuelve
 // el valor por defecto, para que la app siga funcionando offline.
 

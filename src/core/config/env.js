@@ -14,7 +14,7 @@ export const env = Object.freeze({
   // Servidor de IA (ai_module/server.py). En desarrollo es la IP LAN del PC.
   aiServerUrl: process.env.EXPO_PUBLIC_AI_SERVER_URL || 'http://192.168.1.5:8000',
   appVersion: appJson.expo.version,
-  storagePrefix: 'oratiolingo',
+  storagePrefix: 'senaplay',
 });
 
 export default env;

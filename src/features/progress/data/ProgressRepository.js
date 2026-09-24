@@ -4,9 +4,9 @@ import { EMPTY_STATS, registerActivity, toLocalISODate } from '../domain/streak'
 
 /**
  * Repositorio de progreso del usuario (niveles, racha y vidas), persistido en
- * el dispositivo por usuario. Las claves mantienen el formato histórico
- * (`oratiolingo.level.progress.v1.<id>`, `oratiolingo.stats.v1.<id>`) para no
- * perder el progreso de quienes ya usaban la app.
+ * el dispositivo por usuario (`senaplay.level.progress.v1.<id>`,
+ * `senaplay.stats.v1.<id>`). Las claves antiguas `oratiolingo.*` se migran al
+ * iniciar la app (core/storage/migrateLegacyStorage), sin perder progreso.
  */
 export function createProgressRepository({ storage }) {
   const progressKey = (userId) => storageKey('level.progress', 'v1', userId);

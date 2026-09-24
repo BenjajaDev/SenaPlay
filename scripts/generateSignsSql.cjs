@@ -30,7 +30,7 @@ const sqlNum = (value) => (value === null || value === undefined ? 'NULL' : Numb
 
 const lines = [];
 lines.push('-- ============================================================');
-lines.push('-- Senas lexicas reales de OratioLingo (generado automaticamente)');
+lines.push('-- Senas lexicas reales de SeñaPlay (generado automaticamente)');
 lines.push('-- Fuente: Diccionario Bilingue LSCh-Espanol, MINEDUC');
 lines.push('-- Generado el: ' + new Date().toISOString());
 lines.push('-- Pegar completo en Supabase -> SQL Editor -> Run');

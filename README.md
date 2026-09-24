@@ -1,4 +1,4 @@
-# SeñaPlay · OratioLingo
+# SeñaPlay
 
 Plataforma para aprender **Lengua de Señas Chilena (LSCh)** jugando: niveles progresivos, diccionario, juegos, práctica con cámara e inteligencia artificial, y un portal web con landing y panel de administración.
 

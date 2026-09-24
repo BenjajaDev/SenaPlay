@@ -1,37 +1,47 @@
 import { Ionicons } from '@expo/vector-icons';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
-import SignDetailModal from './SignDetailModal';
-import Chip from '../../../shared/ui/Chip';
-import SectionHeader from '../../../shared/ui/SectionHeader';
-import SignImage from '../../signs/presentation/SignImage';
-import SurfaceCard from '../../../shared/ui/SurfaceCard';
-import { fetchDictionary } from '../../signs/data/dictionaryApi';
-import { fetchSigns } from '../../signs/data/signsApi';
+import { FlatList, StyleSheet, View } from 'react-native';
+import { useServices } from '../../../core/di/ServicesProvider';
+import {
+  AppText,
+  Badge,
+  Card,
+  Chip,
+  difficultyBadgeProps,
+  EmptyState,
+  SectionHeader,
+  SegmentedControl,
+  SkeletonList,
+  TextField,
+} from '../../../shared/ui';
+import { useAppTheme } from '../../../shared/theme/ThemeProvider';
 import { DICTIONARY_ENTRIES, DICTIONARY_FILTERS } from '../../signs/data/local/dictionaryData';
 import { REAL_SIGNS, SIGN_THEMES } from '../../signs/data/local/signsData';
-import { useAppTheme } from '../../../shared/theme/ThemeProvider';
+import SignImage from '../../signs/presentation/SignImage';
+import SignDetailModal from './SignDetailModal';
 
 const MODES = [
   { key: 'deletreo', label: 'Deletreo' },
   { key: 'senas', label: 'Señas reales' },
 ];
 
-function getBadgeColor(difficulty) {
-  if (difficulty === 'Fácil') return '#58CC02';
-  if (difficulty === 'Difícil') return '#FF4B4B';
-  return '#F59E0B';
-}
+const normalizeText = (value) =>
+  String(value || '')
+    .toLocaleLowerCase('es')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '');
 
 // Las entradas de deletreo y las señas léxicas vienen con formas distintas.
 // Se normalizan aquí para que el modal reciba siempre el mismo objeto.
 function entryToDetail(entry) {
+  const badge = difficultyBadgeProps(entry.difficulty);
   return {
     signKey: entry.sign,
     title: entry.letter,
     subtitle: entry.category,
     badge: entry.difficulty,
-    badgeColor: getBadgeColor(entry.difficulty),
+    badgeTone: badge.tone,
+    badgeIcon: badge.icon,
     howTo: entry.description,
   };
 }
@@ -48,112 +58,122 @@ function signToDetail(sign) {
   };
 }
 
-// Tarjetas memoizadas: la grilla del diccionario carga fotos reales (pesadas
-// de decodificar), así que evitar que TODAS se vuelvan a renderizar cada vez
-// que se abre el modal de detalle (o cualquier otro cambio de estado ajeno a
-// ellas) es lo que mantiene el scroll fluido. `onPress` recibe el `item`
-// para no crear un closure nuevo por tarjeta en cada render del padre.
+// Tarjetas memoizadas: la grilla carga fotos reales (pesadas de decodificar),
+// así que evitar re-renderizarlas todas al abrir el modal mantiene el scroll
+// fluido. `onPress` recibe el item para no crear un closure por tarjeta.
 const DictionaryCard = memo(function DictionaryCard({ item, onPress, styles, theme }) {
   return (
-    <SurfaceCard style={styles.card}>
-      <Pressable
-        onPress={() => onPress(item)}
-        accessibilityRole="button"
-        accessibilityLabel={`Ver la seña completa de ${item.letter}`}
-      >
-        <View style={styles.cardTopRow}>
-          <Text style={styles.letter}>{item.letter}</Text>
-          <View style={[styles.badge, { backgroundColor: getBadgeColor(item.difficulty) }]}>
-            <Text style={styles.badgeText}>{item.difficulty}</Text>
-          </View>
-        </View>
-        <View style={styles.signRow}>
-          <SignImage signKey={item.sign} label={item.letter} size={96} />
-        </View>
-        <Text style={styles.description} numberOfLines={3}>{item.description}</Text>
-        <View style={styles.verMasRow}>
-          <Text style={styles.verMasTexto}>Ver seña</Text>
-          <Ionicons name="chevron-forward" size={12} color={theme.colors.primary} />
-        </View>
-      </Pressable>
-    </SurfaceCard>
+    <Card
+      padding="md"
+      onPress={() => onPress(item)}
+      accessibilityLabel={`Ver la seña de ${item.letter}, dificultad ${item.difficulty}`}
+      style={styles.gridCard}
+    >
+      <View style={styles.cardTopRow}>
+        <AppText variant="heading" style={styles.shrink}>
+          {item.letter}
+        </AppText>
+        <Badge label={item.difficulty} {...difficultyBadgeProps(item.difficulty)} />
+      </View>
+      <View style={styles.signRow}>
+        <SignImage signKey={item.sign} label={item.letter} size={96} />
+      </View>
+      <AppText variant="caption" tone="secondary" numberOfLines={3} style={styles.description}>
+        {item.description}
+      </AppText>
+      <View style={styles.moreRow}>
+        <AppText variant="label" tone="brand">
+          Ver seña
+        </AppText>
+        <Ionicons name="chevron-forward" size={12} color={theme.colors.primary} />
+      </View>
+    </Card>
   );
 });
 
 const SignListCard = memo(function SignListCard({ item, onPress, styles, theme }) {
   return (
-    <SurfaceCard style={styles.signCard}>
-      <Pressable
-        onPress={() => onPress(item)}
-        accessibilityRole="button"
-        accessibilityLabel={`Ver la seña completa de ${item.word}`}
-        style={styles.signCardInner}
-      >
+    <Card padding="md" onPress={() => onPress(item)} accessibilityLabel={`Ver la seña completa de ${item.word}`} style={styles.listCard}>
+      <View style={styles.signCardInner}>
         <SignImage signKey={item.word} label={item.word.slice(0, 3)} size={84} />
         <View style={styles.signCardTexts}>
           <View style={styles.cardTopRow}>
-            <Text style={styles.word}>{item.word}</Text>
-            {item.type ? (
-              <View style={styles.typeBadge}>
-                <Text style={styles.typeBadgeText}>{item.type}</Text>
-              </View>
-            ) : null}
+            <AppText variant="heading" style={styles.shrink}>
+              {item.word}
+            </AppText>
+            {item.type ? <Badge label={item.type} /> : null}
           </View>
           {item.meaning ? (
-            <Text style={styles.meaning} numberOfLines={2}>{item.meaning}</Text>
+            <AppText variant="caption" tone="secondary" numberOfLines={2}>
+              {item.meaning}
+            </AppText>
           ) : null}
-          <View style={styles.verMasRow}>
-            <Text style={styles.verMasTexto}>Ver seña completa</Text>
+          <View style={styles.moreRow}>
+            <AppText variant="label" tone="brand">
+              Ver seña completa
+            </AppText>
             <Ionicons name="chevron-forward" size={12} color={theme.colors.primary} />
           </View>
         </View>
-      </Pressable>
-    </SurfaceCard>
+      </View>
+    </Card>
   );
 });
 
 export default function DictionaryTabScreen() {
   const theme = useAppTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
+  const { signs: signsRepository } = useServices();
   const [mode, setMode] = useState('deletreo');
   const [filter, setFilter] = useState('Todos');
+  const [query, setQuery] = useState('');
   const [entries, setEntries] = useState(DICTIONARY_ENTRIES);
   const [signs, setSigns] = useState(REAL_SIGNS);
+  const [loading, setLoading] = useState(true);
   const [detail, setDetail] = useState(null);
 
   useEffect(() => {
     let mounted = true;
-    fetchDictionary().then((result) => {
-      if (mounted) setEntries(result.entries);
-    });
-    fetchSigns().then((result) => {
-      if (mounted) setSigns(result.signs);
+    Promise.all([signsRepository.getDictionary(), signsRepository.getVocabulary()]).then(([dictionary, vocabulary]) => {
+      if (!mounted) return;
+      setEntries(dictionary.entries);
+      setSigns(vocabulary.signs);
+      setLoading(false);
     });
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [signsRepository]);
 
-  // Al cambiar de modo, reseteamos el filtro porque las categorias difieren.
+  // Al cambiar de modo se resetea el filtro: las categorías difieren.
   const handleModeChange = (nextMode) => {
     setMode(nextMode);
     setFilter('Todos');
   };
 
   const filters = mode === 'deletreo' ? DICTIONARY_FILTERS : SIGN_THEMES;
+  const search = normalizeText(query.trim());
 
-  const dictionaryItems = useMemo(() => {
-    if (filter === 'Todos') return entries;
-    return entries.filter((entry) => entry.category === filter);
-  }, [entries, filter]);
+  const dictionaryItems = useMemo(
+    () =>
+      entries.filter(
+        (entry) =>
+          (filter === 'Todos' || entry.category === filter) &&
+          (!search || normalizeText(`${entry.letter} ${entry.description}`).includes(search)),
+      ),
+    [entries, filter, search],
+  );
 
-  const signItems = useMemo(() => {
-    if (filter === 'Todos') return signs;
-    return signs.filter((s) => s.theme === filter);
-  }, [signs, filter]);
+  const signItems = useMemo(
+    () =>
+      signs.filter(
+        (sign) =>
+          (filter === 'Todos' || sign.theme === filter) &&
+          (!search || normalizeText(`${sign.word} ${sign.meaning}`).includes(search)),
+      ),
+    [signs, filter, search],
+  );
 
-  // Referencias estables: así React.memo evita re-renderizar cada tarjeta
-  // cuando lo único que cambió fue, por ejemplo, el modal de detalle.
   const openEntryDetail = useCallback((item) => setDetail(entryToDetail(item)), []);
   const openSignDetail = useCallback((item) => setDetail(signToDetail(item)), []);
 
@@ -172,183 +192,86 @@ export default function DictionaryTabScreen() {
         title="Diccionario de señas"
         subtitle={mode === 'deletreo' ? 'Letras, números y acciones por categoría' : 'Señas reales (un gesto por palabra)'}
       />
-
-      {/* Selector de modo */}
-      <View style={styles.modeRow}>
-        {MODES.map((m) => {
-          const selected = m.key === mode;
-          return (
-            <Pressable
-              key={m.key}
-              style={[styles.modeBtn, selected && styles.modeBtnActive]}
-              onPress={() => handleModeChange(m.key)}
-            >
-              <Text style={[styles.modeText, selected && styles.modeTextActive]}>{m.label}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
-
+      <SegmentedControl options={MODES} value={mode} onChange={handleModeChange} />
+      <TextField
+        icon="search"
+        placeholder={mode === 'deletreo' ? 'Buscar letra o descripción…' : 'Buscar palabra…'}
+        value={query}
+        onChangeText={setQuery}
+        accessibilityLabel="Buscar en el diccionario"
+        returnKeyType="search"
+        autoCorrect={false}
+      />
       <View style={styles.filtersRow}>
         {filters.map((item) => (
-          <Chip
-            key={item}
-            label={item}
-            selected={item === filter}
-            onPress={() => setFilter(item)}
-          />
+          <Chip key={item} label={item} selected={item === filter} onPress={() => setFilter(item)} />
         ))}
       </View>
+      {loading ? <SkeletonList count={3} label="Cargando diccionario" /> : null}
     </View>
   );
+
+  const empty = loading ? null : (
+    <EmptyState icon="search" title="Sin resultados" message="Prueba con otra palabra o quita el filtro." />
+  );
+
+  const listProps = {
+    ListHeaderComponent: header,
+    ListEmptyComponent: empty,
+    contentContainerStyle: styles.listContent,
+    showsVerticalScrollIndicator: false,
+    keyboardShouldPersistTaps: 'handled',
+    // Solo se monta/decodifica lo visible (+colchón): con fotos reales de
+    // ~300KB cada una, esto evita el jank al hacer scroll.
+    initialNumToRender: 8,
+    maxToRenderPerBatch: 6,
+    windowSize: 7,
+    removeClippedSubviews: true,
+  };
 
   return (
     <View style={styles.container}>
       {mode === 'deletreo' ? (
         <FlatList
           key="grid"
-          data={dictionaryItems}
+          data={loading ? [] : dictionaryItems}
           keyExtractor={(item) => `${item.letter}-${item.sign}`}
           numColumns={2}
           columnWrapperStyle={styles.gridRow}
           renderItem={renderDictionaryItem}
-          ListHeaderComponent={header}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          // Solo se monta/decodifica lo visible (+colchón): con fotos reales
-          // de ~300KB cada una, esto es lo que evita el jank al scrollear.
-          initialNumToRender={8}
-          maxToRenderPerBatch={6}
-          windowSize={7}
-          removeClippedSubviews
+          {...listProps}
         />
       ) : (
         <FlatList
           key="list"
-          data={signItems}
+          data={loading ? [] : signItems}
           keyExtractor={(item) => item.word}
           renderItem={renderSignItem}
-          ListHeaderComponent={header}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          initialNumToRender={8}
-          maxToRenderPerBatch={6}
-          windowSize={7}
-          removeClippedSubviews
+          {...listProps}
         />
       )}
 
-      <SignDetailModal
-        visible={detail !== null}
-        detail={detail}
-        onClose={() => setDetail(null)}
-      />
+      <SignDetailModal visible={detail !== null} detail={detail} onClose={() => setDetail(null)} />
     </View>
   );
 }
 
 function createStyles(theme) {
+  const { spacing } = theme;
   return StyleSheet.create({
     container: { flex: 1 },
-    header: { gap: 12, paddingBottom: 12 },
-    listContent: { paddingBottom: 12 },
-    modeRow: {
-      flexDirection: 'row',
-      backgroundColor: theme.mode === 'dark' ? '#251E3B' : '#F3DFFB',
-      borderRadius: 14,
-      padding: 4,
-      gap: 4,
-    },
-    modeBtn: {
-      flex: 1,
-      paddingVertical: 9,
-      borderRadius: 11,
-      alignItems: 'center',
-    },
-    modeBtnActive: { backgroundColor: theme.colors.primary },
-    modeText: { fontSize: 13, fontWeight: '700', color: theme.colors.textSecondary },
-    modeTextActive: { color: theme.colors.primaryContrast },
-    filtersRow: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 8,
-    },
-    gridRow: {
-      justifyContent: 'space-between',
-    },
-    card: { width: '48.5%', padding: 10, marginBottom: 10 },
-    cardTopRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    },
-    letter: {
-      fontSize: 16,
-      color: theme.colors.textPrimary,
-      fontWeight: '900',
-      flexShrink: 1,
-    },
-    signRow: {
-      marginTop: 8,
-      alignItems: 'center',
-    },
-    verMasRow: {
-      marginTop: 8,
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 2,
-    },
-    verMasTexto: {
-      fontSize: 11,
-      fontWeight: '800',
-      color: theme.colors.primary,
-    },
-    description: {
-      marginTop: 6,
-      fontSize: 12,
-      color: theme.colors.textSecondary,
-      lineHeight: 16,
-    },
-    badge: {
-      borderRadius: 999,
-      paddingHorizontal: 8,
-      paddingVertical: 2,
-    },
-    badgeText: {
-      color: '#FFFFFF',
-      fontSize: 10,
-      fontWeight: '800',
-    },
-    // Senas reales
-    signCard: { padding: 14, marginBottom: 10 },
-    signCardInner: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      gap: 12,
-    },
-    signCardTexts: { flex: 1, minWidth: 0 },
-    word: {
-      fontSize: 17,
-      color: theme.colors.textPrimary,
-      fontWeight: '900',
-      flexShrink: 1,
-    },
-    typeBadge: {
-      borderRadius: 999,
-      paddingHorizontal: 10,
-      paddingVertical: 3,
-      backgroundColor: theme.mode === 'dark' ? '#33294F' : '#F3DFFB',
-    },
-    typeBadgeText: {
-      color: theme.colors.primary,
-      fontSize: 10,
-      fontWeight: '800',
-    },
-    meaning: {
-      marginTop: 6,
-      fontSize: 13,
-      color: theme.colors.textSecondary,
-      lineHeight: 18,
-    },
+    header: { gap: spacing.md, paddingBottom: spacing.md },
+    listContent: { paddingBottom: spacing.md },
+    filtersRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+    gridRow: { justifyContent: 'space-between' },
+    gridCard: { width: '48.5%', marginBottom: spacing.sm + 2 },
+    listCard: { marginBottom: spacing.sm + 2 },
+    cardTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing.sm },
+    shrink: { flexShrink: 1 },
+    signRow: { marginTop: spacing.sm, alignItems: 'center' },
+    description: { marginTop: spacing.xs + 2 },
+    moreRow: { marginTop: spacing.sm, flexDirection: 'row', alignItems: 'center', gap: 2 },
+    signCardInner: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
+    signCardTexts: { flex: 1, minWidth: 0, gap: spacing.xs },
   });
 }

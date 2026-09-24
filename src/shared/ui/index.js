@@ -9,6 +9,8 @@ export { default as Card } from './Card';
 export { default as TextField } from './TextField';
 export { default as Chip } from './Chip';
 export { default as ProgressBar } from './ProgressBar';
+export { default as Badge, difficultyBadgeProps } from './Badge';
+export { default as SegmentedControl } from './SegmentedControl';
 
 // Moléculas
 export { default as SectionHeader } from './SectionHeader';

@@ -1,12 +1,11 @@
 import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
+import env from '../config/env';
 
-// Estos datos te los dará Supabase cuando crees tu proyecto en su web
-const supabaseUrl = 'https://zjpsvtufseqbpfavepap.supabase.co';
-const supabaseAnonKey = 'sb_publishable_XU2l9g-EZf9qNN3AI_gBQQ_FGVJu2n_';
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+// Cliente único de Supabase. Solo lo usan las implementaciones de
+// repositorios (features/*/data); la UI nunca lo importa directamente.
+export const supabase = createClient(env.supabaseUrl, env.supabaseAnonKey, {
   auth: {
     storage: AsyncStorage,
     autoRefreshToken: true,

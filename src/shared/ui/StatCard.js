@@ -1,54 +1,47 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useMemo } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useAppTheme } from '../theme/ThemeProvider';
+import AppText from './AppText';
 
-export default function StatCard({ label, value, tone = 'violet', style }) {
+// Tonos semánticos → tokens del tema (ambos modos definidos en colors.js).
+const TONES = {
+  green: { soft: 'successSoft', accent: 'success' },
+  orange: { soft: 'warningSoft', accent: 'warning' },
+  blue: { soft: 'infoSoft', accent: 'info' },
+  violet: { soft: 'primarySoft', accent: 'primary' },
+  gold: { soft: 'warningSoft', accent: 'gold' },
+};
+
+/** Métrica destacada (racha, niveles, precisión). `icon` opcional de Ionicons. */
+export default function StatCard({ label, value, tone = 'violet', icon, style }) {
   const theme = useAppTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
-  const toneStyles = useMemo(() => getToneStyles(theme), [theme]);
+  const toneTokens = TONES[tone] || TONES.violet;
+  const accent = theme.colors[toneTokens.accent];
 
   return (
-    <View style={[styles.card, toneStyles[tone] || toneStyles.violet, style]}>
-      <Text style={styles.value}>{value}</Text>
-      <Text style={styles.label}>{label}</Text>
+    <View
+      accessible
+      accessibilityLabel={`${label}: ${value}`}
+      style={[styles.card, { backgroundColor: theme.colors[toneTokens.soft], borderColor: accent }, style]}
+    >
+      {icon ? <Ionicons name={icon} size={18} color={accent} /> : null}
+      <AppText variant="stat">{value}</AppText>
+      <AppText variant="caption" tone="secondary">
+        {label}
+      </AppText>
     </View>
   );
-}
-
-function getToneStyles(theme) {
-  if (theme.mode === 'dark') {
-    return {
-      green: { backgroundColor: '#1E3220', borderColor: '#2D5A31' },
-      orange: { backgroundColor: '#3A2E12', borderColor: '#6A541D' },
-      blue: { backgroundColor: '#172C38', borderColor: '#2C5367' },
-      violet: { backgroundColor: '#2A2240', borderColor: '#4B3B73' },
-    };
-  }
-
-  return {
-    green: { backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' },
-    orange: { backgroundColor: '#FFFBEB', borderColor: '#FDE68A' },
-    blue: { backgroundColor: '#ECFEFF', borderColor: '#BAE6FD' },
-    violet: { backgroundColor: '#F5F3FF', borderColor: '#DDD6FE' },
-  };
 }
 
 function createStyles(theme) {
   return StyleSheet.create({
     card: {
-      borderRadius: 14,
-      padding: 12,
+      borderRadius: theme.radius.lg,
+      padding: theme.spacing.md,
       borderWidth: 1,
-    },
-    value: {
-      fontSize: 20,
-      fontWeight: '900',
-      color: theme.colors.textPrimary,
-    },
-    label: {
-      marginTop: 5,
-      fontSize: 12,
-      color: theme.colors.textSecondary,
+      gap: theme.spacing.xxs,
     },
   });
 }

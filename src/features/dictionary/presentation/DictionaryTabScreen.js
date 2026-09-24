@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import SignDetailModal from './SignDetailModal';
-import FilterChip from '../../../shared/ui/FilterChip';
+import Chip from '../../../shared/ui/Chip';
 import SectionHeader from '../../../shared/ui/SectionHeader';
 import SignImage from '../../signs/presentation/SignImage';
 import SurfaceCard from '../../../shared/ui/SurfaceCard';
@@ -191,7 +191,7 @@ export default function DictionaryTabScreen() {
 
       <View style={styles.filtersRow}>
         {filters.map((item) => (
-          <FilterChip
+          <Chip
             key={item}
             label={item}
             selected={item === filter}

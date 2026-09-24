@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import GameScreenHeader from '../../../shared/ui/GameScreenHeader';
+import ScreenHeader from '../../../shared/ui/ScreenHeader';
 import { SIGNS } from '../data/practiceSigns';
 import { CameraStage, IaBanner, estilos, useSignRecognition } from './signCamera';
 
@@ -79,7 +79,7 @@ export default function SignPracticeScreen({ onBack }) {
   return (
     <View style={estilos.pantalla}>
       <View style={{ paddingTop: insets.top, paddingHorizontal: 12 }}>
-        <GameScreenHeader title="Práctica de señas" onBack={onBack} />
+        <ScreenHeader title="Práctica de señas" onBack={onBack} />
       </View>
 
       <CameraStage recog={recog} />

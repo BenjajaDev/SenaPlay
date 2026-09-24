@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import AdaptiveModal from '../../../shared/ui/feedback/AdaptiveModal';
+import MessageDialog from '../../../shared/ui/feedback/MessageDialog';
 import ActionButton from '../../../shared/ui/ActionButton';
-import GameScreenHeader from '../../../shared/ui/GameScreenHeader';
+import ScreenHeader from '../../../shared/ui/ScreenHeader';
 import SignImage from '../../signs/presentation/SignImage';
 import { useAppTheme } from '../../../shared/theme/ThemeProvider';
 
@@ -93,7 +93,7 @@ export default function QuickQuizGameScreen({ onBack }) {
 
   return (
     <View style={styles.screen}>
-      <GameScreenHeader
+      <ScreenHeader
         title="Quiz Rapido"
         onBack={onBack}
         rightNode={<Text style={styles.scoreLabel}>{score} pts</Text>}
@@ -142,7 +142,7 @@ export default function QuickQuizGameScreen({ onBack }) {
         </View>
       )}
 
-      <AdaptiveModal
+      <MessageDialog
         visible={showResult}
         context="level-complete"
         title="Quiz finalizado"

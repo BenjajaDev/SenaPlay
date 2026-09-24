@@ -14,7 +14,7 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../../core/supabase/client';
-import AdaptiveModal from '../../../shared/ui/feedback/AdaptiveModal';
+import MessageDialog from '../../../shared/ui/feedback/MessageDialog';
 
 const CODE_LENGTH = 6;
 
@@ -193,7 +193,7 @@ export default function VerifyCodeScreen({ email, purpose = 'signup', onBack, on
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <AdaptiveModal
+      <MessageDialog
         visible={modalState.visible}
         context={modalState.context}
         title={modalState.title}

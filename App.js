@@ -20,6 +20,7 @@ import MainAppScreen from './src/app/MainAppScreen';
 import { APP_FONTS } from './src/shared/theme/fonts';
 import { AppThemeProvider, useAppTheme } from './src/shared/theme/ThemeProvider';
 import { CatalogProvider } from './src/features/levels/presentation/CatalogContext';
+import { FeedbackProvider } from './src/shared/ui/feedback/FeedbackProvider';
 
 function AppContent() {
   const [screen, setScreen] = useState('login');
@@ -79,6 +80,7 @@ function AppContent() {
 
   return (
     <SafeAreaProvider>
+      <FeedbackProvider>
       {screen === 'login' && (
         <LoginScreen
           onGoToRegister={() => setScreen('register')}
@@ -127,6 +129,7 @@ function AppContent() {
       {screen === 'main' && (
         <MainAppScreen onLogout={() => setScreen('login')} />
       )}
+      </FeedbackProvider>
     </SafeAreaProvider>
   );
 }

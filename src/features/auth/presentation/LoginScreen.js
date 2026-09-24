@@ -16,8 +16,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../../core/supabase/client';
-import AdaptiveModal from '../../../shared/ui/feedback/AdaptiveModal';
-import LoadingOverlay from '../../../shared/ui/feedback/LoadingOverlay';
+import MessageDialog from '../../../shared/ui/feedback/MessageDialog';
+import BlockingOverlay from '../../../shared/ui/feedback/BlockingOverlay';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -383,7 +383,7 @@ export default function LoginScreen({ onGoToRegister, onLoginSuccess, onNeedPass
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <AdaptiveModal
+      <MessageDialog
         visible={modalState.visible}
         context={modalState.context}
         title={modalState.title}
@@ -392,7 +392,7 @@ export default function LoginScreen({ onGoToRegister, onLoginSuccess, onNeedPass
         onRequestClose={closeModal}
       />
 
-      <LoadingOverlay
+      <BlockingOverlay
         visible={isLoading || isSendingReset}
         label={isSendingReset ? 'Enviando enlace...' : 'Entrando...'}
       />

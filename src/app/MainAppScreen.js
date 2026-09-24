@@ -12,9 +12,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { APP_FONTS } from '../shared/theme/fonts';
 import { supabase } from '../core/supabase/client';
 import { getLevelProgress, recordDailyActivity, saveLevelProgress } from '../features/progress/data/progressStorage';
-import AdaptiveModal from '../shared/ui/feedback/AdaptiveModal';
+import MessageDialog from '../shared/ui/feedback/MessageDialog';
 import AppBottomNav from './navigation/AppBottomNav';
-import LoadingOverlay from '../shared/ui/feedback/LoadingOverlay';
+import BlockingOverlay from '../shared/ui/feedback/BlockingOverlay';
 import ProfileActionsModal from '../features/profile/presentation/ProfileActionsModal';
 import FadeInView from '../shared/ui/motion/FadeInView';
 import LevelsTabScreen from '../features/levels/presentation/LevelsTabScreen';
@@ -305,7 +305,7 @@ export default function MainAppScreen({ onLogout }) {
           isLoggingOut={isLoggingOut}
         />
 
-        <AdaptiveModal
+        <MessageDialog
           visible={feedbackModal.visible}
           context={feedbackModal.context}
           message={feedbackModal.message}
@@ -313,7 +313,7 @@ export default function MainAppScreen({ onLogout }) {
           onRequestClose={() => setFeedbackModal((prev) => ({ ...prev, visible: false }))}
         />
 
-        <LoadingOverlay visible={isSavingLevel} label="Guardando tu progreso..." />
+        <BlockingOverlay visible={isSavingLevel} label="Guardando tu progreso..." />
       </View>
 
       {CAMERA_GAMES[activeGame]

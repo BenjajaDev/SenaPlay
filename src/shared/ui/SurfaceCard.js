@@ -1,21 +1,13 @@
-import { useMemo } from 'react';
-import { StyleSheet, View } from 'react-native';
-import { useAppTheme } from '../theme/ThemeProvider';
+import Card from './Card';
 
-export default function SurfaceCard({ children, style }) {
-  const theme = useAppTheme();
-  const styles = useMemo(() => createStyles(theme), [theme]);
-
-  return <View style={[styles.card, style]}>{children}</View>;
-}
-
-function createStyles(theme) {
-  return StyleSheet.create({
-    card: {
-      backgroundColor: theme.colors.surface,
-      borderRadius: 14,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
-    },
-  });
+/**
+ * @deprecated Usa <Card>. Se mantiene como alias sin padding para no romper
+ * pantallas que todavía definen su propio padding en `style`.
+ */
+export default function SurfaceCard({ children, style, ...rest }) {
+  return (
+    <Card padding="none" style={style} {...rest}>
+      {children}
+    </Card>
+  );
 }

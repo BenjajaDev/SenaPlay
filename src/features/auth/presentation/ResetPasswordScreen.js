@@ -14,7 +14,7 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../../core/supabase/client';
-import AdaptiveModal from '../../../shared/ui/feedback/AdaptiveModal';
+import MessageDialog from '../../../shared/ui/feedback/MessageDialog';
 
 // Pantalla final del flujo de recuperacion: el usuario ya valido el codigo
 // (existe una sesion activa) y aqui define su nueva contrasena.
@@ -153,7 +153,7 @@ export default function ResetPasswordScreen({ onDone }) {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <AdaptiveModal
+      <MessageDialog
         visible={modalState.visible}
         context={modalState.context}
         title={modalState.title}

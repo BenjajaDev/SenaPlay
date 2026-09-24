@@ -13,7 +13,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import LoadingOverlay from '../../../shared/ui/feedback/LoadingOverlay';
+import BlockingOverlay from '../../../shared/ui/feedback/BlockingOverlay';
 import ActionButton from '../../../shared/ui/ActionButton';
 import SectionHeader from '../../../shared/ui/SectionHeader';
 import SurfaceCard from '../../../shared/ui/SurfaceCard';
@@ -299,7 +299,7 @@ export default function ProfileTabScreen({ user, onLogout, isLoggingOut, onRefre
         </View>
       </Modal>
 
-      <LoadingOverlay visible={isSaving} label="Guardando cambios..." />
+      <BlockingOverlay visible={isSaving} label="Guardando cambios..." />
     </View>
   );
 }

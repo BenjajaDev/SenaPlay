@@ -7,9 +7,9 @@ import {
   Text,
   View,
 } from 'react-native';
-import AdaptiveModal from '../../../shared/ui/feedback/AdaptiveModal';
+import MessageDialog from '../../../shared/ui/feedback/MessageDialog';
 import ActionButton from '../../../shared/ui/ActionButton';
-import GameScreenHeader from '../../../shared/ui/GameScreenHeader';
+import ScreenHeader from '../../../shared/ui/ScreenHeader';
 import SignImage from '../../signs/presentation/SignImage';
 import SurfaceCard from '../../../shared/ui/SurfaceCard';
 import { useAppTheme } from '../../../shared/theme/ThemeProvider';
@@ -152,7 +152,7 @@ export default function MemoryGameScreen({ onBack }) {
 
   return (
     <View style={styles.screen}>
-      <GameScreenHeader
+      <ScreenHeader
         title="Memoria de SEÑAS"
         onBack={onBack}
         rightNode={(
@@ -195,7 +195,7 @@ export default function MemoryGameScreen({ onBack }) {
         />
       </View>
 
-      <AdaptiveModal
+      <MessageDialog
         visible={showWinModal}
         context="level-complete"
         title="Juego completado"

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import GameScreenHeader from '../../../shared/ui/GameScreenHeader';
+import ScreenHeader from '../../../shared/ui/ScreenHeader';
 import SignImage from '../../signs/presentation/SignImage';
 import { PALABRAS, UMBRAL_DELETREO } from '../data/practiceSigns';
 import { CameraStage, IaBanner, estilos, useSignRecognition } from './signCamera';
@@ -69,7 +69,7 @@ export default function SpellingGameScreen({ onBack }) {
   return (
     <View style={estilos.pantalla}>
       <View style={{ paddingTop: insets.top, paddingHorizontal: 12 }}>
-        <GameScreenHeader title="Deletreo" onBack={onBack} />
+        <ScreenHeader title="Deletreo" onBack={onBack} />
       </View>
 
       <CameraStage recog={recog} />

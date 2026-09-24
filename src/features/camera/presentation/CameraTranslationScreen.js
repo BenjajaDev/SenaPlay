@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import GameScreenHeader from '../../../shared/ui/GameScreenHeader';
+import ScreenHeader from '../../../shared/ui/ScreenHeader';
 import { CameraStage, IaBanner, estilos, useSignRecognition } from './signCamera';
 
 // ── Parámetros del tracking ───────────────────────────────────────────────────
@@ -121,7 +121,7 @@ export default function CameraTranslationScreen({ onBack }) {
   return (
     <View style={estilos.pantalla}>
       <View style={{ paddingTop: insets.top, paddingHorizontal: 12 }}>
-        <GameScreenHeader title="Traducción en vivo" onBack={onBack} />
+        <ScreenHeader title="Traducción en vivo" onBack={onBack} />
       </View>
 
       <CameraStage recog={recog} />

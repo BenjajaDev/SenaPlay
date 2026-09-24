@@ -11,9 +11,9 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import AdaptiveModal from '../../../shared/ui/feedback/AdaptiveModal';
+import MessageDialog from '../../../shared/ui/feedback/MessageDialog';
 import ActionButton from '../../../shared/ui/ActionButton';
-import GameScreenHeader from '../../../shared/ui/GameScreenHeader';
+import ScreenHeader from '../../../shared/ui/ScreenHeader';
 import SignImage from '../../signs/presentation/SignImage';
 import SurfaceCard from '../../../shared/ui/SurfaceCard';
 import { APP_FONTS } from '../../../shared/theme/fonts';
@@ -752,7 +752,7 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
 
   return (
     <View style={styles.screen}>
-      <GameScreenHeader title={`Nivel ${level.id}`} onBack={onBack} />
+      <ScreenHeader title={`Nivel ${level.id}`} onBack={onBack} />
 
       <View style={styles.topMeta}>
         <View>
@@ -873,7 +873,7 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
         <ActionButton label="Verificar" onPress={submitCurrentExercise} />
       )}
 
-      <AdaptiveModal
+      <MessageDialog
         visible={gameOverVisible}
         context="auth-error"
         title="Se acabaron las vidas"
@@ -894,7 +894,7 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
         onRequestClose={() => setGameOverVisible(false)}
       />
 
-      <AdaptiveModal
+      <MessageDialog
         visible={finishVisible}
         context="level-complete"
         title="Nivel completado"

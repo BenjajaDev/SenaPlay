@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import GameScreenHeader from '../../../shared/ui/GameScreenHeader';
+import ScreenHeader from '../../../shared/ui/ScreenHeader';
 import { CameraStage, IaBanner, estilos, useSignRecognition } from './signCamera';
 
 // Señas que hoy tiene entrenadas el modelo dinámico (TCN). Solo informativo:
@@ -37,7 +37,7 @@ export default function DynamicSignMonitorScreen({ onBack }) {
   return (
     <View style={estilos.pantalla}>
       <View style={{ paddingTop: insets.top, paddingHorizontal: 12 }}>
-        <GameScreenHeader title="Señas dinámicas (beta)" onBack={onBack} />
+        <ScreenHeader title="Señas dinámicas (beta)" onBack={onBack} />
       </View>
 
       <CameraStage recog={recog} />

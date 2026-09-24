@@ -14,8 +14,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../../core/supabase/client';
-import AdaptiveModal from '../../../shared/ui/feedback/AdaptiveModal';
-import LoadingOverlay from '../../../shared/ui/feedback/LoadingOverlay';
+import MessageDialog from '../../../shared/ui/feedback/MessageDialog';
+import BlockingOverlay from '../../../shared/ui/feedback/BlockingOverlay';
 
 const GENDERS = [
   { key: 'masculino', label: 'Masculino' },
@@ -267,7 +267,7 @@ export default function RegisterScreen({ onGoToLogin, onNeedVerification }) {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <AdaptiveModal
+      <MessageDialog
         visible={modalState.visible}
         context={modalState.context}
         title={modalState.title}
@@ -276,7 +276,7 @@ export default function RegisterScreen({ onGoToLogin, onNeedVerification }) {
         onRequestClose={closeModal}
       />
 
-      <LoadingOverlay visible={isLoading} label="Creando tu cuenta..." />
+      <BlockingOverlay visible={isLoading} label="Creando tu cuenta..." />
     </View>
   );
 }

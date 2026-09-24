@@ -1,35 +1,26 @@
-import { useMemo } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { APP_FONTS } from '../theme/fonts';
-import { useAppTheme } from '../theme/ThemeProvider';
+import { StyleSheet, View } from 'react-native';
+import AppText from './AppText';
 
-export default function SectionHeader({ title, subtitle }) {
-  const theme = useAppTheme();
-  const styles = useMemo(() => createStyles(theme), [theme]);
-
+/** Título + subtítulo de sección (inicio de cada tab). `right` para una acción. */
+export default function SectionHeader({ title, subtitle, right }) {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>{title}</Text>
-      {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+    <View style={styles.row}>
+      <View style={styles.texts}>
+        <AppText variant="title" accessibilityRole="header">
+          {title}
+        </AppText>
+        {subtitle ? (
+          <AppText variant="subtitle" tone="secondary">
+            {subtitle}
+          </AppText>
+        ) : null}
+      </View>
+      {right}
     </View>
   );
 }
 
-function createStyles(theme) {
-  return StyleSheet.create({
-    container: {
-      gap: 4,
-    },
-    title: {
-      fontFamily: APP_FONTS.extraBold,
-      fontSize: 22,
-      fontWeight: '800',
-      color: theme.colors.textPrimary,
-    },
-    subtitle: {
-      fontFamily: APP_FONTS.medium,
-      fontSize: 14,
-      color: theme.colors.textSecondary,
-    },
-  });
-}
+const styles = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  texts: { flex: 1, gap: 4 },
+});

@@ -1,9 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -14,6 +16,7 @@ import ActionButton from '../../components/ui/ActionButton';
 import GameScreenHeader from '../../components/ui/GameScreenHeader';
 import SignImage from '../../components/ui/SignImage';
 import SurfaceCard from '../../components/ui/SurfaceCard';
+import { APP_FONTS } from '../../constants/fonts';
 import { normalizeHint } from '../../data/signDescription';
 import { useAppTheme } from '../../theme/ThemeProvider';
 
@@ -466,7 +469,7 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
                     <SignImage
                       signKey={card.value}
                       label={displayValue.toLocaleUpperCase('es')}
-                      size={isDense ? 40 : 52}
+                      size={isDense ? 54 : 68}
                       rounded={10}
                     />
                   ) : (
@@ -494,7 +497,7 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
               delayLongPress={400}
               style={styles.signCardInner}
             >
-              <SignImage signKey={exercise.sign} size={110} rounded={16} />
+              <SignImage signKey={exercise.sign} size={140} rounded={18} />
               <Text style={styles.signLabel}>SEÑA mostrada · mantén presionado para la pista</Text>
             </Pressable>
           </SurfaceCard>
@@ -527,7 +530,7 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
                 onPress={() => removeOrderingSlot(index)}
               >
                 {item ? (
-                  <SignImage signKey={displaySign(item)} size={44} rounded={8} />
+                  <SignImage signKey={displaySign(item)} size={58} rounded={8} />
                 ) : (
                   <Text style={styles.slotPlaceholder}>{index + 1}</Text>
                 )}
@@ -560,7 +563,7 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
               delayLongPress={400}
               style={styles.signCardInner}
             >
-              <SignImage signKey={exercise.sign} size={110} rounded={16} />
+              <SignImage signKey={exercise.sign} size={140} rounded={18} />
               <Text style={styles.signLabel}>Escribe la letra · mantén presionado para la pista</Text>
             </Pressable>
           </SurfaceCard>
@@ -587,7 +590,7 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
                 onLongPress={() => revealHint(null, sign)}
                 delayLongPress={400}
               >
-                <SignImage signKey={sign} size={54} rounded={10} />
+                <SignImage signKey={sign} size={72} rounded={12} />
               </Pressable>
             ))}
           </SurfaceCard>
@@ -622,7 +625,7 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
                     onLongPress={() => revealHint(null, sign)}
                     delayLongPress={400}
                   >
-                    <SignImage signKey={sign} size={54} rounded={10} />
+                    <SignImage signKey={sign} size={72} rounded={12} />
                   </Pressable>
                 ))}
               </SurfaceCard>
@@ -661,7 +664,7 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
                 onLongPress={() => revealHint(null, sign)}
                 delayLongPress={400}
               >
-                <SignImage signKey={sign} size={54} rounded={10} />
+                <SignImage signKey={sign} size={72} rounded={12} />
               </Pressable>
             ))}
           </SurfaceCard>
@@ -766,7 +769,12 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
       </View>
 
       <View style={styles.progressTrack}>
-        <View style={[styles.progressFill, { width: `${progress}%` }]} />
+        <LinearGradient
+          colors={theme.gradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={[styles.progressFill, { width: `${progress}%` }]}
+        />
       </View>
 
       <SurfaceCard style={styles.exerciseCard}>
@@ -819,7 +827,19 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
           </Pressable>
         ) : null}
 
-        {renderExercise()}
+        {/*
+          Solo el contenido del ejercicio (grillas, tiras de señas, etc.)
+          scrollea si no alcanza el espacio; el encabezado de arriba y el
+          botón de verificar/continuar de abajo quedan siempre fijos y
+          visibles, sin necesidad de desplazar la pantalla para llegar a él.
+        */}
+        <ScrollView
+          style={styles.exerciseScroll}
+          contentContainerStyle={styles.exerciseScrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {renderExercise()}
+        </ScrollView>
 
         <Animated.View
           pointerEvents="none"
@@ -842,11 +862,15 @@ export default function LevelSessionScreen({ level, onBack, onComplete }) {
           <ActionButton
             label={feedback.kind === 'correct' ? 'Continuar' : 'Intentar de nuevo'}
             onPress={goNext}
-            style={feedback.kind === 'correct' ? styles.feedbackBtnGood : styles.feedbackBtnBad}
+            gradientColors={
+              feedback.kind === 'correct'
+                ? [theme.colors.success, theme.colors.success]
+                : [theme.colors.danger, theme.colors.danger]
+            }
           />
         </SurfaceCard>
       ) : (
-        <ActionButton label="Verificar" onPress={submitCurrentExercise} style={styles.verifyBtn} />
+        <ActionButton label="Verificar" onPress={submitCurrentExercise} />
       )}
 
       <AdaptiveModal
@@ -901,7 +925,7 @@ function createStyles(theme) {
   return StyleSheet.create({
   screen: {
     flex: 1,
-    gap: 10,
+    gap: 8,
   },
   topMeta: {
     flexDirection: 'row',
@@ -909,11 +933,13 @@ function createStyles(theme) {
     alignItems: 'center',
   },
   levelTitle: {
-    fontSize: 20,
+    fontFamily: APP_FONTS.extraBold,
+    fontSize: 19,
     fontWeight: '900',
     color: theme.colors.textPrimary,
   },
   levelSubtitle: {
+    fontFamily: APP_FONTS.medium,
     color: theme.colors.textSecondary,
     fontSize: 12,
   },
@@ -926,22 +952,29 @@ function createStyles(theme) {
     fontSize: 18,
   },
   progressTrack: {
-    height: 10,
+    height: 8,
     borderRadius: 999,
     backgroundColor: isDark ? '#3A3350' : '#E2E8F0',
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: theme.colors.primary,
   },
   exerciseCard: {
     flex: 1,
     padding: 12,
-    gap: 10,
+    gap: 8,
+  },
+  exerciseScroll: {
+    flex: 1,
+  },
+  exerciseScrollContent: {
+    flexGrow: 1,
+    paddingBottom: 4,
   },
   exerciseTitle: {
-    fontSize: 16,
+    fontFamily: APP_FONTS.bold,
+    fontSize: 15,
     color: theme.colors.textPrimary,
     fontWeight: '800',
   },
@@ -1031,10 +1064,11 @@ function createStyles(theme) {
     textAlign: 'center',
   },
   statementCard: {
-    paddingVertical: 16,
+    paddingVertical: 12,
     paddingHorizontal: 14,
   },
   statementText: {
+    fontFamily: APP_FONTS.medium,
     fontSize: 15,
     fontStyle: 'italic',
     color: theme.colors.textPrimary,
@@ -1044,7 +1078,7 @@ function createStyles(theme) {
   tfRow: {
     flexDirection: 'row',
     gap: 10,
-    marginTop: 10,
+    marginTop: 8,
   },
   tfBtn: {
     flex: 1,
@@ -1054,20 +1088,20 @@ function createStyles(theme) {
     gap: 8,
     borderRadius: 14,
     borderWidth: 2,
-    paddingVertical: 16,
+    paddingVertical: 13,
     backgroundColor: isDark ? '#221C35' : '#FFFFFF',
   },
   tfBtnTrue: { borderColor: '#22C55E' },
   tfBtnFalse: { borderColor: '#EF4444' },
   tfBtnTrueActive: { backgroundColor: '#22C55E', borderColor: '#22C55E' },
   tfBtnFalseActive: { backgroundColor: '#EF4444', borderColor: '#EF4444' },
-  tfText: { fontSize: 15, fontWeight: '800', color: theme.colors.textPrimary },
+  tfText: { fontFamily: APP_FONTS.bold, fontSize: 15, fontWeight: '800', color: theme.colors.textPrimary },
   tfTextActive: { color: '#FFFFFF' },
   exerciseBlock: {
-    flex: 1,
-    gap: 10,
+    gap: 8,
   },
   exerciseHint: {
+    fontFamily: APP_FONTS.medium,
     color: theme.colors.textSecondary,
     fontSize: 13,
   },
@@ -1086,18 +1120,19 @@ function createStyles(theme) {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 10,
-    minHeight: 80,
+    minHeight: 106,
   },
   matchCardActive: {
-    borderColor: isDark ? '#F2C94C' : '#60A5FA',
-    backgroundColor: isDark ? '#2A2341' : '#EFF6FF',
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.primarySoft,
   },
   matchCardDone: {
     borderColor: isDark ? '#7EDB43' : '#22C55E',
     backgroundColor: isDark ? '#2D5A31' : '#DCFCE7',
   },
   matchText: {
-    fontSize: 24,
+    fontFamily: APP_FONTS.black,
+    fontSize: 22,
     fontWeight: '900',
     color: theme.colors.textPrimary,
   },
@@ -1119,7 +1154,7 @@ function createStyles(theme) {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 8,
-    minHeight: 62,
+    minHeight: 86,
     marginBottom: 6,
   },
   matchTextDense: {
@@ -1136,35 +1171,37 @@ function createStyles(theme) {
   signCard: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 24,
+    paddingVertical: 16,
   },
   signCardInner: {
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
   },
   signLabel: {
-    fontSize: 13,
+    fontFamily: APP_FONTS.medium,
+    fontSize: 12,
     color: theme.colors.textSecondary,
-    marginTop: 6,
+    marginTop: 4,
+    textAlign: 'center',
   },
   signStrip: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 14,
-    paddingVertical: 18,
+    gap: 12,
+    paddingVertical: 12,
     paddingHorizontal: 10,
   },
   optionList: {
-    gap: 10,
+    gap: 8,
   },
   optionBtn: {
     borderRadius: 14,
     borderWidth: 2,
     borderColor: isDark ? '#4B3B73' : '#CBD5E1',
     backgroundColor: isDark ? '#221C35' : '#FFFFFF',
-    paddingVertical: 16,
+    paddingVertical: 12,
     alignItems: 'center',
   },
   optionBtnActive: {
@@ -1172,7 +1209,8 @@ function createStyles(theme) {
     backgroundColor: isDark ? '#2A2341' : '#F5F3FF',
   },
   optionText: {
-    fontSize: 22,
+    fontFamily: APP_FONTS.black,
+    fontSize: 20,
     fontWeight: '900',
     color: theme.colors.textPrimary,
   },
@@ -1185,17 +1223,18 @@ function createStyles(theme) {
     gap: 8,
   },
   slot: {
-    minWidth: 48,
+    minWidth: 44,
     borderRadius: 10,
     borderWidth: 1.5,
     borderColor: isDark ? '#4B3B73' : '#CBD5E1',
     backgroundColor: isDark ? '#221C35' : '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
   },
   slotText: {
+    fontFamily: APP_FONTS.extraBold,
     fontSize: 20,
     fontWeight: '800',
     color: theme.colors.textPrimary,
@@ -1210,9 +1249,9 @@ function createStyles(theme) {
     borderWidth: 1.5,
     borderColor: isDark ? '#4B3B73' : '#CBD5E1',
     backgroundColor: isDark ? '#221C35' : '#FFFFFF',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    minWidth: 44,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    minWidth: 40,
     alignItems: 'center',
   },
   poolChipActive: {
@@ -1220,6 +1259,7 @@ function createStyles(theme) {
     backgroundColor: isDark ? '#2A2341' : '#F5F3FF',
   },
   poolText: {
+    fontFamily: APP_FONTS.extraBold,
     color: theme.colors.textPrimary,
     fontWeight: '800',
     fontSize: 18,
@@ -1230,13 +1270,13 @@ function createStyles(theme) {
   slotRowLarge: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 8,
     justifyContent: 'center',
-    paddingVertical: 6,
+    paddingVertical: 4,
   },
   slotLarge: {
-    width: 64,
-    height: 78,
+    width: 72,
+    height: 84,
     borderRadius: 14,
     borderWidth: 2,
     borderStyle: 'dashed',
@@ -1258,13 +1298,13 @@ function createStyles(theme) {
   poolRowLarge: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 8,
     justifyContent: 'center',
-    marginTop: 8,
+    marginTop: 6,
   },
   poolChipLargeSign: {
-    width: 64,
-    height: 78,
+    width: 72,
+    height: 84,
     borderRadius: 14,
     borderWidth: 1.5,
     borderColor: isDark ? '#4B3B73' : '#CBD5E1',
@@ -1273,6 +1313,7 @@ function createStyles(theme) {
     justifyContent: 'center',
   },
   input: {
+    fontFamily: APP_FONTS.black,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: isDark ? '#4B3B73' : '#CBD5E1',
@@ -1296,25 +1337,15 @@ function createStyles(theme) {
     backgroundColor: isDark ? '#3A1E28' : '#FEF2F2',
   },
   feedbackTitle: {
+    fontFamily: APP_FONTS.extraBold,
     fontSize: 16,
     fontWeight: '900',
     color: theme.colors.textPrimary,
   },
   feedbackMessage: {
+    fontFamily: APP_FONTS.medium,
     color: theme.colors.textSecondary,
     fontSize: 13,
-  },
-  feedbackBtnGood: {
-    backgroundColor: theme.colors.success,
-    borderColor: theme.colors.success,
-  },
-  feedbackBtnBad: {
-    backgroundColor: theme.colors.danger,
-    borderColor: theme.colors.danger,
-  },
-  verifyBtn: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
   },
   });
 }

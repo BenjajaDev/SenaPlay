@@ -9,11 +9,14 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { APP_FONTS } from '../constants/fonts';
 import { supabase } from '../../backend/supabase';
 import { getLevelProgress, recordDailyActivity, saveLevelProgress } from '../../backend/userStats';
 import AdaptiveModal from '../components/AdaptiveModal';
 import AppBottomNav from '../components/AppBottomNav';
+import LoadingOverlay from '../components/LoadingOverlay';
 import ProfileActionsModal from '../components/ProfileActionsModal';
+import FadeInView from '../components/ui/FadeInView';
 import LevelsTabScreen from './tabs/LevelsTabScreen';
 import DictionaryTabScreen from './tabs/DictionaryTabScreen';
 import VideosTabScreen from './tabs/VideosTabScreen';
@@ -52,6 +55,7 @@ export default function MainAppScreen({ onLogout }) {
   const [activeGame, setActiveGame] = useState(null);
   const [isProfileModalVisible, setIsProfileModalVisible] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isSavingLevel, setIsSavingLevel] = useState(false);
   const [feedbackModal, setFeedbackModal] = useState({ visible: false, context: 'auth-error', message: '' });
 
   const [user, setUser] = useState(null);
@@ -174,7 +178,15 @@ export default function MainAppScreen({ onLogout }) {
                 completed: { ...base.completed, [levelId]: { score, hits, fails } },
               };
             });
-            closeLevel();
+            // Breve modal de carga como transición mientras se guarda el
+            // progreso (el guardado real es reactivo, ver el useEffect de
+            // saveLevelProgress) — evita que el salto de vuelta a Niveles
+            // se sienta instantáneo/abrupto.
+            setIsSavingLevel(true);
+            setTimeout(() => {
+              setIsSavingLevel(false);
+              closeLevel();
+            }, 650);
           }}
         />
       );
@@ -208,7 +220,20 @@ export default function MainAppScreen({ onLogout }) {
     return <LevelsTabScreen levelProgress={effectiveLevelProgress} onOpenLevel={openLevel} />;
   };
 
-  const usesVirtualizedList = activeGame === 'memory';
+  // Los niveles manejan su propio scroll interno (el encabezado, la barra de
+  // progreso y el botón de verificar/continuar quedan fijos) para que nunca
+  // haga falta desplazar la pantalla completa para llegar al botón.
+  const usesFixedLayout = activeGame === 'memory' || Boolean(activeLevelId);
+  // El diccionario también arma su propio scroll: es una lista virtualizada
+  // (FlatList) porque carga fotos reales y así solo se decodifican las que
+  // están a la vista. Anidarla dentro del ScrollView general rompería esa
+  // virtualización (y React Native avisa de "VirtualizedLists should never
+  // be nested").
+  const isDictionaryTab = activeTab === 'dictionary' && !activeGame && !activeLevelId;
+  // Identifica QUÉ se está mostrando; FadeInView se remonta (y re-anima)
+  // cada vez que esto cambia, dando una transición sutil al cambiar de
+  // pestaña, abrir un juego o entrar/salir de un nivel.
+  const contentKey = activeLevelId ? `level-${activeLevelId}` : activeGame || activeTab;
 
   return (
     <>
@@ -222,7 +247,7 @@ export default function MainAppScreen({ onLogout }) {
           <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
             <View>
               <Text style={styles.headerTitle}>{tabTitle}</Text>
-              <Text style={styles.headerSubtitle}>OratioLingo</Text>
+              <Text style={styles.headerSubtitle}>SeñaPlay</Text>
             </View>
 
             <Pressable
@@ -235,26 +260,32 @@ export default function MainAppScreen({ onLogout }) {
           </View>
         ) : null}
 
-        {usesVirtualizedList ? (
+        {usesFixedLayout ? (
           <View
             style={[
               styles.contentContainer,
               { flex: 1, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 12 },
             ]}
           >
-            {renderContent()}
+            <FadeInView key={contentKey} style={styles.fadeFlex}>
+              {renderContent()}
+            </FadeInView>
+          </View>
+        ) : isDictionaryTab ? (
+          <View style={[styles.contentContainer, { flex: 1, paddingBottom: 0 }]}>
+            <FadeInView key={contentKey} style={styles.fadeFlex}>
+              {renderContent()}
+            </FadeInView>
           </View>
         ) : (
           <ScrollView
             contentContainerStyle={[
               styles.contentContainer,
-              activeGame || activeLevelId
-                ? { flexGrow: 1, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 12 }
-                : null,
+              activeGame ? { flexGrow: 1, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 12 } : null,
             ]}
             showsVerticalScrollIndicator={false}
           >
-            {renderContent()}
+            <FadeInView key={contentKey}>{renderContent()}</FadeInView>
           </ScrollView>
         )}
 
@@ -281,6 +312,8 @@ export default function MainAppScreen({ onLogout }) {
           onPrimaryPress={() => setFeedbackModal((prev) => ({ ...prev, visible: false }))}
           onRequestClose={() => setFeedbackModal((prev) => ({ ...prev, visible: false }))}
         />
+
+        <LoadingOverlay visible={isSavingLevel} label="Guardando tu progreso..." />
       </View>
 
       {CAMERA_GAMES[activeGame]
@@ -300,6 +333,7 @@ export default function MainAppScreen({ onLogout }) {
 function createStyles(theme) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: theme.colors.background },
+    fadeFlex: { flex: 1 },
     header: {
       backgroundColor: theme.colors.surface,
       paddingHorizontal: 18,
@@ -310,8 +344,18 @@ function createStyles(theme) {
       borderBottomWidth: 1,
       borderBottomColor: theme.colors.border,
     },
-    headerTitle: { fontSize: 22, fontWeight: '800', color: theme.colors.textPrimary },
-    headerSubtitle: { fontSize: 13, color: theme.colors.textSecondary, marginTop: 2 },
+    headerTitle: {
+      fontFamily: APP_FONTS.extraBold,
+      fontSize: 22,
+      fontWeight: '800',
+      color: theme.colors.textPrimary,
+    },
+    headerSubtitle: {
+      fontFamily: APP_FONTS.bold,
+      fontSize: 13,
+      color: theme.colors.primary,
+      marginTop: 2,
+    },
     profileTrigger: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' },
     contentContainer: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 24 },
   });

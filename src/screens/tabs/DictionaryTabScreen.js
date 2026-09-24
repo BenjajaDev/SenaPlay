@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import SignDetailModal from '../../components/SignDetailModal';
 import FilterChip from '../../components/ui/FilterChip';
 import SectionHeader from '../../components/ui/SectionHeader';
@@ -48,6 +48,70 @@ function signToDetail(sign) {
   };
 }
 
+// Tarjetas memoizadas: la grilla del diccionario carga fotos reales (pesadas
+// de decodificar), así que evitar que TODAS se vuelvan a renderizar cada vez
+// que se abre el modal de detalle (o cualquier otro cambio de estado ajeno a
+// ellas) es lo que mantiene el scroll fluido. `onPress` recibe el `item`
+// para no crear un closure nuevo por tarjeta en cada render del padre.
+const DictionaryCard = memo(function DictionaryCard({ item, onPress, styles, theme }) {
+  return (
+    <SurfaceCard style={styles.card}>
+      <Pressable
+        onPress={() => onPress(item)}
+        accessibilityRole="button"
+        accessibilityLabel={`Ver la seña completa de ${item.letter}`}
+      >
+        <View style={styles.cardTopRow}>
+          <Text style={styles.letter}>{item.letter}</Text>
+          <View style={[styles.badge, { backgroundColor: getBadgeColor(item.difficulty) }]}>
+            <Text style={styles.badgeText}>{item.difficulty}</Text>
+          </View>
+        </View>
+        <View style={styles.signRow}>
+          <SignImage signKey={item.sign} label={item.letter} size={96} />
+        </View>
+        <Text style={styles.description} numberOfLines={3}>{item.description}</Text>
+        <View style={styles.verMasRow}>
+          <Text style={styles.verMasTexto}>Ver seña</Text>
+          <Ionicons name="chevron-forward" size={12} color={theme.colors.primary} />
+        </View>
+      </Pressable>
+    </SurfaceCard>
+  );
+});
+
+const SignListCard = memo(function SignListCard({ item, onPress, styles, theme }) {
+  return (
+    <SurfaceCard style={styles.signCard}>
+      <Pressable
+        onPress={() => onPress(item)}
+        accessibilityRole="button"
+        accessibilityLabel={`Ver la seña completa de ${item.word}`}
+        style={styles.signCardInner}
+      >
+        <SignImage signKey={item.word} label={item.word.slice(0, 3)} size={84} />
+        <View style={styles.signCardTexts}>
+          <View style={styles.cardTopRow}>
+            <Text style={styles.word}>{item.word}</Text>
+            {item.type ? (
+              <View style={styles.typeBadge}>
+                <Text style={styles.typeBadgeText}>{item.type}</Text>
+              </View>
+            ) : null}
+          </View>
+          {item.meaning ? (
+            <Text style={styles.meaning} numberOfLines={2}>{item.meaning}</Text>
+          ) : null}
+          <View style={styles.verMasRow}>
+            <Text style={styles.verMasTexto}>Ver seña completa</Text>
+            <Ionicons name="chevron-forward" size={12} color={theme.colors.primary} />
+          </View>
+        </View>
+      </Pressable>
+    </SurfaceCard>
+  );
+});
+
 export default function DictionaryTabScreen() {
   const theme = useAppTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -88,8 +152,22 @@ export default function DictionaryTabScreen() {
     return signs.filter((s) => s.theme === filter);
   }, [signs, filter]);
 
-  return (
-    <View style={styles.container}>
+  // Referencias estables: así React.memo evita re-renderizar cada tarjeta
+  // cuando lo único que cambió fue, por ejemplo, el modal de detalle.
+  const openEntryDetail = useCallback((item) => setDetail(entryToDetail(item)), []);
+  const openSignDetail = useCallback((item) => setDetail(signToDetail(item)), []);
+
+  const renderDictionaryItem = useCallback(
+    ({ item }) => <DictionaryCard item={item} onPress={openEntryDetail} styles={styles} theme={theme} />,
+    [openEntryDetail, styles, theme],
+  );
+  const renderSignItem = useCallback(
+    ({ item }) => <SignListCard item={item} onPress={openSignDetail} styles={styles} theme={theme} />,
+    [openSignDetail, styles, theme],
+  );
+
+  const header = (
+    <View style={styles.header}>
       <SectionHeader
         title="Diccionario de señas"
         subtitle={mode === 'deletreo' ? 'Letras, números y acciones por categoría' : 'Señas reales (un gesto por palabra)'}
@@ -121,66 +199,43 @@ export default function DictionaryTabScreen() {
           />
         ))}
       </View>
+    </View>
+  );
 
+  return (
+    <View style={styles.container}>
       {mode === 'deletreo' ? (
-        <View style={styles.grid}>
-          {dictionaryItems.map((item) => (
-            <SurfaceCard key={`${item.letter}-${item.sign}`} style={styles.card}>
-              <Pressable
-                onPress={() => setDetail(entryToDetail(item))}
-                accessibilityRole="button"
-                accessibilityLabel={`Ver la seña completa de ${item.letter}`}
-              >
-                <View style={styles.cardTopRow}>
-                  <Text style={styles.letter}>{item.letter}</Text>
-                  <View style={[styles.badge, { backgroundColor: getBadgeColor(item.difficulty) }]}>
-                    <Text style={styles.badgeText}>{item.difficulty}</Text>
-                  </View>
-                </View>
-                <View style={styles.signRow}>
-                  <SignImage signKey={item.sign} label={item.letter} size={64} />
-                </View>
-                <Text style={styles.description} numberOfLines={3}>{item.description}</Text>
-                <View style={styles.verMasRow}>
-                  <Text style={styles.verMasTexto}>Ver seña</Text>
-                  <Ionicons name="chevron-forward" size={12} color={theme.colors.primary} />
-                </View>
-              </Pressable>
-            </SurfaceCard>
-          ))}
-        </View>
+        <FlatList
+          key="grid"
+          data={dictionaryItems}
+          keyExtractor={(item) => `${item.letter}-${item.sign}`}
+          numColumns={2}
+          columnWrapperStyle={styles.gridRow}
+          renderItem={renderDictionaryItem}
+          ListHeaderComponent={header}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          // Solo se monta/decodifica lo visible (+colchón): con fotos reales
+          // de ~300KB cada una, esto es lo que evita el jank al scrollear.
+          initialNumToRender={8}
+          maxToRenderPerBatch={6}
+          windowSize={7}
+          removeClippedSubviews
+        />
       ) : (
-        <View style={styles.signsList}>
-          {signItems.map((item) => (
-            <SurfaceCard key={item.word} style={styles.signCard}>
-              <Pressable
-                onPress={() => setDetail(signToDetail(item))}
-                accessibilityRole="button"
-                accessibilityLabel={`Ver la seña completa de ${item.word}`}
-                style={styles.signCardInner}
-              >
-                <SignImage signKey={item.word} label={item.word.slice(0, 3)} size={62} />
-                <View style={styles.signCardTexts}>
-                  <View style={styles.cardTopRow}>
-                    <Text style={styles.word}>{item.word}</Text>
-                    {item.type ? (
-                      <View style={styles.typeBadge}>
-                        <Text style={styles.typeBadgeText}>{item.type}</Text>
-                      </View>
-                    ) : null}
-                  </View>
-                  {item.meaning ? (
-                    <Text style={styles.meaning} numberOfLines={2}>{item.meaning}</Text>
-                  ) : null}
-                  <View style={styles.verMasRow}>
-                    <Text style={styles.verMasTexto}>Ver seña completa</Text>
-                    <Ionicons name="chevron-forward" size={12} color={theme.colors.primary} />
-                  </View>
-                </View>
-              </Pressable>
-            </SurfaceCard>
-          ))}
-        </View>
+        <FlatList
+          key="list"
+          data={signItems}
+          keyExtractor={(item) => item.word}
+          renderItem={renderSignItem}
+          ListHeaderComponent={header}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          initialNumToRender={8}
+          maxToRenderPerBatch={6}
+          windowSize={7}
+          removeClippedSubviews
+        />
       )}
 
       <SignDetailModal
@@ -194,10 +249,12 @@ export default function DictionaryTabScreen() {
 
 function createStyles(theme) {
   return StyleSheet.create({
-    container: { gap: 12 },
+    container: { flex: 1 },
+    header: { gap: 12, paddingBottom: 12 },
+    listContent: { paddingBottom: 12 },
     modeRow: {
       flexDirection: 'row',
-      backgroundColor: theme.mode === 'dark' ? '#251E3B' : '#EDE7F6',
+      backgroundColor: theme.mode === 'dark' ? '#251E3B' : '#F3DFFB',
       borderRadius: 14,
       padding: 4,
       gap: 4,
@@ -216,13 +273,10 @@ function createStyles(theme) {
       flexWrap: 'wrap',
       gap: 8,
     },
-    grid: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
+    gridRow: {
       justifyContent: 'space-between',
-      rowGap: 10,
     },
-    card: { width: '48.5%', padding: 10 },
+    card: { width: '48.5%', padding: 10, marginBottom: 10 },
     cardTopRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
@@ -266,8 +320,7 @@ function createStyles(theme) {
       fontWeight: '800',
     },
     // Senas reales
-    signsList: { gap: 10 },
-    signCard: { padding: 14 },
+    signCard: { padding: 14, marginBottom: 10 },
     signCardInner: {
       flexDirection: 'row',
       alignItems: 'flex-start',
@@ -284,7 +337,7 @@ function createStyles(theme) {
       borderRadius: 999,
       paddingHorizontal: 10,
       paddingVertical: 3,
-      backgroundColor: theme.mode === 'dark' ? '#33294F' : '#EDE7F6',
+      backgroundColor: theme.mode === 'dark' ? '#33294F' : '#F3DFFB',
     },
     typeBadgeText: {
       color: theme.colors.primary,

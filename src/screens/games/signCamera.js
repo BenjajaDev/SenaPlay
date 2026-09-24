@@ -6,7 +6,7 @@ import { HAND_HTML } from './handTrackingHtml';
 
 // ── IP del servidor Python (debe ser la IP local de tu PC en la misma WiFi) ─
 // Si tu PC cambia de IP, actualízala aquí.
-export const SERVIDOR_IA = 'http://10.180.72.177:8000';
+export const SERVIDOR_IA = 'http://192.168.1.5:8000';
 
 // Comando para levantar la IA: python -m uvicorn server:app --host 0.0.0.0 --port 8000
 
@@ -201,7 +201,7 @@ export function CameraStage({ recog }) {
         </TouchableOpacity>
         {permisoCamara && !permisoCamara.canAskAgain ? (
           <Text style={estilos.permisoNota}>
-            Si lo bloqueaste, actívalo en Ajustes → OratioLingo → Permisos → Cámara.
+            Si lo bloqueaste, actívalo en Ajustes → SeñaPlay → Permisos → Cámara.
           </Text>
         ) : null}
       </View>

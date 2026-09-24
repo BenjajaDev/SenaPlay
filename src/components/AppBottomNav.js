@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { APP_FONTS } from '../constants/fonts';
 import { useAppTheme } from '../theme/ThemeProvider';
 
 const TABS = [
@@ -28,11 +30,20 @@ export default function AppBottomNav({ activeTab, onChangeTab }) {
             onPress={() => onChangeTab(tab.key)}
             hitSlop={8}
           >
-            <Ionicons
-              name={isActive ? tab.activeIcon : tab.icon}
-              size={22}
-              color={isActive ? theme.colors.primary : theme.colors.navInactive}
-            />
+            {isActive ? (
+              <LinearGradient
+                colors={theme.gradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.iconBadge}
+              >
+                <Ionicons name={tab.activeIcon} size={19} color={theme.colors.primaryContrast} />
+              </LinearGradient>
+            ) : (
+              <View style={styles.iconBadge}>
+                <Ionicons name={tab.icon} size={19} color={theme.colors.navInactive} />
+              </View>
+            )}
             <Text
               numberOfLines={1}
               adjustsFontSizeToFit
@@ -62,10 +73,18 @@ function createStyles(theme) {
       flex: 1,
       minWidth: 0,
       alignItems: 'center',
-      gap: 4,
-      paddingVertical: 4,
+      gap: 3,
+      paddingVertical: 2,
+    },
+    iconBadge: {
+      width: 34,
+      height: 26,
+      borderRadius: 13,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     label: {
+      fontFamily: APP_FONTS.semiBold,
       fontSize: 11,
       fontWeight: '600',
       color: theme.colors.navInactive,
@@ -73,6 +92,7 @@ function createStyles(theme) {
       textAlign: 'center',
     },
     labelActive: {
+      fontFamily: APP_FONTS.bold,
       color: theme.colors.primary,
     },
   });

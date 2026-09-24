@@ -17,6 +17,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../backend/supabase';
 import AdaptiveModal from '../components/AdaptiveModal';
+import LoadingOverlay from '../components/LoadingOverlay';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -221,7 +222,7 @@ export default function LoginScreen({ onGoToRegister, onLoginSuccess, onNeedPass
                 resizeMode="contain"
               />
             </View>
-            <Text style={styles.brand}>OratioLingo</Text>
+            <Text style={styles.brand}>SeñaPlay</Text>
             <Text style={styles.subtitle}>
               Inicia sesion para continuar con tus niveles, progreso y practica diaria.
             </Text>
@@ -376,7 +377,7 @@ export default function LoginScreen({ onGoToRegister, onLoginSuccess, onNeedPass
 
           <View style={styles.footerNote}>
             <Text style={styles.footerText}>
-              Todos los derechos reservados 2024 OratioLingo.
+              Todos los derechos reservados 2024 SeñaPlay.
             </Text>
           </View>
         </ScrollView>
@@ -390,13 +391,18 @@ export default function LoginScreen({ onGoToRegister, onLoginSuccess, onNeedPass
         onPrimaryPress={handleModalPrimary}
         onRequestClose={closeModal}
       />
+
+      <LoadingOverlay
+        visible={isLoading || isSendingReset}
+        label={isSendingReset ? 'Enviando enlace...' : 'Entrando...'}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  safeArea: { flex: 1, backgroundColor: '#EDE7F6' },
+  safeArea: { flex: 1, backgroundColor: '#F7EEFC' },
   content: {
     flexGrow: 1,
     paddingHorizontal: 20,
@@ -442,7 +448,7 @@ const styles = StyleSheet.create({
   },
   brandLogoImage: { width: '84%', height: '84%' },
   brand: {
-    color: '#7E57C2',
+    color: '#8F1EAE',
     fontSize: 25,
     fontWeight: '700',
     letterSpacing: 0.9,
@@ -465,7 +471,7 @@ const styles = StyleSheet.create({
   },
   tabRow: {
     flexDirection: 'row',
-    backgroundColor: '#EDE7F6',
+    backgroundColor: '#F7EEFC',
     borderRadius: 14,
     padding: 4,
     marginBottom: 18,
@@ -477,13 +483,13 @@ const styles = StyleSheet.create({
     borderRadius: 11,
     alignItems: 'center',
   },
-  tabBtnActive: { backgroundColor: '#7E57C2' },
-  tabText: { fontSize: 12, fontWeight: '700', color: '#7E57C2' },
+  tabBtnActive: { backgroundColor: '#8F1EAE' },
+  tabText: { fontSize: 12, fontWeight: '700', color: '#8F1EAE' },
   tabTextActive: { color: '#FFFFFF' },
   cardSubtitle: { color: '#667085', fontSize: 14, marginBottom: 18 },
   label: { color: '#344054', fontSize: 13, fontWeight: '700', marginBottom: 8 },
   input: {
-    backgroundColor: '#EDE7F6',
+    backgroundColor: '#F7EEFC',
     borderWidth: 1,
     borderColor: '#DCE3EE',
     borderRadius: 16,
@@ -496,7 +502,7 @@ const styles = StyleSheet.create({
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#EDE7F6',
+    backgroundColor: '#F7EEFC',
     borderWidth: 1,
     borderColor: '#DCE3EE',
     borderRadius: 16,
@@ -512,7 +518,7 @@ const styles = StyleSheet.create({
   },
   eyeButton: { paddingHorizontal: 6, paddingVertical: 6 },
   button: {
-    backgroundColor: '#7E57C2',
+    backgroundColor: '#8F1EAE',
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
@@ -523,8 +529,8 @@ const styles = StyleSheet.create({
   buttonDisabled: { opacity: 0.65 },
   buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
   linkText: { color: '#667085', fontSize: 14, textAlign: 'center', marginTop: 18 },
-  linkHighlight: { color: '#7E57C2', fontWeight: '800' },
-  verifyText: { color: '#7E57C2', fontSize: 13, textAlign: 'center', marginTop: 10, fontWeight: '700' },
+  linkHighlight: { color: '#8F1EAE', fontWeight: '800' },
+  verifyText: { color: '#8F1EAE', fontSize: 13, textAlign: 'center', marginTop: 10, fontWeight: '700' },
   divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 20, gap: 10 },
   dividerLine: { flex: 1, height: 1, backgroundColor: '#E6EBF3' },
   dividerText: { color: '#9CA3AF', fontSize: 12, fontWeight: '600' },

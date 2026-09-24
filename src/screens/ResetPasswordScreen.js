@@ -97,7 +97,7 @@ export default function ResetPasswordScreen({ onDone }) {
                 resizeMode="contain"
               />
             </View>
-            <Text style={styles.brand}>OratioLingo</Text>
+            <Text style={styles.brand}>SeñaPlay</Text>
           </View>
 
           <View style={styles.card}>
@@ -167,7 +167,7 @@ export default function ResetPasswordScreen({ onDone }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  safeArea: { flex: 1, backgroundColor: '#EDE7F6' },
+  safeArea: { flex: 1, backgroundColor: '#F7EEFC' },
   content: {
     flexGrow: 1,
     paddingHorizontal: 20,
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
   },
   brandLogoImage: { width: '84%', height: '84%' },
   brand: {
-    color: '#7E57C2',
+    color: '#8F1EAE',
     fontSize: 25,
     fontWeight: '700',
     letterSpacing: 0.9,
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#EDE7F6',
+    backgroundColor: '#F7EEFC',
     borderWidth: 1,
     borderColor: '#DCE3EE',
     borderRadius: 16,
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
   },
   eyeButton: { paddingHorizontal: 6, paddingVertical: 6 },
   button: {
-    backgroundColor: '#7E57C2',
+    backgroundColor: '#8F1EAE',
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',

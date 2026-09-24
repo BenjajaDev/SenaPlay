@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "oratioLingoRN",
+    "name": "SeñaPlay",
     "slug": "oratioLingoRN",
     "scheme": "oratiolingo",
     "version": "1.0.0",
@@ -37,13 +37,13 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "OratioLingo necesita acceso a tu galería para cambiar tu foto de perfil."
+          "photosPermission": "SeñaPlay necesita acceso a tu galería para cambiar tu foto de perfil."
         }
       ],
       [
         "expo-camera",
         {
-          "cameraPermission": "OratioLingo necesita la cámara para reconocer tus señas con la mano."
+          "cameraPermission": "SeñaPlay necesita la cámara para reconocer tus señas con la mano."
         }
       ],
       "expo-font"

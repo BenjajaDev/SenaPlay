@@ -15,6 +15,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../backend/supabase';
 import AdaptiveModal from '../components/AdaptiveModal';
+import LoadingOverlay from '../components/LoadingOverlay';
 
 const GENDERS = [
   { key: 'masculino', label: 'Masculino' },
@@ -142,7 +143,7 @@ export default function RegisterScreen({ onGoToLogin, onNeedVerification }) {
                 resizeMode="contain"
               />
             </View>
-            <Text style={styles.brand}>OratioLingo</Text>
+            <Text style={styles.brand}>SeñaPlay</Text>
             <Text style={styles.subtitle}>Crea tu cuenta para empezar tu aprendizaje.</Text>
           </View>
 
@@ -274,13 +275,15 @@ export default function RegisterScreen({ onGoToLogin, onNeedVerification }) {
         onPrimaryPress={handleModalPrimary}
         onRequestClose={closeModal}
       />
+
+      <LoadingOverlay visible={isLoading} label="Creando tu cuenta..." />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  safeArea: { flex: 1, backgroundColor: '#EDE7F6' },
+  safeArea: { flex: 1, backgroundColor: '#F7EEFC' },
   content: {
     flexGrow: 1,
     paddingHorizontal: 20,
@@ -326,7 +329,7 @@ const styles = StyleSheet.create({
   },
   brandLogoImage: { width: '84%', height: '84%' },
   brand: {
-    color: '#7E57C2',
+    color: '#8F1EAE',
     fontSize: 25,
     fontWeight: '700',
     letterSpacing: 0.9,
@@ -357,7 +360,7 @@ const styles = StyleSheet.create({
   cardSubtitle: { color: '#667085', fontSize: 14, marginBottom: 18 },
   label: { color: '#344054', fontSize: 13, fontWeight: '700', marginBottom: 8 },
   input: {
-    backgroundColor: '#EDE7F6',
+    backgroundColor: '#F7EEFC',
     borderWidth: 1,
     borderColor: '#DCE3EE',
     borderRadius: 16,
@@ -370,7 +373,7 @@ const styles = StyleSheet.create({
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#EDE7F6',
+    backgroundColor: '#F7EEFC',
     borderWidth: 1,
     borderColor: '#DCE3EE',
     borderRadius: 16,
@@ -395,18 +398,18 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 10,
     alignItems: 'center',
-    backgroundColor: '#EDE7F6',
+    backgroundColor: '#F7EEFC',
     borderWidth: 1,
     borderColor: '#DCE3EE',
   },
   genderBtnActive: {
-    backgroundColor: '#7E57C2',
-    borderColor: '#7E57C2',
+    backgroundColor: '#8F1EAE',
+    borderColor: '#8F1EAE',
   },
   genderText: { fontSize: 13, fontWeight: '600', color: '#5B6475' },
   genderTextActive: { color: '#FFFFFF' },
   button: {
-    backgroundColor: '#7E57C2',
+    backgroundColor: '#8F1EAE',
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
@@ -417,5 +420,5 @@ const styles = StyleSheet.create({
   buttonDisabled: { opacity: 0.65 },
   buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
   registerText: { color: '#667085', fontSize: 14, textAlign: 'center', marginTop: 18 },
-  registerLink: { color: '#7E57C2', fontWeight: '800' },
+  registerLink: { color: '#8F1EAE', fontWeight: '800' },
 });

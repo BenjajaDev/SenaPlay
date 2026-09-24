@@ -13,6 +13,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import LoadingOverlay from '../../components/LoadingOverlay';
 import ActionButton from '../../components/ui/ActionButton';
 import SectionHeader from '../../components/ui/SectionHeader';
 import SurfaceCard from '../../components/ui/SurfaceCard';
@@ -221,7 +222,7 @@ export default function ProfileTabScreen({ user, onLogout, isLoggingOut, onRefre
         label={isLoggingOut ? 'Cerrando...' : 'Cerrar sesion'}
         onPress={onLogout}
         disabled={isLoggingOut}
-        style={styles.logoutButton}
+        gradientColors={[theme.colors.danger, theme.colors.danger]}
       />
 
       {/* Edit profile modal */}
@@ -297,6 +298,8 @@ export default function ProfileTabScreen({ user, onLogout, isLoggingOut, onRefre
           </View>
         </View>
       </Modal>
+
+      <LoadingOverlay visible={isSaving} label="Guardando cambios..." />
     </View>
   );
 }
@@ -354,7 +357,6 @@ function createStyles(theme) {
       paddingVertical: 14,
     },
     editProfileText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
-    logoutButton: { backgroundColor: theme.colors.danger, borderColor: theme.colors.danger },
     errorText: {
       color: theme.colors.danger,
       fontSize: 13,
@@ -390,7 +392,7 @@ function createStyles(theme) {
       marginTop: 4,
     },
     modalInput: {
-      backgroundColor: '#EDE7F6',
+      backgroundColor: '#F7EEFC',
       borderWidth: 1,
       borderColor: '#DCE3EE',
       borderRadius: 14,
@@ -406,15 +408,15 @@ function createStyles(theme) {
       borderRadius: 12,
       paddingVertical: 10,
       alignItems: 'center',
-      backgroundColor: '#EDE7F6',
+      backgroundColor: '#F7EEFC',
       borderWidth: 1,
       borderColor: '#DCE3EE',
     },
-    genderBtnActive: { backgroundColor: '#7E57C2', borderColor: '#7E57C2' },
+    genderBtnActive: { backgroundColor: '#8F1EAE', borderColor: '#8F1EAE' },
     genderText: { fontSize: 13, fontWeight: '600', color: '#5B6475' },
     genderTextActive: { color: '#FFFFFF' },
     saveBtn: {
-      backgroundColor: '#7E57C2',
+      backgroundColor: '#8F1EAE',
       borderRadius: 16,
       paddingVertical: 15,
       alignItems: 'center',

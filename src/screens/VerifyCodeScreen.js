@@ -126,7 +126,7 @@ export default function VerifyCodeScreen({ email, purpose = 'signup', onBack, on
                 resizeMode="contain"
               />
             </View>
-            <Text style={styles.brand}>OratioLingo</Text>
+            <Text style={styles.brand}>SeñaPlay</Text>
           </View>
 
           <View style={styles.card}>
@@ -186,7 +186,7 @@ export default function VerifyCodeScreen({ email, purpose = 'signup', onBack, on
             </Pressable>
 
             <Pressable onPress={onBack} hitSlop={10} style={styles.backRow}>
-              <Ionicons name="arrow-back" size={16} color="#7E57C2" />
+              <Ionicons name="arrow-back" size={16} color="#8F1EAE" />
               <Text style={styles.backText}>Volver</Text>
             </Pressable>
           </View>
@@ -207,7 +207,7 @@ export default function VerifyCodeScreen({ email, purpose = 'signup', onBack, on
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  safeArea: { flex: 1, backgroundColor: '#EDE7F6' },
+  safeArea: { flex: 1, backgroundColor: '#F7EEFC' },
   content: {
     flexGrow: 1,
     paddingHorizontal: 20,
@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
   },
   brandLogoImage: { width: '84%', height: '84%' },
   brand: {
-    color: '#7E57C2',
+    color: '#8F1EAE',
     fontSize: 25,
     fontWeight: '700',
     letterSpacing: 0.9,
@@ -268,23 +268,23 @@ const styles = StyleSheet.create({
   },
   cardTitle: { color: '#101828', fontSize: 22, fontWeight: '800', marginBottom: 6, textAlign: 'center' },
   cardSubtitle: { color: '#667085', fontSize: 14, marginBottom: 22, textAlign: 'center', lineHeight: 20 },
-  emailHighlight: { color: '#7E57C2', fontWeight: '700' },
+  emailHighlight: { color: '#8F1EAE', fontWeight: '700' },
   codeRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 8, marginBottom: 22 },
   codeCell: {
     flex: 1,
     aspectRatio: 0.82,
     borderRadius: 14,
-    backgroundColor: '#EDE7F6',
+    backgroundColor: '#F7EEFC',
     borderWidth: 1.5,
     borderColor: '#DCE3EE',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  codeCellActive: { borderColor: '#7E57C2', backgroundColor: '#FFFFFF' },
+  codeCellActive: { borderColor: '#8F1EAE', backgroundColor: '#FFFFFF' },
   codeCellText: { fontSize: 24, fontWeight: '800', color: '#101828' },
   hiddenInput: { position: 'absolute', opacity: 0, height: 1, width: 1 },
   button: {
-    backgroundColor: '#7E57C2',
+    backgroundColor: '#8F1EAE',
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
   buttonPressed: { opacity: 0.88, transform: [{ scale: 0.99 }] },
   buttonDisabled: { opacity: 0.65 },
   buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
-  resendText: { color: '#7E57C2', fontSize: 13, textAlign: 'center', marginTop: 16, fontWeight: '700' },
+  resendText: { color: '#8F1EAE', fontSize: 13, textAlign: 'center', marginTop: 16, fontWeight: '700' },
   backRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 16 },
-  backText: { color: '#7E57C2', fontSize: 14, fontWeight: '700' },
+  backText: { color: '#8F1EAE', fontSize: 14, fontWeight: '700' },
 });

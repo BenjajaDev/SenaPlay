@@ -43,6 +43,11 @@ yarn-error.*
 # Python
 __pycache__/
 *.py[cod]
+venv/
+ai_module/venv/
+
+# Editor
+.vscode/
 
 # logs
 *.log

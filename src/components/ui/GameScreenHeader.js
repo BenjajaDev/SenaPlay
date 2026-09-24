@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { APP_FONTS } from '../../constants/fonts';
 import { useAppTheme } from '../../theme/ThemeProvider';
 
 export default function GameScreenHeader({ title, onBack, rightNode }) {
@@ -27,6 +28,7 @@ function createStyles(theme) {
       marginBottom: 10,
     },
     title: {
+      fontFamily: APP_FONTS.extraBold,
       fontSize: 22,
       fontWeight: '800',
       color: theme.colors.textPrimary,

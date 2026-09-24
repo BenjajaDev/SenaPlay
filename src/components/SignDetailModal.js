@@ -170,7 +170,7 @@ function createStyles(theme) {
       paddingVertical: 4,
     },
     badgeNeutral: {
-      backgroundColor: theme.mode === 'dark' ? '#33294F' : '#EDE7F6',
+      backgroundColor: theme.mode === 'dark' ? '#33294F' : '#F3DFFB',
     },
     badgeText: { color: '#FFFFFF', fontSize: 11, fontWeight: '800' },
     description: {

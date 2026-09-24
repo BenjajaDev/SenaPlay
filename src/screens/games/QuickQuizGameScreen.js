@@ -104,7 +104,12 @@ export default function QuickQuizGameScreen({ onBack }) {
           <Ionicons name="flash" size={66} color={theme.colors.gold} />
           <Text style={styles.welcomeTitle}>Ronda rapida de SEÑAS</Text>
           <Text style={styles.welcomeText}>6 preguntas. 10 segundos por cada una.</Text>
-          <ActionButton label="Comenzar" onPress={startGame} style={styles.startBtn} />
+          <ActionButton
+            label="Comenzar"
+            onPress={startGame}
+            style={styles.startBtn}
+            gradientColors={[theme.colors.gold, theme.colors.goldDeep]}
+          />
         </View>
       ) : (
         <View style={styles.gameBox}>
@@ -183,8 +188,6 @@ function createStyles(theme) {
     },
     startBtn: {
       marginTop: 14,
-      backgroundColor: theme.colors.gold,
-      borderColor: theme.colors.gold,
       paddingHorizontal: 24,
     },
     gameBox: {

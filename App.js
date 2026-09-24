@@ -2,6 +2,15 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useFonts } from 'expo-font';
+import {
+  Poppins_400Regular,
+  Poppins_500Medium,
+  Poppins_600SemiBold,
+  Poppins_700Bold,
+  Poppins_800ExtraBold,
+  Poppins_900Black,
+} from '@expo-google-fonts/poppins';
+import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from './backend/supabase';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
@@ -24,6 +33,12 @@ function AppContent() {
   const styles = useMemo(() => createStyles(theme), [theme]);
   const [fontsLoaded] = useFonts({
     [APP_FONTS.sign]: require('./assets/fonts/LenguaDeSenasChilenaHef-Regular.ttf'),
+    Poppins_400Regular,
+    Poppins_500Medium,
+    Poppins_600SemiBold,
+    Poppins_700Bold,
+    Poppins_800ExtraBold,
+    Poppins_900Black,
   });
 
   useEffect(() => {
@@ -55,9 +70,9 @@ function AppContent() {
   if (isBootstrapping || !fontsLoaded) {
     return (
       <SafeAreaProvider>
-        <View style={styles.loaderContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-        </View>
+        <LinearGradient colors={theme.gradient} style={styles.loaderContainer}>
+          <ActivityIndicator size="large" color={theme.colors.primaryContrast} />
+        </LinearGradient>
       </SafeAreaProvider>
     );
   }
@@ -130,7 +145,6 @@ function createStyles(theme) {
   return StyleSheet.create({
     loaderContainer: {
       flex: 1,
-      backgroundColor: theme.colors.background,
       alignItems: 'center',
       justifyContent: 'center',
     },

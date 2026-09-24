@@ -187,7 +187,12 @@ export default function MemoryGameScreen({ onBack }) {
 
       <View style={styles.footer}>
         <ActionButton label="Reiniciar" variant="secondary" onPress={resetGame} style={styles.actionBtn} />
-        <ActionButton label="Salir" onPress={onBack} style={[styles.actionBtn, styles.exitBtn]} />
+        <ActionButton
+          label="Salir"
+          onPress={onBack}
+          style={styles.actionBtn}
+          gradientColors={[theme.colors.success, theme.colors.success]}
+        />
       </View>
 
       <AdaptiveModal
@@ -241,9 +246,9 @@ function createStyles(theme) {
       minHeight: 96,
       margin: 5,
       borderRadius: 14,
-      backgroundColor: isDark ? '#3B2F58' : '#7E57C2',
+      backgroundColor: isDark ? '#3B2F58' : '#8F1EAE',
       borderWidth: 1,
-      borderColor: isDark ? '#5D4A85' : '#7E57C2',
+      borderColor: isDark ? '#5D4A85' : '#8F1EAE',
       alignItems: 'center',
       justifyContent: 'center',
     },

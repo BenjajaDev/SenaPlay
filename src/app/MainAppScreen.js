@@ -63,7 +63,7 @@ export default function MainAppScreen() {
   const { user, refreshUser } = useSession();
   const { getLevelById, loading: catalogLoading } = useCatalog();
   const { isEnabled } = useRemoteConfig();
-  const { confirm, notify, runBlocking } = useFeedback();
+  const { confirm, notify } = useFeedback();
   const { levelProgress, stats, lives, isLoaded: progressLoaded } = useUserProgress(user?.id);
 
   const [activeTab, setActiveTab] = useState('levels');
@@ -111,13 +111,10 @@ export default function MainAppScreen() {
     }
   };
 
-  const handleLevelComplete = async (result) => {
-    const nextLevel = getLevelById(result.levelId + 1);
-    // Observer: useUserProgress escucha este evento y persiste el avance.
-    await runBlocking('Guardando tu progreso…', async () => {
-      events.emit(APP_EVENTS.LEVEL_COMPLETED, { result, nextLevel });
-    });
-    closeLevel();
+  // La sesión informa el resultado al terminar (antes de la celebración);
+  // useUserProgress escucha LEVEL_COMPLETED (Observer) y lo persiste.
+  const handleLevelComplete = (result) => {
+    events.emit(APP_EVENTS.LEVEL_COMPLETED, { result, nextLevel: getLevelById(result.levelId + 1) });
   };
 
   const renderContent = () => {

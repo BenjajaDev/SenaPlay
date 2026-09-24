@@ -126,7 +126,8 @@ export function sessionReducer(state, event) {
       return state.notice ? { ...state, notice: null } : state;
 
     case SESSION_EVENTS.RESTART:
-      return createInitialSession({ total: state.total, maxLives: state.maxLives });
+      // `lives` permite reiniciar con las vidas disponibles del pool.
+      return createInitialSession({ total: state.total, maxLives: event.lives ?? state.maxLives });
 
     default:
       return state;

@@ -1,6 +1,6 @@
 /*
  * Genera el SQL (esquema + seed) del catalogo de niveles a partir de
- * src/data/levelsConfig.js, para pegarlo en el SQL Editor de Supabase.
+ * src/features/levels/data/local/levelsCatalog.js, para pegarlo en el SQL Editor de Supabase.
  *
  * Uso:  node scripts/generateCatalogSql.cjs
  * Salida:  supabase/catalog.sql
@@ -9,7 +9,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
-const configPath = path.join(ROOT, 'src', 'data', 'levelsConfig.js');
+const configPath = path.join(ROOT, 'src', 'features', 'levels', 'data', 'local', 'levelsCatalog.js');
 const outDir = path.join(ROOT, 'supabase');
 const outPath = path.join(outDir, 'catalog.sql');
 

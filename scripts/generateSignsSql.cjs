@@ -1,6 +1,6 @@
 /*
  * Genera el SQL (esquema + seed) de las senas lexicas reales a partir de
- * src/data/signsData.js, para pegarlo en el SQL Editor de Supabase.
+ * src/features/signs/data/local/signsData.js, para pegarlo en el SQL Editor de Supabase.
  *
  * Uso:  node scripts/generateSignsSql.cjs
  * Salida:  supabase/signs.sql
@@ -9,7 +9,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
-const dataPath = path.join(ROOT, 'src', 'data', 'signsData.js');
+const dataPath = path.join(ROOT, 'src', 'features', 'signs', 'data', 'local', 'signsData.js');
 const outDir = path.join(ROOT, 'supabase');
 const outPath = path.join(outDir, 'signs.sql');
 

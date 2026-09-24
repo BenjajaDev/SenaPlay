@@ -1,6 +1,6 @@
 /*
  * Genera el SQL (esquema + seed) del diccionario de senas a partir de
- * src/data/dictionaryData.js, para pegarlo en el SQL Editor de Supabase.
+ * src/features/signs/data/local/dictionaryData.js, para pegarlo en el SQL Editor de Supabase.
  *
  * Uso:  node scripts/generateDictionarySql.cjs
  * Salida:  supabase/dictionary.sql
@@ -9,7 +9,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
-const dataPath = path.join(ROOT, 'src', 'data', 'dictionaryData.js');
+const dataPath = path.join(ROOT, 'src', 'features', 'signs', 'data', 'local', 'dictionaryData.js');
 const outDir = path.join(ROOT, 'supabase');
 const outPath = path.join(outDir, 'dictionary.sql');
 

@@ -11,15 +11,15 @@ import {
   Poppins_900Black,
 } from '@expo-google-fonts/poppins';
 import { LinearGradient } from 'expo-linear-gradient';
-import { supabase } from './backend/supabase';
-import LoginScreen from './src/screens/LoginScreen';
-import RegisterScreen from './src/screens/RegisterScreen';
-import VerifyCodeScreen from './src/screens/VerifyCodeScreen';
-import ResetPasswordScreen from './src/screens/ResetPasswordScreen';
-import MainAppScreen from './src/screens/MainAppScreen';
-import { APP_FONTS } from './src/constants/fonts';
-import { AppThemeProvider, useAppTheme } from './src/theme/ThemeProvider';
-import { CatalogProvider } from './src/data/CatalogContext';
+import { supabase } from './src/core/supabase/client';
+import LoginScreen from './src/features/auth/presentation/LoginScreen';
+import RegisterScreen from './src/features/auth/presentation/RegisterScreen';
+import VerifyCodeScreen from './src/features/auth/presentation/VerifyCodeScreen';
+import ResetPasswordScreen from './src/features/auth/presentation/ResetPasswordScreen';
+import MainAppScreen from './src/app/MainAppScreen';
+import { APP_FONTS } from './src/shared/theme/fonts';
+import { AppThemeProvider, useAppTheme } from './src/shared/theme/ThemeProvider';
+import { CatalogProvider } from './src/features/levels/presentation/CatalogContext';
 
 function AppContent() {
   const [screen, setScreen] = useState('login');

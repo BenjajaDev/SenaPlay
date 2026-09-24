@@ -1,11 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import MessageDialog from '../../../shared/ui/feedback/MessageDialog';
-import ActionButton from '../../../shared/ui/ActionButton';
-import ScreenHeader from '../../../shared/ui/ScreenHeader';
-import SignImage from '../../signs/presentation/SignImage';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
+import announce from '../../../core/a11y/announce';
+import haptics from '../../../core/feedback/haptics';
+import { AppText, Button, Card, MessageDialog, ProgressBar, ScreenHeader } from '../../../shared/ui';
 import { useAppTheme } from '../../../shared/theme/ThemeProvider';
+import OptionTile from '../../levels/presentation/exercises/OptionTile';
+import { useRemoteConfig } from '../../remoteConfig/presentation/RemoteConfigProvider';
+import SignImage from '../../signs/presentation/SignImage';
 
 const QUESTIONS = [
   { sign: 'a', options: ['A', 'B', 'C'], correct: 'A' },
@@ -16,137 +18,162 @@ const QUESTIONS = [
   { sign: 'f', options: ['E', 'F', 'G'], correct: 'F' },
 ];
 
-const MAX_TIME = 10;
+const REVEAL_MS = 900;
 
+/**
+ * Quiz contrarreloj. Tiempo por pregunta configurable remotamente
+ * (difficulty.quizSecondsPerQuestion). Al responder se revela la correcta:
+ * la elegida se marca ✓ o ✕ con color, icono, vibración y anuncio.
+ */
 export default function QuickQuizGameScreen({ onBack }) {
   const theme = useAppTheme();
-  const styles = useMemo(() => createStyles(theme), [theme]);
+  const { config } = useRemoteConfig();
+  const maxTime = Math.max(3, Number(config.difficulty?.quizSecondsPerQuestion) || 10);
 
   const [started, setStarted] = useState(false);
   const [index, setIndex] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(MAX_TIME);
+  const [timeLeft, setTimeLeft] = useState(maxTime);
   const [score, setScore] = useState(0);
-  const [correct, setCorrect] = useState(0);
+  const [correctCount, setCorrectCount] = useState(0);
+  const [picked, setPicked] = useState(null);
   const [showResult, setShowResult] = useState(false);
-  const [isAnswerLocked, setIsAnswerLocked] = useState(false);
+  const revealTimer = useRef(null);
 
   const question = QUESTIONS[index];
-  const progress = useMemo(() => (index / QUESTIONS.length) * 100, [index]);
+  const locked = picked !== null;
 
-  useEffect(() => {
-    if (!started || showResult || isAnswerLocked) {
-      return undefined;
-    }
-
-    if (timeLeft <= 0) {
-      setIsAnswerLocked(true);
-      setTimeout(() => {
-        moveNext();
-      }, 700);
-      return undefined;
-    }
-
-    const timer = setTimeout(() => {
-      setTimeLeft((prev) => prev - 1);
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [started, timeLeft, showResult, isAnswerLocked]);
-
-  const startGame = () => {
-    setStarted(true);
-    setIndex(0);
-    setTimeLeft(MAX_TIME);
-    setScore(0);
-    setCorrect(0);
-    setShowResult(false);
-    setIsAnswerLocked(false);
-  };
+  useEffect(() => () => clearTimeout(revealTimer.current), []);
 
   const moveNext = () => {
+    setPicked(null);
     if (index < QUESTIONS.length - 1) {
       setIndex((prev) => prev + 1);
-      setTimeLeft(MAX_TIME);
-      setIsAnswerLocked(false);
-      return;
+      setTimeLeft(maxTime);
+    } else {
+      setShowResult(true);
     }
-    setShowResult(true);
   };
 
-  const handleAnswer = (value) => {
-    if (isAnswerLocked) {
-      return;
-    }
-
-    setIsAnswerLocked(true);
+  const reveal = (value) => {
+    setPicked(value);
     const isCorrect = value === question.correct;
-
     if (isCorrect) {
-      setCorrect((prev) => prev + 1);
+      haptics.success();
+      announce('Correcto');
+      setCorrectCount((prev) => prev + 1);
       setScore((prev) => prev + 50 + timeLeft * 10);
+    } else {
+      haptics.error();
+      announce(value === '__timeout__' ? `Se acabó el tiempo. Era ${question.correct}` : `Incorrecto. Era ${question.correct}`);
     }
-
-    setTimeout(() => {
-      moveNext();
-    }, 700);
+    revealTimer.current = setTimeout(moveNext, REVEAL_MS);
   };
+
+  useEffect(() => {
+    if (!started || showResult || locked) return undefined;
+    if (timeLeft <= 0) {
+      reveal('__timeout__');
+      return undefined;
+    }
+    const timer = setTimeout(() => setTimeLeft((prev) => prev - 1), 1000);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [started, timeLeft, showResult, locked]);
+
+  const startGame = () => {
+    clearTimeout(revealTimer.current);
+    setStarted(true);
+    setIndex(0);
+    setTimeLeft(maxTime);
+    setScore(0);
+    setCorrectCount(0);
+    setPicked(null);
+    setShowResult(false);
+  };
+
+  const optionState = (option) => {
+    if (!locked) return 'idle';
+    if (option === question.correct) return 'matched';
+    if (option === picked) return 'selected';
+    return 'idle';
+  };
+
+  const timeRatio = useMemo(() => timeLeft / maxTime, [timeLeft, maxTime]);
 
   return (
     <View style={styles.screen}>
       <ScreenHeader
-        title="Quiz Rapido"
+        title="Quiz rápido"
         onBack={onBack}
-        rightNode={<Text style={styles.scoreLabel}>{score} pts</Text>}
+        rightNode={
+          <AppText variant="label" tone="brand" accessibilityLabel={`${score} puntos`}>
+            {score} pts
+          </AppText>
+        }
       />
 
       {!started ? (
-        <View style={styles.centerBox}>
-          <Ionicons name="flash" size={66} color={theme.colors.gold} />
-          <Text style={styles.welcomeTitle}>Ronda rapida de SEÑAS</Text>
-          <Text style={styles.welcomeText}>6 preguntas. 10 segundos por cada una.</Text>
-          <ActionButton
-            label="Comenzar"
-            onPress={startGame}
-            style={styles.startBtn}
-            gradientColors={[theme.colors.gold, theme.colors.goldDeep]}
-          />
-        </View>
+        <Card variant="gradient" padding="xl" style={styles.welcome}>
+          <Ionicons name="flash" size={64} color={theme.colors.gold} />
+          <AppText variant="title" align="center">
+            Ronda rápida de señas
+          </AppText>
+          <AppText variant="body" tone="secondary" align="center">
+            {QUESTIONS.length} preguntas · {maxTime} segundos por cada una
+          </AppText>
+          <Button label="Comenzar" icon="play" onPress={startGame} haptic />
+        </Card>
       ) : (
-        <View style={styles.gameBox}>
-          <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: `${progress}%` }]} />
-          </View>
-
+        <View style={styles.game}>
           <View style={styles.metaRow}>
-            <Text style={styles.metaText}>Pregunta {index + 1}/{QUESTIONS.length}</Text>
-            <Text style={[styles.metaText, timeLeft <= 3 && styles.timerDanger]}>{timeLeft}s</Text>
+            <AppText variant="caption" tone="secondary">
+              Pregunta {index + 1}/{QUESTIONS.length}
+            </AppText>
+            <View style={styles.timer} accessible accessibilityLabel={`Quedan ${timeLeft} segundos`}>
+              <Ionicons name="timer-outline" size={16} color={timeLeft <= 3 ? theme.colors.dangerText : theme.colors.textSecondary} />
+              <AppText variant="label" tone={timeLeft <= 3 ? 'danger' : 'secondary'}>
+                {timeLeft}s
+              </AppText>
+            </View>
           </View>
+          <ProgressBar value={timeRatio} gradient={timeLeft <= 3 ? 'danger' : 'reward'} label="Tiempo restante" />
 
-          <View style={styles.questionCard}>
-            <Text style={styles.questionText}>Que letra representa esta SEÑA?</Text>
-            <SignImage signKey={question.sign} size={96} rounded={16} />
-          </View>
+          <Card padding="lg" style={styles.questionCard}>
+            <AppText variant="bodyStrong">¿Qué letra representa esta seña?</AppText>
+            <SignImage signKey={question.sign} size={120} rounded={theme.radius.xl} />
+          </Card>
 
-          <View style={styles.optionsList}>
-            {question.options.map((option) => (
-              <Pressable
-                key={option}
-                style={({ pressed }) => [styles.optionBtn, pressed && styles.optionBtnPressed]}
-                onPress={() => handleAnswer(option)}
-                disabled={isAnswerLocked}
-              >
-                <Text style={styles.optionText}>{option}</Text>
-              </Pressable>
-            ))}
+          <View style={styles.options}>
+            {question.options.map((option) => {
+              const state = optionState(option);
+              const wrongPick = state === 'selected';
+              return (
+                <OptionTile
+                  key={option}
+                  state={state}
+                  disabled={locked}
+                  onPress={() => reveal(option)}
+                  accessibilityLabel={`Letra ${option}`}
+                  style={[styles.option, wrongPick && { borderColor: theme.colors.danger, backgroundColor: theme.colors.dangerSoft }]}
+                >
+                  <View style={styles.optionInner}>
+                    <AppText variant="display" tone={wrongPick ? 'danger' : state === 'matched' ? 'success' : 'primary'}>
+                      {option}
+                    </AppText>
+                    {wrongPick ? <Ionicons name="close-circle" size={22} color={theme.colors.dangerText} /> : null}
+                  </View>
+                </OptionTile>
+              );
+            })}
           </View>
         </View>
       )}
 
       <MessageDialog
         visible={showResult}
-        context="level-complete"
+        variant={correctCount >= QUESTIONS.length / 2 ? 'celebration' : 'info'}
         title="Quiz finalizado"
-        message={`Aciertos: ${correct}/${QUESTIONS.length}. Puntuacion: ${score}.`}
+        message={`Aciertos: ${correctCount}/${QUESTIONS.length}. Puntuación: ${score}.`}
         primaryText="Jugar otra vez"
         secondaryText="Volver"
         onPrimaryPress={startGame}
@@ -157,97 +184,14 @@ export default function QuickQuizGameScreen({ onBack }) {
   );
 }
 
-function createStyles(theme) {
-  const isDark = theme.mode === 'dark';
-
-  return StyleSheet.create({
-    screen: {
-      flex: 1,
-    },
-    scoreLabel: {
-      fontSize: 14,
-      fontWeight: '800',
-      color: theme.colors.gold,
-    },
-    centerBox: {
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 10,
-    },
-    welcomeTitle: {
-      fontSize: 24,
-      fontWeight: '900',
-      color: theme.colors.textPrimary,
-      textAlign: 'center',
-    },
-    welcomeText: {
-      color: theme.colors.textSecondary,
-      fontSize: 14,
-      textAlign: 'center',
-    },
-    startBtn: {
-      marginTop: 14,
-      paddingHorizontal: 24,
-    },
-    gameBox: {
-      flex: 1,
-    },
-    progressTrack: {
-      height: 10,
-      borderRadius: 999,
-      backgroundColor: isDark ? '#3A3350' : '#E2E8F0',
-      overflow: 'hidden',
-      marginBottom: 10,
-    },
-    progressFill: {
-      height: '100%',
-      backgroundColor: theme.colors.primary,
-    },
-    metaRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginBottom: 12,
-    },
-    metaText: {
-      color: theme.colors.textSecondary,
-      fontWeight: '700',
-    },
-    timerDanger: {
-      color: theme.colors.danger,
-    },
-    questionCard: {
-      backgroundColor: isDark ? '#261F3B' : '#FFFFFF',
-      borderRadius: 14,
-      borderWidth: 1,
-      borderColor: isDark ? '#4B3B73' : '#E2E8F0',
-      alignItems: 'center',
-      paddingVertical: 20,
-      marginBottom: 12,
-    },
-    questionText: {
-      color: isDark ? '#E6DDBB' : '#334155',
-      fontWeight: '700',
-      marginBottom: 8,
-    },
-    optionsList: {
-      gap: 8,
-    },
-    optionBtn: {
-      backgroundColor: isDark ? '#221C35' : '#FFFFFF',
-      borderWidth: 1,
-      borderColor: isDark ? '#4B3B73' : '#CBD5E1',
-      borderRadius: 12,
-      paddingVertical: 14,
-      alignItems: 'center',
-    },
-    optionBtnPressed: {
-      backgroundColor: isDark ? '#2A2341' : '#F8FAFC',
-    },
-    optionText: {
-      fontSize: 20,
-      fontWeight: '900',
-      color: theme.colors.textPrimary,
-    },
-  });
-}
+const styles = StyleSheet.create({
+  screen: { flex: 1, gap: 12 },
+  welcome: { alignItems: 'center', gap: 12, marginTop: 24 },
+  game: { gap: 12 },
+  metaRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  timer: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  questionCard: { alignItems: 'center', gap: 12 },
+  options: { gap: 10 },
+  option: { minHeight: 56 },
+  optionInner: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+});

@@ -1,227 +1,141 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useMemo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import SectionHeader from '../../../shared/ui/SectionHeader';
-import SurfaceCard from '../../../shared/ui/SurfaceCard';
+import { StyleSheet, View } from 'react-native';
+import { AppText, Badge, Card, EmptyState, SectionHeader, StaggerItem } from '../../../shared/ui';
 import { useAppTheme } from '../../../shared/theme/ThemeProvider';
+import { useRemoteConfig } from '../../remoteConfig/presentation/RemoteConfigProvider';
 
-const GAMES = [
+// Catálogo de juegos. `flag` permite activarlos/desactivarlos desde el panel
+// web (módulos experimentales o eventos) sin publicar una versión nueva.
+export const GAMES = [
   {
     id: 'memory',
-    title: 'Memoria de SEÑAS',
-    description: 'Encuentra parejas entre SEÑA y letra',
+    flag: 'games.memory',
+    title: 'Memoria de señas',
+    description: 'Encuentra parejas entre seña y letra',
     icon: 'extension-puzzle-outline',
-    color: '#58CC02',
-    available: true,
+    tone: 'success',
   },
   {
     id: 'quiz',
-    title: 'Quiz Rapido',
-    description: 'Selecciona respuestas antes de que termine el tiempo',
+    flag: 'games.quiz',
+    title: 'Quiz rápido',
+    description: 'Responde antes de que termine el tiempo',
     icon: 'flash-outline',
-    color: '#F59E0B',
-    available: true,
+    tone: 'warning',
   },
   {
     id: 'practice',
+    flag: 'games.practice',
     title: 'Práctica de señas',
     description: 'La IA te corrige la seña frente a la cámara',
     icon: 'hand-left-outline',
-    color: '#1CB0F6',
-    available: true,
+    tone: 'info',
+    camera: true,
   },
   {
     id: 'spelling',
+    flag: 'games.spelling',
     title: 'Deletreo',
     description: 'Escribe palabras haciendo una seña por letra',
     icon: 'text-outline',
-    color: '#FF4B4B',
-    available: true,
+    tone: 'danger',
+    camera: true,
   },
   {
     id: 'camera-translation',
+    flag: 'games.cameraTranslation',
     title: 'Traducción en vivo',
     description: 'Traduce tus señas a texto en tiempo real',
     icon: 'camera-outline',
-    color: '#0EA5E9',
-    available: true,
+    tone: 'info',
+    camera: true,
   },
   {
     id: 'dynamic-monitor',
-    title: 'Señas dinámicas (beta)',
+    flag: 'games.dynamicMonitor',
+    title: 'Señas dinámicas',
     description: 'Graba una seña con movimiento y prueba el modelo nuevo',
     icon: 'videocam-outline',
-    color: '#8B5CF6',
-    available: true,
+    tone: 'brand',
+    camera: true,
+    beta: true,
   },
 ];
 
+const TONE_TOKENS = {
+  success: ['successSoft', 'successText'],
+  warning: ['warningSoft', 'warningText'],
+  info: ['infoSoft', 'infoText'],
+  danger: ['dangerSoft', 'dangerText'],
+  brand: ['primarySoft', 'primary'],
+};
+
 export default function GamesTabScreen({ onOpenGame }) {
   const theme = useAppTheme();
-  const styles = useMemo(() => createStyles(theme), [theme]);
+  const { isEnabled } = useRemoteConfig();
+  const games = GAMES.filter((game) => isEnabled(game.flag));
 
   return (
     <View style={styles.container}>
-      <SectionHeader
-        title="Juegos divertidos"
-        subtitle="Aprende jugando con retos interactivos"
-      />
+      <SectionHeader title="Juegos" subtitle="Aprende jugando con retos interactivos" />
 
-      <View style={styles.grid}>
-        {GAMES.map((game) => {
-          const cardTone = getGameCardTone(theme, game);
-
-          return (
-          <SurfaceCard
-            key={game.title}
-            style={[
-              styles.card,
-              cardTone.card,
-              !game.available && styles.cardDisabled,
-            ]}
-          >
-            <Pressable
-              onPress={() => {
-                if (game.available && onOpenGame) {
-                  onOpenGame(game.id);
-                }
-              }}
-            >
-              <View style={[styles.iconBox, cardTone.iconBox]}> 
-                <Ionicons name={game.icon} size={24} color={game.color} />
-              </View>
-              <Text style={[styles.title, cardTone.title]}>{game.title}</Text>
-              <Text style={[styles.description, cardTone.description]}>{game.description}</Text>
-              <View
-                style={[
-                  styles.cta,
-                  {
-                    backgroundColor: game.available ? game.color : theme.colors.primarySoft,
-                    borderColor: game.available ? game.color : theme.colors.border,
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.ctaText,
-                    { color: game.available ? '#FFFFFF' : theme.colors.textSecondary },
-                  ]}
+      {games.length === 0 ? (
+        <EmptyState icon="game-controller-outline" title="Juegos en pausa" message="Volverán muy pronto." />
+      ) : (
+        <View style={styles.grid}>
+          {games.map((game, index) => {
+            const [soft, strong] = TONE_TOKENS[game.tone];
+            return (
+              <StaggerItem key={game.id} index={index} style={styles.cell}>
+                <Card
+                  padding="md"
+                  onPress={() => onOpenGame?.(game.id)}
+                  accessibilityLabel={`${game.title}. ${game.description}`}
+                  accessibilityHint="Toca para jugar"
+                  style={styles.card}
                 >
-                  {game.available ? 'Jugar' : 'Muy pronto'}
-                </Text>
-              </View>
-            </Pressable>
-          </SurfaceCard>
-        );})}
-      </View>
+                  <View style={styles.topRow}>
+                    <View style={[styles.iconBox, { backgroundColor: theme.colors[soft] }]}>
+                      <Ionicons name={game.icon} size={24} color={theme.colors[strong]} />
+                    </View>
+                    {game.beta ? <Badge label="Beta" tone="brand" /> : null}
+                    {game.camera && !game.beta ? <Ionicons name="camera" size={14} color={theme.colors.textMuted} /> : null}
+                  </View>
+                  <AppText variant="bodyStrong">{game.title}</AppText>
+                  <AppText variant="caption" tone="secondary" style={styles.description}>
+                    {game.description}
+                  </AppText>
+                  <View style={[styles.cta, { backgroundColor: theme.colors[soft] }]}>
+                    <AppText variant="label" style={{ color: theme.colors[strong] }}>
+                      Jugar
+                    </AppText>
+                    <Ionicons name="play" size={12} color={theme.colors[strong]} />
+                  </View>
+                </Card>
+              </StaggerItem>
+            );
+          })}
+        </View>
+      )}
     </View>
   );
 }
 
-function getGameCardTone(theme, game) {
-  const baseBg = theme.mode === 'dark' ? '#221C35' : '#F8F4FF';
-  const baseBorder = theme.mode === 'dark' ? '#4A3D66' : '#DCCDF8';
-
-  if (game.id === 'memory') {
-    return {
-      card: {
-        backgroundColor: theme.mode === 'dark' ? '#1D2E1A' : '#EFFCE7',
-        borderColor: theme.mode === 'dark' ? '#3E6B34' : '#B9E79A',
-      },
-      iconBox: {
-        backgroundColor: theme.mode === 'dark' ? 'rgba(126, 219, 67, 0.16)' : 'rgba(88, 204, 2, 0.14)',
-      },
-      title: {
-        color: theme.mode === 'dark' ? '#F0FFE7' : '#1F3A16',
-      },
-      description: {
-        color: theme.mode === 'dark' ? '#CFEABD' : '#3E6B34',
-      },
-    };
-  }
-
-  if (game.id === 'quiz') {
-    return {
-      card: {
-        backgroundColor: theme.mode === 'dark' ? '#34280F' : '#FFF6DD',
-        borderColor: theme.mode === 'dark' ? '#6F5520' : '#F2D286',
-      },
-      iconBox: {
-        backgroundColor: theme.mode === 'dark' ? 'rgba(242, 201, 76, 0.18)' : 'rgba(245, 158, 11, 0.14)',
-      },
-      title: {
-        color: theme.mode === 'dark' ? '#FFF7E3' : '#4A3200',
-      },
-      description: {
-        color: theme.mode === 'dark' ? '#ECD8A6' : '#7A5A16',
-      },
-    };
-  }
-
-  return {
-    card: {
-      backgroundColor: baseBg,
-      borderColor: baseBorder,
-    },
-    iconBox: {
-      backgroundColor: theme.mode === 'dark' ? 'rgba(242, 201, 76, 0.12)' : 'rgba(126, 87, 194, 0.12)',
-    },
-    title: {
-      color: theme.colors.textPrimary,
-    },
-    description: {
-      color: theme.colors.textSecondary,
-    },
-  };
-}
-
-function createStyles(theme) {
-  return StyleSheet.create({
-    container: {
-      gap: 12,
-    },
-    grid: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      justifyContent: 'space-between',
-      rowGap: 10,
-    },
-    card: {
-      width: '48.5%',
-      padding: 12,
-    },
-    cardDisabled: {
-      opacity: 0.75,
-    },
-    iconBox: {
-      width: 48,
-      height: 48,
-      borderRadius: 12,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: 8,
-    },
-    title: {
-      fontSize: 14,
-      fontWeight: '800',
-      color: theme.colors.textPrimary,
-    },
-    description: {
-      fontSize: 12,
-      color: theme.colors.textSecondary,
-      marginTop: 6,
-      minHeight: 30,
-    },
-    cta: {
-      marginTop: 10,
-      borderRadius: 10,
-      borderWidth: 1,
-      paddingVertical: 7,
-      alignItems: 'center',
-    },
-    ctaText: {
-      fontSize: 12,
-      fontWeight: '800',
-    },
-  });
-}
+const styles = StyleSheet.create({
+  container: { gap: 12 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 10 },
+  cell: { width: '48.5%' },
+  card: { flex: 1 },
+  topRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 },
+  iconBox: { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  description: { marginTop: 4, minHeight: 36 },
+  cta: {
+    marginTop: 10,
+    borderRadius: 10,
+    paddingVertical: 7,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+});

@@ -3,10 +3,13 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useCameraPermissions } from 'expo-camera';
 import { HAND_HTML } from './handTrackingHtml';
+import env from '../../../core/config/env';
+import { cameraAlpha, cameraColors } from '../../../shared/theme/tokens/colors';
 
-// ── IP del servidor Python (debe ser la IP local de tu PC en la misma WiFi) ─
-// Si tu PC cambia de IP, actualízala aquí.
-export const SERVIDOR_IA = 'http://192.168.1.5:8000';
+// ── Servidor Python de IA ──────────────────────────────────────────────────
+// En desarrollo es la IP local de tu PC en la misma WiFi. Se configura con
+// EXPO_PUBLIC_AI_SERVER_URL (ver src/core/config/env.js), sin tocar código.
+export const SERVIDOR_IA = env.aiServerUrl;
 
 // Comando para levantar la IA: python -m uvicorn server:app --host 0.0.0.0 --port 8000
 
@@ -251,7 +254,7 @@ export function IaBanner({ recog, objetivo, textoInactivo, umbral = UMBRAL_CONFI
       ) : confiable ? (
         <Text style={estilos.iaTexto}>
           {'IA reconoce: '}
-          <Text style={[estilos.iaLetra, { color: acierto ? '#22C55E' : '#1CB0F6' }]}>
+          <Text style={[estilos.iaLetra, { color: acierto ? cameraColors.success : cameraColors.accent }]}>
             {iaResultado.sena}
           </Text>
           {`  (${Math.round((iaResultado.confianza || 0) * 100)}%)`}
@@ -271,7 +274,7 @@ export function IaBanner({ recog, objetivo, textoInactivo, umbral = UMBRAL_CONFI
 }
 
 export const estilos = StyleSheet.create({
-  pantalla: { flex: 1, backgroundColor: '#0F172A' },
+  pantalla: { flex: 1, backgroundColor: cameraColors.stage },
   permisoBox: {
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
@@ -279,22 +282,22 @@ export const estilos = StyleSheet.create({
     paddingHorizontal: 32,
     gap: 14,
   },
-  permisoTitulo: { color: '#F1F5F9', fontSize: 20, fontWeight: '800' },
+  permisoTitulo: { color: cameraColors.textStrong, fontSize: 20, fontWeight: '800' },
   permisoTexto: {
-    color: 'rgba(226,232,240,0.7)',
+    color: cameraAlpha('text', 0.7),
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,
   },
   permisoBtn: {
-    backgroundColor: '#1CB0F6',
+    backgroundColor: cameraColors.accent,
     paddingHorizontal: 22,
     paddingVertical: 12,
     borderRadius: 14,
     marginTop: 4,
   },
-  permisoBtnTexto: { color: '#FFFFFF', fontWeight: '800', fontSize: 15 },
-  permisoNota: { color: 'rgba(226,232,240,0.5)', fontSize: 12, textAlign: 'center' },
+  permisoBtnTexto: { color: cameraColors.text, fontWeight: '800', fontSize: 15 },
+  permisoNota: { color: cameraAlpha('text', 0.5), fontSize: 12, textAlign: 'center' },
   barraControl: {
     position: 'absolute',
     bottom: 0,
@@ -302,9 +305,9 @@ export const estilos = StyleSheet.create({
     right: 0,
     paddingHorizontal: 16,
     paddingTop: 10,
-    backgroundColor: 'rgba(15,23,42,0.88)',
+    backgroundColor: cameraAlpha('stage', 0.88),
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.08)',
+    borderTopColor: cameraAlpha('white', 0.08),
     gap: 10,
   },
   iaBanner: {
@@ -312,30 +315,30 @@ export const estilos = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 6,
     paddingHorizontal: 10,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: cameraAlpha('white', 0.05),
     borderRadius: 10,
   },
-  iaTexto: { color: '#E2E8F0', fontSize: 14, fontWeight: '600' },
+  iaTexto: { color: cameraColors.textSoft, fontSize: 14, fontWeight: '600' },
   iaLetra: { fontSize: 18, fontWeight: '900' },
-  iaTextoTenue: { color: 'rgba(226,232,240,0.5)', fontSize: 12 },
-  iaTextoError: { color: '#FCA5A5', fontSize: 11, fontWeight: '600', textAlign: 'center' },
+  iaTextoTenue: { color: cameraAlpha('text', 0.5), fontSize: 12 },
+  iaTextoError: { color: cameraColors.dangerLight, fontSize: 11, fontWeight: '600', textAlign: 'center' },
   errorCamaraBox: {
-    backgroundColor: 'rgba(239,68,68,0.15)',
+    backgroundColor: cameraAlpha('danger', 0.15),
     borderRadius: 10,
     paddingVertical: 6,
     paddingHorizontal: 10,
   },
   errorCamaraTexto: {
-    color: '#FCA5A5',
+    color: cameraColors.dangerLight,
     fontSize: 12,
     fontWeight: '600',
     textAlign: 'center',
   },
   btnPrimario: {
-    backgroundColor: '#1CB0F6',
+    backgroundColor: cameraColors.accent,
     paddingHorizontal: 18,
     paddingVertical: 9,
     borderRadius: 12,
   },
-  btnPrimarioTexto: { color: '#FFFFFF', fontWeight: '800', fontSize: 14 },
+  btnPrimarioTexto: { color: cameraColors.text, fontWeight: '800', fontSize: 14 },
 });

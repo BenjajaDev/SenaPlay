@@ -27,6 +27,7 @@ export { default as Dialog } from './feedback/Dialog';
 export { default as ConfirmDialog } from './feedback/ConfirmDialog';
 export { default as MessageDialog, MESSAGE_PRESETS } from './feedback/MessageDialog';
 export { default as BlockingOverlay } from './feedback/BlockingOverlay';
+export { default as BottomSheet } from './feedback/BottomSheet';
 export { FeedbackProvider, useFeedback, useConfirm } from './feedback/FeedbackProvider';
 
 // Movimiento

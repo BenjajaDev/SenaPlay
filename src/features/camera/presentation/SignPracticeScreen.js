@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ScreenHeader from '../../../shared/ui/ScreenHeader';
 import { SIGNS } from '../data/practiceSigns';
 import { CameraStage, IaBanner, estilos, useSignRecognition } from './signCamera';
+import { cameraAlpha, cameraColors } from '../../../shared/theme/tokens/colors';
 
 // Bajo este valor se considera que un dedo está mal colocado y se nombra en la
 // corrección. La nota por dedo la calcula el visor (0–1 por dedo).
@@ -156,7 +157,7 @@ export default function SignPracticeScreen({ onBack }) {
                       estilos2.puntuacion,
                       {
                         color:
-                          puntuacion > 88 ? '#22C55E' : puntuacion > 72 ? '#F59E0B' : '#EF4444',
+                          puntuacion > 88 ? cameraColors.success : puntuacion > 72 ? cameraColors.warning : cameraColors.danger,
                       },
                     ]}
                   >
@@ -179,16 +180,16 @@ export default function SignPracticeScreen({ onBack }) {
 const estilos2 = StyleSheet.create({
   toggleContenedor: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.07)',
+    backgroundColor: cameraAlpha('white', 0.07),
     borderRadius: 12,
     padding: 3,
   },
   toggleBtn: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 10 },
-  toggleActivo: { backgroundColor: '#1CB0F6' },
-  toggleTexto: { color: 'rgba(255,255,255,0.5)', fontWeight: '700', fontSize: 13 },
-  toggleTextoActivo: { color: '#FFFFFF' },
+  toggleActivo: { backgroundColor: cameraColors.accent },
+  toggleTexto: { color: cameraAlpha('white', 0.5), fontWeight: '700', fontSize: 13 },
+  toggleTextoActivo: { color: cameraColors.text },
   instruccion: {
-    color: 'rgba(226,232,240,0.75)',
+    color: cameraAlpha('text', 0.75),
     fontSize: 13,
     textAlign: 'center',
     lineHeight: 18,
@@ -197,33 +198,33 @@ const estilos2 = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    backgroundColor: 'rgba(245,158,11,0.15)',
+    backgroundColor: cameraAlpha('warning', 0.15),
     borderWidth: 1,
-    borderColor: 'rgba(245,158,11,0.4)',
+    borderColor: cameraAlpha('warning', 0.4),
     alignItems: 'center',
     gap: 2,
   },
   consejoOk: {
-    backgroundColor: 'rgba(34,197,94,0.15)',
-    borderColor: 'rgba(34,197,94,0.45)',
+    backgroundColor: cameraAlpha('success', 0.15),
+    borderColor: cameraAlpha('success', 0.45),
   },
   consejoMal: {
-    backgroundColor: 'rgba(239,68,68,0.15)',
-    borderColor: 'rgba(239,68,68,0.4)',
+    backgroundColor: cameraAlpha('danger', 0.15),
+    borderColor: cameraAlpha('danger', 0.4),
   },
-  consejoTexto: { color: '#F1F5F9', fontSize: 13, fontWeight: '700', textAlign: 'center' },
-  consejoDedos: { color: 'rgba(226,232,240,0.75)', fontSize: 12 },
+  consejoTexto: { color: cameraColors.textStrong, fontSize: 13, fontWeight: '700', textAlign: 'center' },
+  consejoDedos: { color: cameraAlpha('text', 0.75), fontSize: 12 },
   signNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   btnNav: {
     width: 40,
     height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: cameraAlpha('white', 0.08),
     borderRadius: 10,
   },
-  btnNavTexto: { color: '#FFFFFF', fontSize: 22, fontWeight: '300', lineHeight: 26 },
+  btnNavTexto: { color: cameraColors.text, fontSize: 22, fontWeight: '300', lineHeight: 26 },
   signInfo: { flex: 1, alignItems: 'center' },
-  signName: { color: '#F1F5F9', fontWeight: '800', fontSize: 15 },
+  signName: { color: cameraColors.textStrong, fontWeight: '800', fontSize: 15 },
   puntuacion: { fontWeight: '800', fontSize: 20, marginTop: 2 },
 });

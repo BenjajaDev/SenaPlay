@@ -3,6 +3,7 @@ import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'rea
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ScreenHeader from '../../../shared/ui/ScreenHeader';
 import { CameraStage, IaBanner, estilos, useSignRecognition } from './signCamera';
+import { cameraAlpha, cameraColors } from '../../../shared/theme/tokens/colors';
 
 // Señas que hoy tiene entrenadas el modelo dinámico (TCN). Solo informativo:
 // el modelo igual devuelve su mejor intento con cualquier seña que se grabe.
@@ -70,7 +71,7 @@ export default function DynamicSignMonitorScreen({ onBack }) {
         >
           {grabando || procesando ? (
             <>
-              <ActivityIndicator color="#FFFFFF" size="small" />
+              <ActivityIndicator color={cameraColors.text} size="small" />
               <Text style={propios.btnGrabarTexto}>
                 {grabando ? 'Grabando…' : 'Procesando…'}
               </Text>
@@ -90,19 +91,19 @@ const propios = StyleSheet.create({
     left: 14,
     right: 14,
     alignItems: 'center',
-    backgroundColor: 'rgba(15,23,42,0.75)',
+    backgroundColor: cameraAlpha('stage', 0.75),
     borderRadius: 12,
     paddingVertical: 6,
     paddingHorizontal: 10,
   },
   avisoTexto: {
-    color: 'rgba(226,232,240,0.75)',
+    color: cameraAlpha('text', 0.75),
     fontSize: 11,
     fontWeight: '600',
     textAlign: 'center',
   },
   diagnostico: {
-    color: 'rgba(226,232,240,0.45)',
+    color: cameraAlpha('text', 0.45),
     fontSize: 11,
     textAlign: 'center',
   },
@@ -111,15 +112,15 @@ const propios = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#EF4444',
+    backgroundColor: cameraColors.danger,
     paddingVertical: 14,
     borderRadius: 16,
   },
   btnGrabarActivo: {
-    backgroundColor: 'rgba(239,68,68,0.5)',
+    backgroundColor: cameraAlpha('danger', 0.5),
   },
   btnGrabarTexto: {
-    color: '#FFFFFF',
+    color: cameraColors.text,
     fontWeight: '800',
     fontSize: 15,
   },

@@ -77,7 +77,7 @@ export default function LevelCompleteCelebration({ visible, result, levelTitle, 
           ]}
         >
           <LinearGradient {...theme.gradients.header} style={styles.banner}>
-            <Ionicons name="trophy" size={34} color="#FFFFFF" />
+            <Ionicons name="trophy" size={34} color={theme.colors.onHeader} />
             <AppText variant="title" style={styles.bannerTitle} accessibilityRole="header">
               ¡Nivel completado!
             </AppText>
@@ -134,8 +134,8 @@ function createStyles(theme) {
       ...theme.elevation.lg,
     },
     banner: { alignItems: 'center', gap: spacing.xs, paddingVertical: spacing.xl, paddingHorizontal: spacing.lg },
-    bannerTitle: { color: '#FFFFFF', textAlign: 'center' },
-    bannerSubtitle: { color: '#FFFFFF', opacity: 0.92, textAlign: 'center' },
+    bannerTitle: { color: colors.onHeader, textAlign: 'center' },
+    bannerSubtitle: { color: colors.onHeader, opacity: 0.92, textAlign: 'center' },
     stars: { flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-end', gap: spacing.md },
     statsRow: { flexDirection: 'row', paddingHorizontal: spacing.lg, gap: spacing.sm },
     stat: {

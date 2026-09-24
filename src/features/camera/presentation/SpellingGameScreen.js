@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import haptics from '../../../core/feedback/haptics';
 import ScreenHeader from '../../../shared/ui/ScreenHeader';
+import { useRemoteConfig } from '../../remoteConfig/presentation/RemoteConfigProvider';
 import SignImage from '../../signs/presentation/SignImage';
 import { PALABRAS, UMBRAL_DELETREO } from '../data/practiceSigns';
 import { CameraStage, IaBanner, estilos, useSignRecognition } from './signCamera';
+import { cameraAlpha, cameraColors } from '../../../shared/theme/tokens/colors';
 
 /**
  * Juego de Deletreo: escribe una palabra letra por letra haciendo las señas.
@@ -20,6 +23,9 @@ import { CameraStage, IaBanner, estilos, useSignRecognition } from './signCamera
 export default function SpellingGameScreen({ onBack }) {
   const insets = useSafeAreaInsets();
   const recog = useSignRecognition();
+  // Umbral ajustable desde el panel web (difficulty.spellingConfidenceThreshold).
+  const { config } = useRemoteConfig();
+  const umbral = Number(config.difficulty?.spellingConfidenceThreshold) || UMBRAL_DELETREO;
 
   const [palabraIdx, setPalabraIdx] = useState(0);
   const [letraIdx, setLetraIdx] = useState(0);
@@ -50,14 +56,12 @@ export default function SpellingGameScreen({ onBack }) {
     if (!iaResultado || palabraCompleta) return;
     if (String(iaResultado.sena).toUpperCase() !== letraObjetivo) return;
 
-    if (iaResultado.dinamica) {
-      setLetraIdx((i) => i + 1);
-      setAciertos((n) => n + 1);
-    } else if ((iaResultado.confianza || 0) >= UMBRAL_DELETREO && !movimientoRef.current) {
+    if (iaResultado.dinamica || ((iaResultado.confianza || 0) >= umbral && !movimientoRef.current)) {
+      haptics.success();
       setLetraIdx((i) => i + 1);
       setAciertos((n) => n + 1);
     }
-  }, [iaResultado, letraObjetivo, palabraCompleta, movimientoRef]);
+  }, [iaResultado, letraObjetivo, palabraCompleta, movimientoRef, umbral]);
 
   const siguientePalabra = useCallback(() => {
     setPalabraIdx((p) => (p + 1) % PALABRAS.length);
@@ -155,13 +159,13 @@ const propios = StyleSheet.create({
     right: 14,
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(15,23,42,0.75)',
+    backgroundColor: cameraAlpha('stage', 0.75),
     borderRadius: 16,
     padding: 8,
   },
-  guiaTexto: { color: 'rgba(226,232,240,0.75)', fontSize: 11, fontWeight: '700' },
+  guiaTexto: { color: cameraAlpha('text', 0.75), fontSize: 11, fontWeight: '700' },
   progresoRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  progresoTexto: { color: 'rgba(226,232,240,0.6)', fontSize: 11, fontWeight: '700' },
+  progresoTexto: { color: cameraAlpha('text', 0.6), fontSize: 11, fontWeight: '700' },
   palabraRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -174,20 +178,20 @@ const propios = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.07)',
+    backgroundColor: cameraAlpha('white', 0.07),
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.12)',
+    borderColor: cameraAlpha('white', 0.12),
   },
-  letraChipOk: { backgroundColor: 'rgba(34,197,94,0.18)', borderColor: '#22C55E' },
-  letraChipActual: { borderColor: '#1CB0F6', backgroundColor: 'rgba(28,176,246,0.15)' },
-  letraChipTexto: { fontSize: 20, fontWeight: '900', color: 'rgba(255,255,255,0.4)' },
-  letraChipTextoOn: { color: '#FFFFFF' },
+  letraChipOk: { backgroundColor: cameraAlpha('success', 0.18), borderColor: cameraColors.success },
+  letraChipActual: { borderColor: cameraColors.accent, backgroundColor: cameraAlpha('accent', 0.15) },
+  letraChipTexto: { fontSize: 20, fontWeight: '900', color: cameraAlpha('white', 0.4) },
+  letraChipTextoOn: { color: cameraColors.text },
   footer: { alignItems: 'center', gap: 6 },
-  ok: { color: '#22C55E', fontWeight: '800', fontSize: 15 },
-  instr: { color: 'rgba(226,232,240,0.8)', fontSize: 14 },
-  letraDestacada: { color: '#1CB0F6', fontWeight: '900', fontSize: 18 },
+  ok: { color: cameraColors.success, fontWeight: '800', fontSize: 15 },
+  instr: { color: cameraAlpha('text', 0.8), fontSize: 14 },
+  letraDestacada: { color: cameraColors.accent, fontWeight: '900', fontSize: 18 },
   reiniciar: {
-    color: 'rgba(226,232,240,0.5)',
+    color: cameraAlpha('text', 0.5),
     fontSize: 12,
     textDecorationLine: 'underline',
   },

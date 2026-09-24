@@ -1,121 +1,138 @@
-import { useMemo, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import SectionHeader from '../../../shared/ui/SectionHeader';
-import SurfaceCard from '../../../shared/ui/SurfaceCard';
+import * as WebBrowser from 'expo-web-browser';
+import { useEffect, useMemo, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
+import { useServices } from '../../../core/di/ServicesProvider';
+import {
+  AppText,
+  Badge,
+  Card,
+  Chip,
+  EmptyState,
+  SectionHeader,
+  SkeletonList,
+  StaggerItem,
+  TextField,
+  useFeedback,
+} from '../../../shared/ui';
 import { useAppTheme } from '../../../shared/theme/ThemeProvider';
+import { formatDuration } from '../data/MediaRepository';
 
-const VIDEOS = [
-  { title: 'Pronunciacion diaria', category: 'Basico', duration: '06:12' },
-  { title: 'Vocabulario para saludos', category: 'Basico', duration: '08:45' },
-  { title: 'Frases en contexto', category: 'Intermedio', duration: '10:03' },
-  { title: 'Conversaciones reales', category: 'Avanzado', duration: '12:20' },
-];
+const normalizeText = (value) =>
+  String(value || '')
+    .toLocaleLowerCase('es')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '');
 
+/**
+ * Videos de aprendizaje administrados desde el Gestor de Medios del panel
+ * web. Muestra si el video trae subtítulos (CC): la app sirve a personas
+ * oyentes y no oyentes, y los videos con voz deben ser accesibles.
+ */
 export default function VideosTabScreen() {
   const theme = useAppTheme();
-  const styles = useMemo(() => createStyles(theme), [theme]);
+  const { media } = useServices();
+  const { notify } = useFeedback();
+  const [videos, setVideos] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
+  const [category, setCategory] = useState('Todos');
 
-  const filtered = useMemo(() => {
-    const value = query.trim().toLowerCase();
-    if (!value) {
-      return VIDEOS;
-    }
-    return VIDEOS.filter((item) => {
-      return item.title.toLowerCase().includes(value) || item.category.toLowerCase().includes(value);
+  useEffect(() => {
+    let mounted = true;
+    media.listVideos().then((result) => {
+      if (!mounted) return;
+      setVideos(result.videos);
+      setLoading(false);
     });
-  }, [query]);
+    return () => {
+      mounted = false;
+    };
+  }, [media]);
+
+  const categories = useMemo(() => ['Todos', ...new Set(videos.map((video) => video.category))], [videos]);
+  const filtered = useMemo(() => {
+    const search = normalizeText(query.trim());
+    return videos.filter(
+      (video) =>
+        (category === 'Todos' || video.category === category) &&
+        (!search || normalizeText(`${video.title} ${video.category} ${video.description || ''}`).includes(search)),
+    );
+  }, [videos, query, category]);
+
+  const openVideo = async (video) => {
+    if (!video.url) {
+      notify({ tone: 'info', title: 'Muy pronto', message: 'Este video todavía no está publicado.' });
+      return;
+    }
+    await WebBrowser.openBrowserAsync(video.url);
+  };
 
   return (
     <View style={styles.container}>
-      <SectionHeader
-        title="Videos"
-        subtitle="Busca y filtra contenido de aprendizaje"
+      <SectionHeader title="Videos" subtitle="Aprende con videos cortos por nivel" />
+      <TextField
+        icon="search"
+        placeholder="Buscar videos…"
+        value={query}
+        onChangeText={setQuery}
+        accessibilityLabel="Buscar videos"
+        returnKeyType="search"
       />
+      {categories.length > 2 ? (
+        <View style={styles.chips}>
+          {categories.map((item) => (
+            <Chip key={item} label={item} selected={item === category} onPress={() => setCategory(item)} />
+          ))}
+        </View>
+      ) : null}
 
-      <View style={styles.searchBox}>
-        <Ionicons name="search" size={18} color={theme.colors.textSecondary} />
-        <TextInput
-          value={query}
-          onChangeText={setQuery}
-          placeholder="Buscar videos..."
-          placeholderTextColor={theme.colors.navInactive}
-          style={styles.searchInput}
-        />
-      </View>
-
-      <View style={styles.list}>
-        {filtered.map((video) => (
-          <SurfaceCard key={video.title} style={styles.videoCard}>
-            <Pressable style={styles.videoCardPressable}>
-              <View style={styles.thumb}>
-                <Ionicons name="play-circle" size={32} color={theme.colors.primary} />
-              </View>
-              <View style={styles.info}>
-                <Text style={styles.videoTitle}>{video.title}</Text>
-                <Text style={styles.videoMeta}>{video.category} • {video.duration}</Text>
-              </View>
-            </Pressable>
-          </SurfaceCard>
-        ))}
-      </View>
+      {loading ? (
+        <SkeletonList count={4} label="Cargando videos" />
+      ) : filtered.length === 0 ? (
+        <EmptyState icon="videocam-outline" title="Sin videos" message="Prueba con otra búsqueda." />
+      ) : (
+        <View style={styles.list}>
+          {filtered.map((video, index) => (
+            <StaggerItem key={video.id} index={index}>
+              <Card
+                padding="md"
+                onPress={() => openVideo(video)}
+                accessibilityLabel={`${video.title}, ${video.category}${video.durationSeconds ? `, ${formatDuration(video.durationSeconds)}` : ''}${video.captionsUrl ? ', con subtítulos' : ''}`}
+                accessibilityHint="Abre el video"
+              >
+                <View style={styles.row}>
+                  <View style={[styles.thumb, { backgroundColor: theme.colors.primarySoft, borderRadius: theme.radius.md }]}>
+                    <Ionicons name="play-circle" size={32} color={theme.colors.primary} />
+                  </View>
+                  <View style={styles.info}>
+                    <AppText variant="bodyStrong" numberOfLines={2}>
+                      {video.title}
+                    </AppText>
+                    <View style={styles.metaRow}>
+                      <AppText variant="caption" tone="secondary">
+                        {[video.category, formatDuration(video.durationSeconds)].filter(Boolean).join(' • ')}
+                      </AppText>
+                      {video.captionsUrl ? <Badge label="CC" tone="info" icon="text" /> : null}
+                    </View>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color={theme.colors.textMuted} />
+                </View>
+              </Card>
+            </StaggerItem>
+          ))}
+        </View>
+      )}
     </View>
   );
 }
 
-function createStyles(theme) {
-  return StyleSheet.create({
-    container: {
-      gap: 12,
-    },
-    searchBox: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: theme.colors.surface,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
-      borderRadius: 999,
-      paddingHorizontal: 12,
-      gap: 8,
-    },
-    searchInput: {
-      flex: 1,
-      paddingVertical: 10,
-      color: theme.colors.textPrimary,
-      fontSize: 14,
-    },
-    list: {
-      gap: 8,
-    },
-    videoCard: {
-      padding: 10,
-    },
-    videoCardPressable: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    thumb: {
-      width: 64,
-      height: 54,
-      borderRadius: 10,
-      backgroundColor: theme.colors.primarySoft,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginRight: 10,
-    },
-    info: {
-      flex: 1,
-    },
-    videoTitle: {
-      fontSize: 14,
-      fontWeight: '800',
-      color: theme.colors.textPrimary,
-    },
-    videoMeta: {
-      marginTop: 3,
-      fontSize: 12,
-      color: theme.colors.textSecondary,
-    },
-  });
-}
+const styles = StyleSheet.create({
+  container: { gap: 12 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  list: { gap: 8 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  thumb: { width: 64, height: 54, alignItems: 'center', justifyContent: 'center' },
+  info: { flex: 1, gap: 4 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+});

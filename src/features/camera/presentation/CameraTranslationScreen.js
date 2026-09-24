@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import haptics from '../../../core/feedback/haptics';
 import ScreenHeader from '../../../shared/ui/ScreenHeader';
+import { useRemoteConfig } from '../../remoteConfig/presentation/RemoteConfigProvider';
 import { CameraStage, IaBanner, estilos, useSignRecognition } from './signCamera';
+import { cameraAlpha, cameraColors } from '../../../shared/theme/tokens/colors';
 
 // ── Parámetros del tracking ───────────────────────────────────────────────────
 // Traducir en vivo no es "clasificar un frame": el clasificador emite ~2
@@ -37,6 +40,9 @@ const MS_PAUSA_ESPACIO = 1800;
 export default function CameraTranslationScreen({ onBack }) {
   const insets = useSafeAreaInsets();
   const recog = useSignRecognition();
+  // Umbral ajustable desde el panel web (difficulty.aiConfidenceThreshold).
+  const { config } = useRemoteConfig();
+  const umbralConfianza = Number(config.difficulty?.aiConfidenceThreshold) || UMBRAL_CONFIANZA;
 
   const [texto, setTexto] = useState('');
   const [candidata, setCandidata] = useState(null); // { sena, veces }
@@ -71,7 +77,7 @@ export default function CameraTranslationScreen({ onBack }) {
       return;
     }
 
-    if ((iaResultado.confianza || 0) < UMBRAL_CONFIANZA) return;
+    if ((iaResultado.confianza || 0) < umbralConfianza) return;
     if (movimientoRef.current) return; // mano en tránsito, no es una letra estable
 
     // Rearme: no repetir la misma letra hasta que pase el tiempo mínimo
@@ -82,13 +88,14 @@ export default function CameraTranslationScreen({ onBack }) {
       const veces = prev && prev.sena === sena ? prev.veces + 1 : 1;
 
       if (veces >= LECTURAS_PARA_CONFIRMAR) {
+        haptics.tap();
         setTexto((t) => t + sena);
         ultimaConfirmada.current = { sena, cuando: ahora };
         return null;
       }
       return { sena, veces };
     });
-  }, [iaResultado, activo, movimientoRef]);
+  }, [iaResultado, activo, movimientoRef, umbralConfianza]);
 
   // ── Separación de palabras por pausa ──
   // Si la mano sale de cuadro el tiempo suficiente, se inserta un espacio.
@@ -193,40 +200,40 @@ const propios = StyleSheet.create({
     right: 14,
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(15,23,42,0.78)',
+    backgroundColor: cameraAlpha('stage', 0.78),
     borderRadius: 16,
     paddingVertical: 10,
     paddingHorizontal: 14,
   },
-  candidataLetra: { color: '#1CB0F6', fontSize: 30, fontWeight: '900' },
+  candidataLetra: { color: cameraColors.accent, fontSize: 30, fontWeight: '900' },
   candidataTrack: {
     width: 46,
     height: 4,
     borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: cameraAlpha('white', 0.15),
     overflow: 'hidden',
   },
-  candidataFill: { height: '100%', backgroundColor: '#1CB0F6', borderRadius: 2 },
+  candidataFill: { height: '100%', backgroundColor: cameraColors.accent, borderRadius: 2 },
   salidaBox: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: cameraAlpha('white', 0.06),
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: cameraAlpha('white', 0.1),
     minHeight: 62,
     maxHeight: 110,
   },
   salidaScroll: { flexGrow: 0 },
   salidaContent: { padding: 10 },
-  salidaTexto: { color: '#F1F5F9', fontSize: 19, fontWeight: '700', letterSpacing: 1 },
-  salidaVacia: { color: 'rgba(226,232,240,0.35)', fontSize: 13, fontStyle: 'italic' },
+  salidaTexto: { color: cameraColors.textStrong, fontSize: 19, fontWeight: '700', letterSpacing: 1 },
+  salidaVacia: { color: cameraAlpha('text', 0.35), fontSize: 13, fontStyle: 'italic' },
   controles: { flexDirection: 'row', gap: 6 },
   btn: {
     flex: 1,
     paddingVertical: 9,
     borderRadius: 10,
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: cameraAlpha('white', 0.08),
   },
-  btnPausado: { backgroundColor: 'rgba(245,158,11,0.25)' },
-  btnTexto: { color: '#E2E8F0', fontSize: 11, fontWeight: '800' },
+  btnPausado: { backgroundColor: cameraAlpha('warning', 0.25) },
+  btnTexto: { color: cameraColors.textSoft, fontSize: 11, fontWeight: '800' },
 });

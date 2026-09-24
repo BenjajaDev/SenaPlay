@@ -52,6 +52,12 @@ describe.each([
     });
   });
 
+  test('texto sobre el degradé de cabecera (hero, celebración) ≥ 4.5', () => {
+    gradients.header.colors.forEach((stop) => {
+      expect(contrastRatio(colors.onHeader, stop)).toBeGreaterThanOrEqual(4.5);
+    });
+  });
+
   test('ambos temas definen exactamente los mismos tokens', () => {
     expect(Object.keys(colors).sort()).toEqual(Object.keys(lightColors).sort());
     expect(Object.keys(gradients).sort()).toEqual(Object.keys(lightGradients).sort());

@@ -1,138 +1,99 @@
-import { useMemo } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import SectionHeader from '../../../shared/ui/SectionHeader';
-import StatCard from '../../../shared/ui/StatCard';
-import SurfaceCard from '../../../shared/ui/SurfaceCard';
+import { Ionicons } from '@expo/vector-icons';
+import { StyleSheet, View } from 'react-native';
+import { AppText, Card, ProgressBar, SectionHeader, SkeletonList, StatCard, StaggerItem } from '../../../shared/ui';
 import { useAppTheme } from '../../../shared/theme/ThemeProvider';
+import { useCatalog } from '../../levels/presentation/CatalogContext';
+import { currentStreak, toLocalISODate } from '../domain/streak';
 
-export default function ProgressTabScreen({ levelProgress, userStats }) {
+const plural = (n, singular, pluralWord) => `${n} ${n === 1 ? singular : pluralWord}`;
+
+/** Resumen de actividad: métricas, racha y detalle por nivel (del catálogo real). */
+export default function ProgressTabScreen({ levelProgress, userStats, isLoading }) {
   const theme = useAppTheme();
-  const styles = useMemo(() => createStyles(theme), [theme]);
+  const { levels } = useCatalog();
 
   const completed = levelProgress?.completed || {};
   const unlocked = levelProgress?.unlocked || [1];
+  const completedCount = levels.filter((level) => completed[level.id]).length;
+  const totalLevels = levels.length;
 
-  const completedCount = Object.keys(completed).length;
-  const totalLevels = 6;
-
-  // Precision = aciertos / (aciertos + fallos) por nivel, promediada. Siempre 0-100%.
-  const accuracies = Object.values(completed).map((c) => {
-    const hits = c.hits || 0;
-    const fails = c.fails || 0;
-    const attempts = hits + fails;
-    return attempts > 0 ? (hits / attempts) * 100 : 0;
-  });
-  const avgScore =
-    accuracies.length > 0
-      ? Math.round(accuracies.reduce((a, b) => a + b, 0) / accuracies.length)
-      : 0;
-
-  const streak = userStats?.streak ?? 0;
+  // Precisión = aciertos / (aciertos + fallos) por nivel, promediada (0–100 %).
+  const accuracies = Object.values(completed).map(({ hits = 0, fails = 0 }) =>
+    hits + fails > 0 ? (hits / (hits + fails)) * 100 : 0,
+  );
+  const avgAccuracy = accuracies.length ? Math.round(accuracies.reduce((a, b) => a + b, 0) / accuracies.length) : 0;
+  const streak = currentStreak(userStats, toLocalISODate());
   const totalDays = userStats?.totalDays ?? 0;
+  const totalStars = Object.values(completed).reduce((sum, item) => sum + (item.stars || 0), 0);
 
-  const streakLabel = streak === 1 ? '1 dia' : `${streak} dias`;
-  const totalLabel = totalDays === 1 ? '1 dia' : `${totalDays} dias`;
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <SectionHeader title="Tu progreso" subtitle="Resumen de actividad y rendimiento" />
+        <SkeletonList count={4} lines={1} label="Cargando tu progreso" />
+      </View>
+    );
+  }
 
-  const levelEntries = Array.from({ length: totalLevels }, (_, i) => {
-    const id = i + 1;
-    const isCompleted = Boolean(completed[id]);
-    const isUnlocked = unlocked.includes(id);
-    const score = completed[id]?.score ?? null;
-
-    let statusLabel;
-    if (isCompleted) statusLabel = `Completado (${score}pts)`;
-    else if (isUnlocked) statusLabel = 'En progreso';
-    else statusLabel = 'Bloqueado';
-
-    return { id, isCompleted, isUnlocked, statusLabel };
-  });
+  const stats = [
+    { label: 'Niveles completados', value: `${completedCount} / ${totalLevels}`, tone: 'green', icon: 'layers' },
+    { label: 'Precisión promedio', value: completedCount ? `${avgAccuracy}%` : '–', tone: 'blue', icon: 'analytics' },
+    { label: 'Racha actual', value: plural(streak, 'día', 'días'), tone: 'orange', icon: 'flame' },
+    { label: 'Estrellas', value: String(totalStars), tone: 'gold', icon: 'star' },
+  ];
 
   return (
     <View style={styles.container}>
       <SectionHeader title="Tu progreso" subtitle="Resumen de actividad y rendimiento" />
 
       <View style={styles.statsGrid}>
-        <StatCard
-          label="Niveles completados"
-          value={`${completedCount} / ${totalLevels}`}
-          tone="green"
-          style={styles.statCard}
-        />
-        <StatCard
-          label="Precision promedio"
-          value={completedCount > 0 ? `${avgScore}%` : '-'}
-          tone="blue"
-          style={styles.statCard}
-        />
-        <StatCard
-          label="Racha actual"
-          value={streakLabel}
-          tone="orange"
-          style={styles.statCard}
-        />
-        <StatCard
-          label="Dias activos"
-          value={totalLabel}
-          tone="violet"
-          style={styles.statCard}
-        />
+        {stats.map((stat, index) => (
+          <StaggerItem key={stat.label} index={index} style={styles.statCell}>
+            <StatCard {...stat} />
+          </StaggerItem>
+        ))}
       </View>
 
-      <SurfaceCard style={styles.panel}>
-        <Text style={styles.panelTitle}>Detalle por nivel</Text>
-        {levelEntries.map((entry) => (
-          <View key={entry.id} style={styles.levelRow}>
-            <View
-              style={[
-                styles.levelDot,
-                entry.isCompleted && styles.levelDotCompleted,
-                !entry.isUnlocked && styles.levelDotLocked,
-              ]}
-            />
-            <Text
-              style={[
-                styles.levelText,
-                entry.isCompleted && styles.levelTextCompleted,
-                !entry.isUnlocked && styles.levelTextLocked,
-              ]}
-            >
-              {`Nivel ${entry.id}: ${entry.statusLabel}`}
-            </Text>
-          </View>
-        ))}
-      </SurfaceCard>
+      <Card padding="lg">
+        <AppText variant="heading" style={styles.panelTitle}>
+          Días activos: {totalDays}
+        </AppText>
+        <ProgressBar value={totalLevels ? completedCount / totalLevels : 0} gradient="reward" label="Avance total" />
+      </Card>
+
+      <Card padding="lg" style={styles.panel}>
+        <AppText variant="heading">Detalle por nivel</AppText>
+        {levels.map((level) => {
+          const done = completed[level.id];
+          const isUnlocked = unlocked.includes(level.id);
+          const status = done
+            ? { icon: 'checkmark-circle', color: theme.colors.successText, text: `Completado · ${done.score} pts`, tone: 'success' }
+            : isUnlocked
+              ? { icon: 'play-circle', color: theme.colors.primary, text: 'Disponible', tone: 'brand' }
+              : { icon: 'lock-closed', color: theme.colors.textMuted, text: 'Bloqueado', tone: 'muted' };
+          return (
+            <View key={level.id} style={styles.levelRow} accessible accessibilityLabel={`Nivel ${level.id}, ${level.title}: ${status.text}`}>
+              <Ionicons name={status.icon} size={18} color={status.color} />
+              <AppText variant="caption" style={styles.flex} numberOfLines={1}>
+                {`Nivel ${level.id} · ${level.title}`}
+              </AppText>
+              <AppText variant="label" tone={status.tone}>
+                {status.text}
+              </AppText>
+            </View>
+          );
+        })}
+      </Card>
     </View>
   );
 }
 
-function createStyles(theme) {
-  return StyleSheet.create({
-    container: { gap: 12 },
-    statsGrid: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      justifyContent: 'space-between',
-      rowGap: 8,
-    },
-    statCard: { width: '48.5%' },
-    panel: { marginTop: 6, padding: 14, gap: 10 },
-    panelTitle: {
-      fontSize: 15,
-      fontWeight: '800',
-      color: theme.colors.textPrimary,
-      marginBottom: 4,
-    },
-    levelRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-    levelDot: {
-      width: 10,
-      height: 10,
-      borderRadius: 5,
-      backgroundColor: '#F59E0B',
-    },
-    levelDotCompleted: { backgroundColor: '#22C55E' },
-    levelDotLocked: { backgroundColor: '#D1D5DB' },
-    levelText: { fontSize: 13, color: theme.colors.textSecondary },
-    levelTextCompleted: { color: '#22C55E', fontWeight: '700' },
-    levelTextLocked: { color: '#9CA3AF' },
-  });
-}
+const styles = StyleSheet.create({
+  container: { gap: 12 },
+  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 8 },
+  statCell: { width: '48.5%' },
+  panelTitle: { marginBottom: 8 },
+  panel: { gap: 10 },
+  levelRow: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 28 },
+  flex: { flex: 1 },
+});

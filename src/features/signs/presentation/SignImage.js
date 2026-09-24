@@ -99,7 +99,7 @@ export default function SignImage({
               accessibilityLabel="Variación anterior"
               style={[styles.flecha, styles.flechaIzq, { width: flechaCaja, height: flechaCaja, borderRadius: flechaCaja / 2 }]}
             >
-              <Ionicons name="chevron-back" size={flechaSize} color="#FFFFFF" />
+              <Ionicons name="chevron-back" size={flechaSize} color={theme.colors.onHeader} />
             </Pressable>
             <Pressable
               onPress={goNext}
@@ -108,7 +108,7 @@ export default function SignImage({
               accessibilityLabel="Siguiente variación"
               style={[styles.flecha, styles.flechaDer, { width: flechaCaja, height: flechaCaja, borderRadius: flechaCaja / 2 }]}
             >
-              <Ionicons name="chevron-forward" size={flechaSize} color="#FFFFFF" />
+              <Ionicons name="chevron-forward" size={flechaSize} color={theme.colors.onHeader} />
             </Pressable>
             <View pointerEvents="none" style={styles.dotsRow}>
               {assets.map((_, dotIndex) => (
@@ -157,7 +157,7 @@ function createStyles(theme) {
       position: 'absolute',
       top: 0,
       left: 0,
-      backgroundColor: theme.mode === 'dark' ? '#1B1730' : '#F7F4FC',
+      backgroundColor: theme.colors.surfaceSunken,
     },
     flecha: {
       position: 'absolute',
@@ -165,7 +165,7 @@ function createStyles(theme) {
       marginTop: -11,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: 'rgba(20, 12, 28, 0.45)',
+      backgroundColor: theme.colors.scrim,
     },
     flechaIzq: { left: 2 },
     flechaDer: { right: 2 },
@@ -182,7 +182,7 @@ function createStyles(theme) {
       width: 4,
       height: 4,
       borderRadius: 2,
-      backgroundColor: theme.mode === 'dark' ? 'rgba(244,240,255,0.35)' : 'rgba(43,23,51,0.25)',
+      backgroundColor: theme.colors.borderStrong,
     },
     dotActive: {
       backgroundColor: theme.colors.primary,
@@ -190,9 +190,9 @@ function createStyles(theme) {
     placeholder: {
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: theme.mode === 'dark' ? '#221C35' : '#F3EEFB',
+      backgroundColor: theme.colors.surfaceSunken,
       borderWidth: 1,
-      borderColor: theme.mode === 'dark' ? '#4A3D66' : '#DCCDF8',
+      borderColor: theme.colors.borderStrong,
       borderStyle: 'dashed',
       paddingHorizontal: 4,
       gap: 2,

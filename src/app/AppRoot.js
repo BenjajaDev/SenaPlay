@@ -8,11 +8,13 @@ import {
 } from '@expo-google-fonts/poppins';
 import { useFonts } from 'expo-font';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ServicesProvider } from '../core/di/ServicesProvider';
 import { SessionProvider, useSession } from '../features/auth/presentation/SessionProvider';
 import { CatalogProvider } from '../features/levels/presentation/CatalogContext';
+import { hydratePreferences } from '../features/profile/presentation/usePreferences';
 import { RemoteConfigProvider } from '../features/remoteConfig/presentation/RemoteConfigProvider';
 import { APP_FONTS } from '../shared/theme/fonts';
 import { AppThemeProvider, useAppTheme } from '../shared/theme/ThemeProvider';
@@ -46,7 +48,7 @@ function FontGate({ children }) {
     // Sin fuentes aún no se puede usar el Spinner temático (usa texto con Poppins).
     return (
       <LinearGradient {...theme.gradients.header} style={styles.loader}>
-        <ActivityIndicator size="large" color="#FFFFFF" accessibilityLabel="Cargando" />
+        <ActivityIndicator size="large" color={theme.colors.onHeader} accessibilityLabel="Cargando" />
       </LinearGradient>
     );
   }
@@ -60,6 +62,11 @@ function FontGate({ children }) {
  *   Sesión → Config remota → Catálogo → Navegación
  */
 export default function AppRoot() {
+  // Preferencias locales (ej. vibración) antes del primer toque.
+  useEffect(() => {
+    hydratePreferences();
+  }, []);
+
   return (
     <SafeAreaProvider>
       <AppThemeProvider>

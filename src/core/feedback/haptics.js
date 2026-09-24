@@ -9,21 +9,28 @@ import { Platform } from 'react-native';
 // para quienes el sonido no es opción: sienten el acierto/error sin tener que
 // mirar un detalle chico de la pantalla.
 //
-// Se puede desactivar desde Perfil (preferencia del usuario) o remotamente
-// (flag `haptics_enabled`); ambos llaman a setHapticsEnabled.
+// Se puede desactivar desde Perfil (setUserHapticsPreference) o remotamente
+// con el flag `feedback.haptics` (setHapticsEnabled).
 
-let enabled = true;
+// Dos interruptores independientes: el remoto (flag del panel) y la
+// preferencia del usuario (Perfil). Vibra solo si ambos lo permiten.
+let remoteEnabled = true;
+let userEnabled = true;
 
 export function setHapticsEnabled(value) {
-  enabled = Boolean(value);
+  remoteEnabled = Boolean(value);
+}
+
+export function setUserHapticsPreference(value) {
+  userEnabled = Boolean(value);
 }
 
 export function isHapticsEnabled() {
-  return enabled;
+  return remoteEnabled && userEnabled;
 }
 
 function run(effect) {
-  if (!enabled || Platform.OS === 'web') return;
+  if (!isHapticsEnabled() || Platform.OS === 'web') return;
   // expo-haptics puede fallar en dispositivos sin motor de vibración (o en un
   // dev client sin el módulo nativo): se ignora, el feedback visual ya está.
   try {

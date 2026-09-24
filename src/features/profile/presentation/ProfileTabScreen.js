@@ -1,428 +1,306 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Image,
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
-import BlockingOverlay from '../../../shared/ui/feedback/BlockingOverlay';
-import ActionButton from '../../../shared/ui/ActionButton';
-import SectionHeader from '../../../shared/ui/SectionHeader';
-import SurfaceCard from '../../../shared/ui/SurfaceCard';
+import { ActivityIndicator, Image, Pressable, StyleSheet, Switch, View } from 'react-native';
+import { useServices } from '../../../core/di/ServicesProvider';
+import haptics from '../../../core/feedback/haptics';
+import { AppText, Button, Card, SectionHeader, SegmentedControl, TextField, useFeedback } from '../../../shared/ui';
+import BottomSheet from '../../../shared/ui/feedback/BottomSheet';
 import { useAppTheme } from '../../../shared/theme/ThemeProvider';
-import { supabase } from '../../../core/supabase/client';
+import usePreferences from './usePreferences';
 
 const GENDERS = [
-  { key: 'masculino', label: 'Masc.' },
-  { key: 'femenino', label: 'Fem.' },
+  { key: 'masculino', label: 'Masculino' },
+  { key: 'femenino', label: 'Femenino' },
   { key: 'otro', label: 'Otro' },
 ];
 
-export default function ProfileTabScreen({ user, onLogout, isLoggingOut, onRefreshUser, editTrigger }) {
+function formatBirthdate(text) {
+  const digits = text.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+}
+
+function PreferenceRow({ icon, label, description, value, onChange, theme }) {
+  return (
+    <View style={styles.prefRow}>
+      <Ionicons name={icon} size={20} color={theme.colors.primary} />
+      <View style={styles.flex}>
+        <AppText variant="bodyStrong">{label}</AppText>
+        {description ? (
+          <AppText variant="caption" tone="secondary">
+            {description}
+          </AppText>
+        ) : null}
+      </View>
+      <Switch
+        value={value}
+        onValueChange={onChange}
+        accessibilityLabel={label}
+        trackColor={{ true: theme.colors.primary, false: theme.colors.border }}
+        thumbColor={theme.colors.surfaceRaised}
+      />
+    </View>
+  );
+}
+
+/**
+ * Perfil: datos del usuario, foto, preferencias y cierre de sesión.
+ * Guardar la edición y cambiar la foto piden confirmación; ambas muestran
+ * estado de carga y confirman el resultado con un aviso (toast).
+ */
+export default function ProfileTabScreen({ user, onLogout, onRefreshUser, editTrigger }) {
   const theme = useAppTheme();
-  const styles = useMemo(() => createStyles(theme), [theme]);
+  const { profile } = useServices();
+  const { confirm, notify } = useFeedback();
+  const { prefs, update: updatePrefs } = usePreferences();
   const meta = user?.user_metadata || {};
 
   const [editVisible, setEditVisible] = useState(false);
-  const [editName, setEditName] = useState('');
-  const [editPhone, setEditPhone] = useState('');
-  const [editBirthdate, setEditBirthdate] = useState('');
-  const [editGender, setEditGender] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
+  const [form, setForm] = useState({ fullName: '', phone: '', birthdate: '', gender: '' });
+  const [formError, setFormError] = useState('');
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
   const lastEditTrigger = useRef(editTrigger ?? 0);
 
   const openEdit = useCallback(() => {
     const m = user?.user_metadata || {};
-    setEditName(m.full_name || '');
-    setEditPhone(m.phone || '');
-    setEditBirthdate(m.birthdate || '');
-    setEditGender(m.gender || '');
-    setErrorMessage('');
+    setForm({ fullName: m.full_name || '', phone: m.phone || '', birthdate: m.birthdate || '', gender: m.gender || '' });
+    setFormError('');
     setEditVisible(true);
   }, [user]);
 
+  // "Editar perfil" desde el menú de la cabecera abre directamente la hoja.
   useEffect(() => {
     const current = editTrigger ?? 0;
-    if (current > lastEditTrigger.current) {
-      openEdit();
-    }
+    if (current > lastEditTrigger.current) openEdit();
     lastEditTrigger.current = current;
   }, [editTrigger, openEdit]);
 
-  const handleBirthdate = (text) => {
-    const digits = text.replace(/\D/g, '');
-    let formatted = digits;
-    if (digits.length > 2) formatted = digits.slice(0, 2) + '/' + digits.slice(2);
-    if (digits.length > 4) formatted = formatted.slice(0, 5) + '/' + digits.slice(4);
-    if (digits.length > 8) return;
-    setEditBirthdate(formatted);
-  };
+  const hasChanges = useMemo(
+    () =>
+      form.fullName.trim() !== (meta.full_name || '') ||
+      form.phone.trim() !== (meta.phone || '') ||
+      form.birthdate.trim() !== (meta.birthdate || '') ||
+      form.gender !== (meta.gender || ''),
+    [form, meta],
+  );
 
-  const handleSaveProfile = async () => {
-    if (!editName.trim()) {
-      setErrorMessage('El nombre no puede estar vacio');
+  const handleSave = async () => {
+    if (!form.fullName.trim()) {
+      setFormError('El nombre no puede estar vacío.');
+      haptics.warning();
       return;
     }
+    if (form.birthdate && form.birthdate.length !== 10) {
+      setFormError('Usa el formato DD/MM/AAAA.');
+      haptics.warning();
+      return;
+    }
+    setFormError('');
     try {
-      setIsSaving(true);
-      setErrorMessage('');
-      const { data, error } = await supabase.auth.updateUser({
-        data: {
-          ...(user?.user_metadata || {}),
-          full_name: editName.trim(),
-          phone: editPhone.trim() || null,
-          birthdate: editBirthdate.trim() || null,
-          gender: editGender || null,
+      const saved = await confirm({
+        title: '¿Guardar cambios?',
+        message: 'Se actualizarán tus datos de perfil.',
+        tone: 'info',
+        icon: 'save-outline',
+        confirmLabel: 'Guardar',
+        onConfirm: async () => {
+          const result = await profile.updateProfile(user, form);
+          if (!result.ok) throw new Error(result.error);
+          onRefreshUser?.(result.value || undefined);
         },
       });
-      if (error) {
-        setErrorMessage(error.message || 'No se pudo guardar.');
-        return;
+      if (saved) {
+        setEditVisible(false);
+        notify({ tone: 'success', title: 'Perfil actualizado', message: 'Tus cambios se guardaron.' });
       }
-      setEditVisible(false);
-      if (data?.user) {
-        onRefreshUser?.(data.user);
-      } else {
-        onRefreshUser?.();
-      }
-    } catch {
-      setErrorMessage('No se pudo guardar el perfil.');
-    } finally {
-      setIsSaving(false);
+    } catch (error) {
+      setFormError(error.message);
     }
   };
 
   const handlePickAvatar = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') return;
-
-    const result = await ImagePicker.launchImageLibraryAsync({
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (permission.status !== 'granted') {
+      notify({ tone: 'warning', title: 'Sin permiso', message: 'Permite el acceso a tus fotos para cambiar tu imagen.' });
+      return;
+    }
+    const picked = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.7,
     });
+    if (picked.canceled || !picked.assets?.[0]) return;
 
-    if (result.canceled || !result.assets?.[0]) return;
+    const accepted = await confirm({
+      title: '¿Usar esta foto?',
+      message: 'Reemplazará tu foto de perfil actual.',
+      tone: 'info',
+      icon: 'image-outline',
+      confirmLabel: 'Usar foto',
+    });
+    if (!accepted) return;
 
-    const uri = result.assets[0].uri;
     setIsUploadingAvatar(true);
-    try {
-      const response = await fetch(uri);
-      const blob = await response.blob();
-      const fileName = `${user.id}/avatar.jpg`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(fileName, blob, { contentType: 'image/jpeg', upsert: true });
-
-      if (!uploadError) {
-        const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
-        const { data: updateData } = await supabase.auth.updateUser({
-          data: {
-            ...(user?.user_metadata || {}),
-            avatar_url: `${urlData.publicUrl}?t=${Date.now()}`,
-          },
-        });
-        if (updateData?.user) {
-          onRefreshUser?.(updateData.user);
-        } else {
-          onRefreshUser?.();
-        }
-      }
-    } finally {
-      setIsUploadingAvatar(false);
+    const result = await profile.uploadAvatar(user, picked.assets[0].uri);
+    setIsUploadingAvatar(false);
+    if (result.ok) {
+      onRefreshUser?.(result.value || undefined);
+      notify({ tone: 'success', message: 'Foto de perfil actualizada.' });
+    } else {
+      notify({ tone: 'danger', title: 'No se pudo subir la foto', message: result.error });
     }
   };
 
-  const displayName = meta.full_name || 'Usuario';
-  const displayEmail = user?.email || '';
   const avatarUrl = meta.avatar_url || null;
+  const details = [
+    meta.phone ? { icon: 'call-outline', text: meta.phone } : null,
+    meta.birthdate ? { icon: 'calendar-outline', text: meta.birthdate } : null,
+    meta.gender ? { icon: 'person-outline', text: meta.gender.charAt(0).toUpperCase() + meta.gender.slice(1) } : null,
+  ].filter(Boolean);
 
   return (
     <View style={styles.container}>
-      <SectionHeader title="Perfil" subtitle="Configura tu cuenta y preferencias" />
+      <SectionHeader title="Perfil" subtitle="Tu cuenta y preferencias" />
 
-      <SurfaceCard style={styles.profileCard}>
-        <Pressable onPress={handlePickAvatar} style={styles.avatarWrapper} disabled={isUploadingAvatar}>
+      <Card variant="gradient" padding="xl" style={styles.profileCard}>
+        <Pressable
+          onPress={handlePickAvatar}
+          disabled={isUploadingAvatar}
+          accessibilityRole="button"
+          accessibilityLabel="Cambiar foto de perfil"
+          style={styles.avatarWrapper}
+        >
           {avatarUrl ? (
-            <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
+            <Image source={{ uri: avatarUrl }} style={[styles.avatar, { borderColor: theme.colors.primary }]} />
           ) : (
-            <Ionicons name="person-circle" size={80} color={theme.colors.primary} />
+            <Ionicons name="person-circle" size={88} color={theme.colors.primary} />
           )}
-          <View style={styles.avatarBadge}>
+          <View style={[styles.avatarBadge, { backgroundColor: theme.colors.primary, borderColor: theme.colors.surface }]}>
             {isUploadingAvatar ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
+              <ActivityIndicator size="small" color={theme.colors.primaryContrast} />
             ) : (
-              <Ionicons name="camera" size={14} color="#FFFFFF" />
+              <Ionicons name="camera" size={14} color={theme.colors.primaryContrast} />
             )}
           </View>
         </Pressable>
-
-        <Text style={styles.name}>{displayName}</Text>
-        <Text style={styles.email}>{displayEmail}</Text>
-
-        {meta.phone ? (
-          <Text style={styles.metaItem}>
-            <Ionicons name="call-outline" size={13} color={theme.colors.textSecondary} />
-            {'  '}{meta.phone}
-          </Text>
-        ) : null}
-        {meta.birthdate ? (
-          <Text style={styles.metaItem}>
-            <Ionicons name="calendar-outline" size={13} color={theme.colors.textSecondary} />
-            {'  '}{meta.birthdate}
-          </Text>
-        ) : null}
-        {meta.gender ? (
-          <Text style={styles.metaItem}>
-            <Ionicons name="person-outline" size={13} color={theme.colors.textSecondary} />
-            {'  '}{meta.gender.charAt(0).toUpperCase() + meta.gender.slice(1)}
-          </Text>
-        ) : null}
-      </SurfaceCard>
-
-      <SurfaceCard style={styles.optionCard}>
-        <View style={styles.optionRow}>
-          <Text style={styles.optionLabel}>Notificaciones</Text>
-          <Switch
-            value
-            onValueChange={() => {}}
-            trackColor={{ true: theme.colors.primarySoft }}
-            thumbColor={theme.colors.primary}
-          />
-        </View>
-        <View style={styles.optionRow}>
-          <Text style={styles.optionLabel}>Tema oscuro</Text>
-          <Switch
-            value={theme.isDark}
-            onValueChange={theme.toggleMode}
-            trackColor={{ true: theme.colors.primarySoft }}
-            thumbColor={theme.colors.primary}
-          />
-        </View>
-      </SurfaceCard>
-
-      <Pressable style={styles.editProfileBtn} onPress={openEdit}>
-        <Ionicons name="create-outline" size={18} color="#FFFFFF" />
-        <Text style={styles.editProfileText}>Editar mis datos</Text>
-      </Pressable>
-
-      <ActionButton
-        label={isLoggingOut ? 'Cerrando...' : 'Cerrar sesion'}
-        onPress={onLogout}
-        disabled={isLoggingOut}
-        gradientColors={[theme.colors.danger, theme.colors.danger]}
-      />
-
-      {/* Edit profile modal */}
-      <Modal visible={editVisible} animationType="slide" transparent onRequestClose={() => setEditVisible(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Editar perfil</Text>
-              <Pressable onPress={() => setEditVisible(false)} hitSlop={10}>
-                <Ionicons name="close" size={22} color={theme.colors.textSecondary} />
-              </Pressable>
-            </View>
-
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <Text style={styles.modalLabel}>Nombre completo</Text>
-              <TextInput
-                style={styles.modalInput}
-                value={editName}
-                onChangeText={setEditName}
-                autoCapitalize="words"
-                placeholder="Tu nombre completo"
-                placeholderTextColor="#8D97A8"
-              />
-
-              <Text style={styles.modalLabel}>Telefono</Text>
-              <TextInput
-                style={styles.modalInput}
-                value={editPhone}
-                onChangeText={setEditPhone}
-                keyboardType="phone-pad"
-                placeholder="+54 9 11 1234-5678"
-                placeholderTextColor="#8D97A8"
-              />
-
-              <Text style={styles.modalLabel}>Fecha de nacimiento</Text>
-              <TextInput
-                style={styles.modalInput}
-                value={editBirthdate}
-                onChangeText={handleBirthdate}
-                keyboardType="numeric"
-                placeholder="DD/MM/AAAA"
-                placeholderTextColor="#8D97A8"
-                maxLength={10}
-              />
-
-              <Text style={styles.modalLabel}>Genero</Text>
-              <View style={styles.genderRow}>
-                {GENDERS.map((g) => (
-                  <Pressable
-                    key={g.key}
-                    style={[styles.genderBtn, editGender === g.key && styles.genderBtnActive]}
-                    onPress={() => setEditGender((prev) => (prev === g.key ? '' : g.key))}
-                  >
-                    <Text style={[styles.genderText, editGender === g.key && styles.genderTextActive]}>
-                      {g.label}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-
-              {errorMessage ? (
-                <Text style={styles.errorText}>{errorMessage}</Text>
-              ) : null}
-
-              <Pressable
-                style={[styles.saveBtn, isSaving && styles.saveBtnDisabled]}
-                onPress={handleSaveProfile}
-                disabled={isSaving}
-              >
-                <Text style={styles.saveBtnText}>{isSaving ? 'Guardando...' : 'Guardar cambios'}</Text>
-              </Pressable>
-            </ScrollView>
+        <AppText variant="title" align="center">
+          {meta.full_name || 'Usuario'}
+        </AppText>
+        <AppText variant="subtitle" tone="secondary" align="center">
+          {user?.email || ''}
+        </AppText>
+        {details.map((item) => (
+          <View key={item.icon} style={styles.detailRow}>
+            <Ionicons name={item.icon} size={14} color={theme.colors.textSecondary} />
+            <AppText variant="caption" tone="secondary">
+              {item.text}
+            </AppText>
           </View>
-        </View>
-      </Modal>
+        ))}
+      </Card>
 
-      <BlockingOverlay visible={isSaving} label="Guardando cambios..." />
+      <Card padding="md" style={styles.prefs}>
+        <PreferenceRow
+          icon="moon-outline"
+          label="Tema oscuro"
+          value={theme.isDark}
+          onChange={theme.toggleMode}
+          theme={theme}
+        />
+        <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
+        <PreferenceRow
+          icon="phone-portrait-outline"
+          label="Vibración"
+          description="Vibra al acertar, fallar o completar un nivel"
+          value={prefs.haptics}
+          onChange={(value) => {
+            updatePrefs({ haptics: value });
+            if (value) haptics.success();
+          }}
+          theme={theme}
+        />
+      </Card>
+
+      <Button label="Editar mis datos" icon="create-outline" onPress={openEdit} />
+      <Button label="Cerrar sesión" icon="log-out-outline" variant="danger" onPress={onLogout} />
+
+      <BottomSheet
+        visible={editVisible}
+        title="Editar perfil"
+        onClose={() => setEditVisible(false)}
+        footer={<Button label="Guardar cambios" icon="checkmark" onPress={handleSave} disabled={!hasChanges} />}
+      >
+        <TextField
+          label="Nombre completo"
+          value={form.fullName}
+          onChangeText={(fullName) => setForm((prev) => ({ ...prev, fullName }))}
+          autoCapitalize="words"
+          placeholder="Tu nombre completo"
+          icon="person-outline"
+          error={formError && !form.fullName.trim() ? formError : undefined}
+        />
+        <TextField
+          label="Teléfono"
+          value={form.phone}
+          onChangeText={(phone) => setForm((prev) => ({ ...prev, phone }))}
+          keyboardType="phone-pad"
+          placeholder="+56 9 1234 5678"
+          icon="call-outline"
+        />
+        <TextField
+          label="Fecha de nacimiento"
+          value={form.birthdate}
+          onChangeText={(text) => setForm((prev) => ({ ...prev, birthdate: formatBirthdate(text) }))}
+          keyboardType="numeric"
+          placeholder="DD/MM/AAAA"
+          icon="calendar-outline"
+          maxLength={10}
+        />
+        <View style={styles.genderBlock}>
+          <AppText variant="label">Género</AppText>
+          <SegmentedControl
+            options={GENDERS}
+            value={form.gender}
+            onChange={(gender) => setForm((prev) => ({ ...prev, gender: prev.gender === gender ? '' : gender }))}
+          />
+        </View>
+        {formError && form.fullName.trim() ? (
+          <View style={styles.errorRow} accessibilityLiveRegion="polite">
+            <Ionicons name="alert-circle" size={16} color={theme.colors.dangerText} />
+            <AppText variant="caption" tone="danger" style={styles.flex}>
+              {formError}
+            </AppText>
+          </View>
+        ) : null}
+      </BottomSheet>
     </View>
   );
 }
 
-function createStyles(theme) {
-  return StyleSheet.create({
-    container: { gap: 12 },
-    profileCard: { alignItems: 'center', paddingVertical: 18, gap: 4 },
-    avatarWrapper: {
-      marginBottom: 8,
-      position: 'relative',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    avatarImage: {
-      width: 80,
-      height: 80,
-      borderRadius: 40,
-      borderWidth: 2,
-      borderColor: theme.colors.primary,
-    },
-    avatarBadge: {
-      position: 'absolute',
-      bottom: 0,
-      right: -4,
-      backgroundColor: theme.colors.primary,
-      borderRadius: 12,
-      width: 24,
-      height: 24,
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderWidth: 2,
-      borderColor: theme.colors.surface,
-    },
-    name: { fontSize: 17, color: theme.colors.textPrimary, fontWeight: '800' },
-    email: { fontSize: 13, color: theme.colors.textSecondary },
-    metaItem: { fontSize: 13, color: theme.colors.textSecondary, marginTop: 2 },
-    optionCard: { paddingHorizontal: 12, paddingVertical: 4 },
-    optionRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      paddingVertical: 10,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.colors.border,
-    },
-    optionLabel: { fontSize: 14, color: theme.colors.textPrimary, fontWeight: '600' },
-    editProfileBtn: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 8,
-      backgroundColor: theme.colors.primary,
-      borderRadius: 14,
-      paddingVertical: 14,
-    },
-    editProfileText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
-    errorText: {
-      color: theme.colors.danger,
-      fontSize: 13,
-      marginBottom: 10,
-      textAlign: 'center',
-      fontWeight: '600',
-    },
-    modalOverlay: {
-      flex: 1,
-      backgroundColor: 'rgba(0,0,0,0.45)',
-      justifyContent: 'flex-end',
-    },
-    modalCard: {
-      backgroundColor: theme.colors.surface,
-      borderTopLeftRadius: 28,
-      borderTopRightRadius: 28,
-      padding: 24,
-      paddingBottom: 40,
-      maxHeight: '85%',
-    },
-    modalHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 20,
-    },
-    modalTitle: { fontSize: 18, fontWeight: '800', color: theme.colors.textPrimary },
-    modalLabel: {
-      fontSize: 13,
-      fontWeight: '700',
-      color: '#344054',
-      marginBottom: 8,
-      marginTop: 4,
-    },
-    modalInput: {
-      backgroundColor: '#F7EEFC',
-      borderWidth: 1,
-      borderColor: '#DCE3EE',
-      borderRadius: 14,
-      paddingHorizontal: 16,
-      paddingVertical: 13,
-      color: '#101828',
-      fontSize: 15,
-      marginBottom: 14,
-    },
-    genderRow: { flexDirection: 'row', gap: 8, marginBottom: 20 },
-    genderBtn: {
-      flex: 1,
-      borderRadius: 12,
-      paddingVertical: 10,
-      alignItems: 'center',
-      backgroundColor: '#F7EEFC',
-      borderWidth: 1,
-      borderColor: '#DCE3EE',
-    },
-    genderBtnActive: { backgroundColor: '#8F1EAE', borderColor: '#8F1EAE' },
-    genderText: { fontSize: 13, fontWeight: '600', color: '#5B6475' },
-    genderTextActive: { color: '#FFFFFF' },
-    saveBtn: {
-      backgroundColor: '#8F1EAE',
-      borderRadius: 16,
-      paddingVertical: 15,
-      alignItems: 'center',
-      marginTop: 4,
-    },
-    saveBtnDisabled: { opacity: 0.65 },
-    saveBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
-  });
-}
+const styles = StyleSheet.create({
+  container: { gap: 12 },
+  flex: { flex: 1 },
+  profileCard: { alignItems: 'center', gap: 4 },
+  avatarWrapper: { marginBottom: 8, alignItems: 'center', justifyContent: 'center' },
+  avatar: { width: 88, height: 88, borderRadius: 44, borderWidth: 3 },
+  avatarBadge: {
+    position: 'absolute',
+    bottom: 2,
+    right: -2,
+    borderRadius: 14,
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+  },
+  detailRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
+  prefs: { gap: 4 },
+  prefRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 },
+  divider: { height: 1 },
+  genderBlock: { gap: 6 },
+  errorRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+});

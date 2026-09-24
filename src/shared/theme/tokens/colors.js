@@ -31,6 +31,7 @@ export const lightColors = {
   primaryStrong: '#6E1789',
   primarySoft: '#F3DFFB',
   primaryContrast: '#FFFFFF',
+  onHeader: '#FFFFFF',
 
   gold: '#F2C94C',
   goldDeep: '#D9AE2C',
@@ -84,6 +85,7 @@ export const darkColors = {
   primaryStrong: '#E2A10A',
   primarySoft: '#3A3350',
   primaryContrast: '#191106',
+  onHeader: '#FFFFFF',
 
   gold: '#F2C94C',
   goldDeep: '#D9AE2C',
@@ -117,3 +119,33 @@ export const darkColors = {
   skeletonBase: '#262038',
   skeletonHighlight: '#322A48',
 };
+
+// Paleta del "escenario de cámara": las pantallas de práctica con IA se
+// dibujan SOBRE el video en vivo, cuyo fondo no depende del tema, así que
+// usan siempre esta paleta oscura de alto contraste (igual en claro y oscuro).
+const CAMERA_RGB = {
+  stage: '15,23,42',
+  white: '255,255,255',
+  text: '226,232,240',
+  accent: '28,176,246',
+  success: '34,197,94',
+  danger: '239,68,68',
+  warning: '245,158,11',
+};
+
+export const cameraColors = {
+  stage: '#0F172A',
+  text: '#FFFFFF',
+  textStrong: '#F1F5F9',
+  textSoft: '#E2E8F0',
+  accent: '#1CB0F6',
+  success: '#22C55E',
+  danger: '#EF4444',
+  dangerLight: '#FCA5A5',
+  warning: '#F59E0B',
+};
+
+/** Color del escenario de cámara con transparencia: cameraAlpha('white', 0.1). */
+export function cameraAlpha(key, alpha) {
+  return `rgba(${CAMERA_RGB[key]},${alpha})`;
+}

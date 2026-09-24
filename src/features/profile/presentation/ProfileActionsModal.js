@@ -1,39 +1,49 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMemo } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AppText } from '../../../shared/ui';
 import { useAppTheme } from '../../../shared/theme/ThemeProvider';
 
-export default function ProfileActionsModal({
-  visible,
-  onClose,
-  onEditProfile,
-  onLogout,
-  isLoggingOut,
-}) {
+/**
+ * Menú desplegable del avatar (cabecera). "Cerrar sesión" no cierra aquí
+ * mismo: delega en el shell, que pide confirmación antes de ejecutarlo.
+ */
+export default function ProfileActionsModal({ visible, onClose, onEditProfile, onLogout }) {
   const theme = useAppTheme();
+  const insets = useSafeAreaInsets();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
+  const actions = [
+    { key: 'edit', icon: 'person-circle-outline', label: 'Editar perfil', onPress: onEditProfile, tone: 'primary' },
+    { key: 'logout', icon: 'log-out-outline', label: 'Cerrar sesión', onPress: onLogout, tone: 'danger' },
+  ];
+
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
-      <Pressable style={styles.backdrop} onPress={onClose}>
-        <Pressable style={styles.panel} onPress={() => {}}>
-          <Text style={styles.title}>Perfil</Text>
-          <Text style={styles.subtitle}>Elige una accion</Text>
-
-          <Pressable style={styles.actionButton} onPress={onEditProfile}>
-            <Ionicons name="person-circle-outline" size={20} color={theme.colors.textPrimary} />
-            <Text style={styles.actionText}>Editar perfil</Text>
-          </Pressable>
-
-          <Pressable style={[styles.actionButton, styles.logoutButton]} onPress={onLogout} disabled={isLoggingOut}>
-            <Ionicons name="log-out-outline" size={20} color="#B42318" />
-            <Text style={styles.logoutText}>{isLoggingOut ? 'Cerrando...' : 'Cerrar sesion'}</Text>
-          </Pressable>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable style={[styles.backdrop, { paddingTop: insets.top + 64 }]} onPress={onClose} accessibilityLabel="Cerrar menú">
+        <Pressable style={styles.panel} onPress={() => {}} accessibilityViewIsModal>
+          <AppText variant="bodyStrong">Perfil</AppText>
+          <AppText variant="caption" tone="secondary" style={styles.subtitle}>
+            Elige una acción
+          </AppText>
+          {actions.map((action) => {
+            const danger = action.tone === 'danger';
+            return (
+              <Pressable
+                key={action.key}
+                onPress={action.onPress}
+                accessibilityRole="menuitem"
+                accessibilityLabel={action.label}
+                style={({ pressed }) => [styles.action, danger && styles.actionDanger, pressed && styles.pressed]}
+              >
+                <Ionicons name={action.icon} size={20} color={danger ? theme.colors.dangerText : theme.colors.textPrimary} />
+                <AppText variant="bodyStrong" tone={danger ? 'danger' : 'primary'}>
+                  {action.label}
+                </AppText>
+              </Pressable>
+            );
+          })}
         </Pressable>
       </Pressable>
     </Modal>
@@ -41,66 +51,32 @@ export default function ProfileActionsModal({
 }
 
 function createStyles(theme) {
-  const isDark = theme.mode === 'dark';
-
+  const { colors, spacing, radius } = theme;
   return StyleSheet.create({
-    backdrop: {
-      flex: 1,
-      backgroundColor: theme.colors.overlay,
-      justifyContent: 'flex-start',
-      alignItems: 'flex-end',
-      paddingTop: 78,
-      paddingHorizontal: 16,
-    },
+    backdrop: { flex: 1, backgroundColor: colors.overlay, alignItems: 'flex-end', paddingHorizontal: spacing.lg },
     panel: {
-      width: 210,
-      backgroundColor: isDark ? '#221C35' : '#FFFFFF',
-      borderRadius: 16,
+      width: 230,
+      backgroundColor: colors.surfaceRaised,
+      borderRadius: radius.xl,
       borderWidth: 1,
-      borderColor: isDark ? '#4B3B73' : '#E5E7EB',
-      padding: 12,
-      shadowColor: theme.colors.shadow,
-      shadowOpacity: 0.14,
-      shadowRadius: 10,
-      shadowOffset: { width: 0, height: 6 },
-      elevation: 8,
+      borderColor: colors.border,
+      padding: spacing.md,
+      ...theme.elevation.lg,
     },
-    title: {
-      fontSize: 15,
-      fontWeight: '800',
-      color: theme.colors.textPrimary,
-    },
-    subtitle: {
-      fontSize: 12,
-      color: theme.colors.textSecondary,
-      marginBottom: 12,
-    },
-    actionButton: {
+    subtitle: { marginBottom: spacing.md },
+    action: {
+      minHeight: 48,
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 8,
-      borderRadius: 12,
+      gap: spacing.sm,
+      borderRadius: radius.md,
       borderWidth: 1,
-      borderColor: isDark ? '#4B3B73' : '#E5E7EB',
-      backgroundColor: isDark ? '#2A2341' : '#FFFFFF',
-      paddingHorizontal: 10,
-      paddingVertical: 10,
-      marginBottom: 8,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      paddingHorizontal: spacing.md,
+      marginBottom: spacing.sm,
     },
-    actionText: {
-      fontSize: 14,
-      fontWeight: '700',
-      color: theme.colors.textPrimary,
-    },
-    logoutButton: {
-      borderColor: isDark ? '#7A3A4E' : '#FECACA',
-      backgroundColor: isDark ? '#3A1E28' : '#FFF1F2',
-      marginBottom: 0,
-    },
-    logoutText: {
-      fontSize: 14,
-      fontWeight: '700',
-      color: theme.colors.danger,
-    },
+    actionDanger: { borderColor: colors.danger, backgroundColor: colors.dangerSoft, marginBottom: 0 },
+    pressed: { opacity: 0.75 },
   });
 }

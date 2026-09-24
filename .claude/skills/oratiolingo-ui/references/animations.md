@@ -1,10 +1,11 @@
 # Animaciones en OratioLingo
 
 La app anima con la API `Animated` de React Native. Ejemplos reales para copiar el estilo:
-- `src/components/ui/FadeInView.js` — entrada fade + slide.
-- `src/components/LoadingOverlay.js` — pop‑in con `Easing.back`.
-- `src/components/ui/SignImage.js` — crossfade entre variaciones.
-- `src/screens/levels/LevelSessionScreen.js` — shake de vidas, pulso del corazón perdido, flash rojo, aparición de pista.
+- `src/shared/ui/motion/FadeInView.js` y `StaggerItem.js` — entrada fade + slide y escalonada.
+- `src/shared/ui/motion/animations.js` — recetas `shake`, `pulse`, `popIn`, `fadeTo`, `breathe`.
+- `src/shared/ui/feedback/BlockingOverlay.js` / `Dialog.js` — pop‑in con `Easing.back`.
+- `src/features/signs/presentation/SignImage.js` — crossfade entre variaciones.
+- `src/features/levels/presentation/session/` — `LivesCounter` (temblor sutil + desvanecimiento), `FeedbackPanel` (borde luminoso), `HintFab` (globo), `Confetti` y `LevelCompleteCelebration`.
 
 ## Índice
 1. Escala de movimiento
@@ -29,7 +30,7 @@ Curvas:
 - Pop con rebote leve: `Easing.out(Easing.back(1.4))` o `Animated.spring({ friction: 6, tension: 120 })`.
 - Evita `linear` salvo en spinners y timers.
 
-Si una pantalla usa varias duraciones, decláralas como constantes arriba del archivo (`const CAROUSEL_FADE_MS = 160;`) como hace `SignImage`.
+Estas duraciones y curvas existen como tokens: `theme.motion.duration.*` y `theme.motion.easing.*` (ver `src/shared/theme/tokens/scales.js`). Úsalos en vez de números sueltos.
 
 ## 2. Reglas técnicas
 
@@ -43,7 +44,7 @@ Si una pantalla usa varias duraciones, decláralas como constantes arriba del ar
 
 ## 3. Reducir movimiento
 
-Algunas personas se marean con movimiento. La app todavía no respeta el ajuste del sistema; cuando crees animaciones nuevas, usa (o crea si no existe) este hook en `src/theme/useReducedMotion.js`:
+Algunas personas se marean con movimiento. Usa el hook `src/core/a11y/useReducedMotion.js` (ya existe) en toda animación nueva. Su implementación:
 
 ```js
 import { useEffect, useState } from 'react';

@@ -1,61 +1,49 @@
-# Catálogo de componentes UI
+# Catálogo de componentes (`src/shared/ui`)
 
-Todos usan `useAppTheme()` + `createStyles(theme)` y se adaptan solos a claro/oscuro. Rutas relativas a `src/components/`.
+Todos usan `useAppTheme()` y funcionan en claro/oscuro. Importar desde el índice: `import { Button, Card } from '<ruta>/shared/ui'`.
 
-## ui/ActionButton
-Botón principal de la app.
-- `label` (string), `onPress`, `disabled`
-- `variant`: `'primary'` (degradé de marca, texto `primaryContrast`) | `'secondary'` (superficie + borde `primary`)
-- `gradientColors`: pisa el degradé; úsalo para feedback (`[theme.colors.success, theme.colors.success]`, `[theme.colors.danger, theme.colors.danger]`)
-- `style`, `textStyle`
-- Radio 12, padding 12×14, `disabled` baja la opacidad a 0.55.
+## Átomos
 
-```js
-<ActionButton label="Comprobar" onPress={check} disabled={!answer} />
-<ActionButton label="Más tarde" variant="secondary" onPress={close} />
-```
+| Componente | Props clave | Notas |
+|---|---|---|
+| `AppText` | `variant` (display, title, heading, body, bodyStrong, subtitle, caption, label, button, stat), `tone` (primary, secondary, muted, brand, inverse, success, danger, warning, info, gold), `align` | reemplaza fontSize/fontWeight/color sueltos |
+| `Button` | `label`, `onPress`, `variant` (primary, secondary, ghost, danger, success), `size` (sm, md, lg), `icon`, `iconPosition`, `loading`, `disabled`, `fullWidth`, `haptic` | escala al presionar, borde de foco, bloquea doble envío en `loading` |
+| `IconButton` | `icon`, `label` (obligatorio), `variant` (ghost, soft, solid, surface), `size`, `haptic` | área táctil ≥ 44 |
+| `Card` | `variant` (surface, raised, gradient, brand), `tone` (success, danger, warning, info), `padding` (none, sm, md, lg, xl), `onPress`, `accessibilityLabel` | presionable con estado pressed/focus |
+| `TextField` | `label`, `value`, `onChangeText`, `error`, `helper`, `icon`, `secureTextEntry`, `multiline`, `disabled`, `right` | foco con halo, error con icono y región viva, mostrar/ocultar contraseña |
+| `Chip` | `label`, `selected`, `onPress`, `icon` | seleccionado = degradé + ✓ |
+| `Badge` | `label`, `tone` (brand, success, warning, danger, info, neutral), `icon` | `difficultyBadgeProps(dificultad)` |
+| `SegmentedControl` | `options [{key,label}]`, `value`, `onChange` | 2–4 opciones excluyentes |
+| `ProgressBar` | `value` 0–1, `gradient`, `height`, `label` | anima `scaleX` con native driver |
 
-## ui/SurfaceCard
-`<SurfaceCard style>` — fondo `surface`, borde `border`, radio 14. Contenedor base para tarjetas; agrega padding vía `style`.
+## Moléculas
 
-## ui/SectionHeader
-`title`, `subtitle?`. Título extraBold 22 + subtítulo medium 14. Úsalo al inicio de cada tab.
+`SectionHeader` (title, subtitle, right) · `ScreenHeader` (title, onBack, rightNode, backLabel) · `StatCard` (label, value, tone: green/orange/blue/violet/gold, icon) · `EmptyState` (icon, title, message, actionLabel, onAction).
 
-## ui/GameScreenHeader
-`title`, `onBack`, `rightNode?` (ej. contador de vidas o puntaje). Flecha atrás con `hitSlop`. Cabecera estándar de juegos y sesiones de nivel.
+## Carga
 
-## ui/FilterChip
-`label`, `selected`, `onPress`. Seleccionado = degradé; inactivo = superficie + borde. Radio 999.
+`Spinner` (size, label) — anillo de marca + mano; cae a ActivityIndicator con reducir movimiento · `Skeleton` (width, height, radius) · `SkeletonCard` · `SkeletonList` (count, lines, label) · `BlockingOverlay` (visible, label) — normalmente vía `runBlocking`.
 
-## ui/StatCard
-`label`, `value`, `tone`: `'violet' | 'green' | 'orange' | 'blue'`. Los tonos tienen versión clara y oscura definida en el propio componente; sigue ese patrón si agregas un tono.
+## Feedback
 
-## ui/SignImage
-Muestra la seña (imagen/GIF de `src/data/signAssets.js`).
-- `signKey` (ej. `'a'`, `'hola'`), `label?`, `size` (default 72), `rounded` (default 14), `showPlaceholderIcon`
-- Varias fotos → flechas + puntos, crossfade de 160 ms; nada se mueve solo.
-- Sin asset → placeholder punteado con la letra/palabra (no parece error).
-- Ya trae `accessibilityLabel`.
+| Componente / API | Uso |
+|---|---|
+| `useFeedback().confirm({ title, message, tone, icon, confirmLabel, cancelLabel, onConfirm })` → `Promise<boolean>` | acciones críticas |
+| `useFeedback().runBlocking(label, tarea)` | esperas con bloqueo (mín. 450 ms) |
+| `useFeedback().notify({ tone, title, message })` | toast no bloqueante + vibración + anuncio |
+| `useFeedback().showMessage({ context \| title, message, variant })` → `'primary'\|'secondary'\|'dismiss'` | mensajes con presets (`MESSAGE_PRESETS`) |
+| `Dialog` | base visual de diálogos (tone: info, success, warning, danger, celebration, brand) |
+| `MessageDialog` | API de la antigua AdaptiveModal (context, variant, primaryText, secondaryText…) |
+| `BottomSheet` | formularios (visible, title, onClose, dismissible, footer) |
 
-## ui/FadeInView
-`duration` (200), `distance` (10), `style`. Anima al **montar**: pasa una `key` que cambie con el contenido (`key={activeTab}`).
+## Movimiento
 
-## AdaptiveModal
-Modal de mensaje centrado.
-- `visible`, `context` (preset), `title?`, `message?`, `variant?`, `primaryText?`, `secondaryText?`, `autoCloseMs?`, `onPrimaryPress`, `onSecondaryPress`, `onRequestClose`
-- Presets de `context`: `login-success`, `register-success`, `email-verification-sent`, `email-verification-required`, `password-updated`, `validation`, `auth-error`, `level-complete`
-- Variantes: `info`, `success`, `warning`, `error`, `celebration`
-- Si necesitas un mensaje recurrente nuevo, agrégalo como preset en `CONTEXT_PRESETS` en vez de pasar título/mensaje a mano en cada pantalla.
-- Ojo: `VARIANT_STYLES` usa colores fijos (pensados para modo claro); si trabajas en el modal, dales versión oscura.
+`FadeInView` (duration, distance, delay; re-anima al remontar con `key`) · `StaggerItem` (index; escalona hasta 8) · `animations.shake|pulse|popIn|fadeTo|breathe`.
 
-## LoadingOverlay
-`visible`, `label` ("Guardando cambios…"). Modal con spinner y pop‑in. Úsalo para cualquier espera > ~300 ms iniciada por el usuario; el texto dice qué pasa.
+## Específicos de niveles (`features/levels/presentation`)
 
-## AppBottomNav
-`activeTab`, `onChangeTab`. Tabs definidas en `TABS` (key, label, icon, activeIcon de Ionicons). Tab activa = badge con degradé. Respeta `insets.bottom`.
+`exercises/OptionTile` (state: idle, selected, matched, empty) · `SignStrip` / `SignSpotlight` (long-press = pista) · `session/LivesCounter` · `session/FeedbackPanel` (borde luminoso) · `session/HintFab` + `HintPopover` · `session/LevelCompleteCelebration` + `Confetti`.
 
-## SignDetailModal / ProfileActionsModal
-Modales específicos (detalle de seña del diccionario, acciones de perfil). Revísalos como referencia de modal tipo hoja.
+## Otros
 
-## Iconos
-`Ionicons` de `@expo/vector-icons`. Convención: variante `-outline` para estado inactivo, sólida para activo. Iconos de dominio usados: `hand-left-outline` (seña), `layers` (niveles), `book` (diccionario), `videocam`, `game-controller`, `analytics`, `flash-outline` (quiz), `extension-puzzle-outline` (memoria).
+`features/signs/presentation/SignImage` (signKey, size, rounded; carrusel manual de variaciones y placeholder) · `app/navigation/AppBottomNav` (tabs con flag remoto) · `features/remoteConfig/presentation/AnnouncementBanner` · `AppGateScreen`.

@@ -1,88 +1,80 @@
 ---
 name: oratiolingo-frontend
-description: Guía de desarrollo frontend para OratioLingo / SeñaPlay (Expo SDK 57 + React Native 0.86 + React 19, JavaScript, Supabase). Úsala SIEMPRE que escribas, refactorices o depures código de la app móvil — pantallas, componentes, hooks, estado, navegación entre tabs/juegos/niveles, llamadas a Supabase o AsyncStorage, cámara/IA, rendimiento, instalación de dependencias o builds con EAS — aunque el pedido no diga "frontend" (ej. "agrega un juego nuevo", "la pantalla de progreso no guarda", "crea un hook para…", "instala X", "la app va lenta en el diccionario", "arregla este bug"). Para decisiones de look & feel y animaciones, combínala con la skill oratiolingo-ui.
+description: Guía de desarrollo para OratioLingo / SeñaPlay — app móvil (Expo SDK 57 + React Native 0.86, JavaScript, arquitectura feature-first con capas domain/data/presentation), portal web (web/: Vite + React + TypeScript) y Supabase (migraciones + RLS). Úsala SIEMPRE que escribas, refactorices o depures código del proyecto — pantallas, hooks, repositorios, dominio, navegación, Supabase, AsyncStorage, config remota, feature flags, panel de administración, migraciones SQL, cámara/IA, dependencias o builds — aunque el pedido no diga "frontend" (ej. "agrega un juego", "el progreso no guarda", "nuevo tipo de ejercicio", "agrega un flag", "sección nueva en el panel", "instala X", "arregla este bug"). Para look & feel y animaciones, combínala con oratiolingo-ui.
 ---
 
-# OratioLingo — desarrollo frontend
+# OratioLingo — desarrollo
 
-App Expo para aprender Lengua de Señas Chilena. El objetivo de esta guía es que el código nuevo se lea como el existente y no rompa lo que funciona (sesión, progreso offline, cámara con IA).
+Documentación completa en `docs/` (arquitectura, patrones, modelo, casos de uso, despliegue, trazabilidad, design system, config remota, guía). Léela antes de cambios estructurales.
 
-## Stack
+## Stack y piezas
 
-- **Expo SDK 57**, React Native 0.86, React 19.2, **JavaScript** (no TypeScript), **pnpm**.
-- `expo-dev-client`: la app corre en un *development build* (la cámara y los módulos nativos no funcionan en Expo Go). Builds con EAS: `pnpm build:dev`, `pnpm build:preview` (Android).
-- Supabase (`backend/supabase.js`) para auth + catálogo/diccionario; AsyncStorage para progreso y preferencias locales.
-- `expo-camera` + WebView con MediaPipe (`handTrackingHtml.js`) + servidor IA Python (`ai_module/`, URL en `SERVIDOR_IA` de `src/screens/games/signCamera.js`).
-- UI: `expo-linear-gradient`, `@expo/vector-icons` (Ionicons), Poppins. Sin librería de componentes externa.
+| Pieza | Dónde | Tecnología |
+|---|---|---|
+| App móvil | `App.js` → `src/app/AppRoot.js` | Expo 57, RN 0.86, React 19, JS, pnpm, dev client (EAS) |
+| Portal web | `web/` (proyecto pnpm independiente) | Vite 8, React 19, TS 5.9, React Router 7 |
+| Backend | `supabase/` (+ `migrations/`, `tests/`) | Postgres + Auth + Storage + RLS |
+| IA | `ai_module/` | Python, FastAPI, MediaPipe (URL en `EXPO_PUBLIC_AI_SERVER_URL`) |
 
-## Estructura
+## Arquitectura de la app (feature-first + capas)
 
 ```
-App.js                  Auth + router de nivel superior (login/register/verify/reset/main) por estado
-index.js                applyPoppinsGlobally() + registerRootComponent
-backend/                Acceso a datos: supabase.js, catalog.js, dictionary.js, signs.js, userStats.js
-src/theme/              palette.js (tokens claro/oscuro), ThemeProvider (useAppTheme)
-src/constants/fonts.js  APP_FONTS, poppins()
-src/components/         Componentes compartidos; ui/ = piezas del sistema de diseño
-src/screens/            MainAppScreen (router interno), tabs/, games/, levels/
-src/data/               Datos locales y contextos (CatalogContext, levelsConfig, signAssets…)
-supabase/ + scripts/    SQL y generadores (node scripts/generate*Sql.cjs)
-ai_module/              Modelo y servidor IA (Python) — no es parte del bundle
+src/app/                 AppRoot (providers), RootNavigator (máquina de estados de auth), MainAppScreen (tabs/juegos/niveles)
+src/core/                config/env · di/ServicesProvider · events/EventBus · storage/jsonStorage · supabase/client · feedback/haptics · a11y · result
+src/shared/theme|ui/     tokens + ThemeProvider · design system (ver skill oratiolingo-ui)
+src/features/<módulo>/
+  domain/                JS PURO: reglas y entidades (sin React, sin Supabase) — testeado con Jest
+  data/                  repositorios: remoto → caché → local; devuelven Result {ok, value, error} o datos con `source`
+  presentation/          pantallas, hooks y componentes del módulo
 ```
 
-Detalle de cómo agregar pantallas, tabs, juegos y datos en `references/recipes.md`.
+Módulos: `auth`, `levels`, `progress`, `signs`, `dictionary`, `games`, `camera`, `profile`, `videos`, `remoteConfig`.
 
-## Convenciones de código
+**Reglas de dependencia (no romperlas):**
+- La UI pide servicios con `useServices()` (auth, profile, catalog, progress, signs, media, remoteConfig, events). **Nunca** importa `core/supabase/client` fuera de `features/*/data` o `core/di`.
+- `domain/` no importa React, RN, Supabase ni AsyncStorage (el portal web lo reutiliza vía alias `@domain`).
+- Solo `core/di/ServicesProvider.js` elige implementaciones concretas (composition root).
 
-- Componentes función con **default export**; helpers puros como funciones sueltas arriba o abajo del componente.
-- Estilos: `const styles = useMemo(() => createStyles(theme), [theme]);` y `function createStyles(theme) { return StyleSheet.create({...}) }` al final del archivo. Colores del tema, nunca hex nuevos (ver skill `oratiolingo-ui`).
-- Imports en este orden: librerías externas, luego módulos locales (componentes, constants, data, theme).
-- Nombres en inglés para código; textos de UI y **comentarios en español**. Los comentarios explican el *por qué* (decisiones, trampas), no el qué — mira `FadeInView`, `SignImage` o `applyPoppinsGlobally` como modelo.
-- Textos visibles en español de Chile neutro, con tildes y ñ correctas.
-- `toLocaleUpperCase('es')` / `toLocaleLowerCase('es')` al manipular letras (ñ).
+## Patrones en uso (seguir el mismo estilo)
+
+- **Repository**: `createXRepository({ supabase, storage, ... })`, try/catch, nunca lanza hacia la UI; errores con `toUserMessage` (español).
+- **Factory/Builder**: ejercicios SIEMPRE pasan por `ExerciseFactory`; niveles por `LevelBuilder` (`.lenient()` en la app).
+- **State Machine**: `levels/domain/sessionMachine.js` (reducer puro) + `useLevelSession` (efectos). Nuevas reglas de juego → reducer + test.
+- **Observer**: `appEvents` (`APP_EVENTS.LEVEL_COMPLETED`, `LIFE_LOST`, `REMOTE_CONFIG_UPDATED`…). Emite desde quien sabe qué pasó; escucha en hooks (`useUserProgress`).
+- **Strategy**: `levels/presentation/exercises/index.js` (tipo → componente).
+
+## Recetas
+
+- **Tipo de ejercicio nuevo**: `domain/exerciseTypes.js` → `domain/evaluateAnswer.js` (+ test) → componente en `presentation/exercises/` con contrato `{ exercise, answer, onAnswerChange, disabled, onHint }` → registrar en `exercises/index.js` → agregar al `check` de `supabase/migrations/*_content_admin.sql`. El editor del panel lo muestra solo.
+- **Juego nuevo**: pantalla con `ScreenHeader`, entrada en `GAMES` de `games/presentation/GamesTabScreen.js` con `flag`, flag en `DEFAULT_FLAGS` y fila en `feature_flags`; montar en `MainAppScreen` (`CAMERA_GAMES` si usa cámara).
+- **Clave de config remota**: `DEFAULT_REMOTE_CONFIG` (remoteConfig/domain) → leer con `useRemoteConfig().config` → sección en `web/src/features/admin/config/RemoteConfigPage.tsx` y tipo en `web/src/lib/domain.ts` → documentar en `docs/08`.
+- **Flag**: `DEFAULT_FLAGS` + `useFeatureFlag('modulo.nombre')`.
+- **Tabla/cambio de BD**: nueva migración `supabase/migrations/<timestamp>_<nombre>.sql` idempotente (`if not exists`, `drop policy if exists`), RLS con `is_staff()` / `is_admin()`, y casos en `supabase/tests/10_rls_policies.sql`.
+- **Preferencia local**: `jsonStorage` + `storageKey('area', 'v1', userId)`.
+- **Página del panel**: `web/src/features/admin/...`, datos por `useRepositories()` (DI), carga con `useResource`, acciones destructivas/publicación con `useFeedback().confirm({ onConfirm })`, ruta lazy en `web/src/App.tsx` (+ `RequireStaff admin` si aplica).
 
 ## Navegación
 
-No se usa React Navigation (está instalado pero sin uso). La navegación es por estado:
-- `App.js`: `screen` = `'login' | 'register' | 'verify' | 'resetPassword' | 'main'`.
-- `MainAppScreen`: `activeTab`, `activeGame`, `activeLevelId`. Los juegos de cámara van en `CAMERA_GAMES` y se montan a pantalla completa fuera del `ScrollView`.
+Por estado (sin React Navigation): `RootNavigator` (loading/login/register/verify/resetPassword/main + gate remoto) y `MainAppScreen` (`activeTab`, `activeGame`, `activeLevelId`). Cada destino en `FadeInView key=…`. Migrar a React Navigation es una decisión grande: proponerla antes.
 
-Sigue este patrón al agregar pantallas. Migrar a React Navigation es un cambio grande: proponlo al usuario, no lo hagas de pasada.
+## Convenciones
 
-## Estado y datos
+- Código en inglés; textos de UI y comentarios en español de Chile (tildes y ñ). Comentarios explican el **por qué**.
+- Componentes función, default export; estilos con `createStyles(theme)` (ver oratiolingo-ui).
+- Efectos async con bandera `mounted` y cleanup; listeners siempre desuscritos.
+- Claves públicas solamente (`EXPO_PUBLIC_*`, `VITE_*`); nunca service key en clientes.
+- Dependencias: `pnpm add <pkg>@~<versión SDK 57>` (el proxy bloquea la API de `expo install`; elegir la línea 57.x para módulos expo-*). Módulo nativo nuevo ⇒ avisar que hay que regenerar el dev client.
+- `@supabase/supabase-js` está fijado en 2.105.4: ≥ 2.106 rompe la compilación Hermes (import dinámico).
 
-- Estado local con `useState`; contexto solo para datos globales (`AppThemeProvider`, `CatalogProvider`). No agregues Redux/Zustand sin acordarlo.
-- **Todo acceso a datos pasa por `backend/`**, nunca `supabase.from(...)` directo en una pantalla. Las funciones de `backend/`:
-  - atrapan errores (`try/catch`) y devuelven un valor por defecto utilizable, nunca lanzan hacia la UI;
-  - tienen **respaldo local** (ej. `fetchCatalog` cae a `LEVELS_CATALOG`) para que la app funcione offline;
-  - devuelven `{ data, source }` o la forma que la UI ya espera.
-- Claves de AsyncStorage con prefijo versionado: `oratiolingo.<área>.v1[.<userId>]`. Si cambias la forma del dato, sube la versión o valida al leer (ver `getLevelProgress`).
-- Efectos async: bandera `mounted`/`isMounted` y cleanup para evitar setState tras desmontar; desuscribe listeners (`authListener.subscription.unsubscribe()`).
-- La clave de Supabase del cliente es *publishable* (pública por diseño); la seguridad real depende de las políticas RLS en `supabase/*.sql`. Nunca pongas una service key en la app.
+## Verificación antes de entregar (obligatoria)
 
-## Rendimiento
-
-- Listas largas (diccionario, catálogo de señas): `FlatList` con `keyExtractor`, `initialNumToRender`, y `renderItem` memoizado; no `ScrollView` + `map` para cientos de ítems.
-- Calcula derivados con `useMemo`, callbacks que van a hijos con `useCallback`.
-- Imágenes de señas: se resuelven vía `src/data/signAssets.js` (requires estáticos). No hagas `require` dinámico con strings construidos: Metro no lo soporta.
-- Pantallas de cámara: el hilo JS está ocupado con frames/landmarks; evita setState por frame, agrupa o limita (throttle) actualizaciones.
-
-## Dependencias
-
-- Instala con `npx expo install <paquete>` (elige la versión compatible con el SDK 57); pnpm es el gestor. No uses `npm install`.
-- Si el paquete trae código nativo: hay que reconstruir el dev client (`pnpm build:dev`) — avísale al usuario.
-- Antes de sumar una dependencia, revisa si RN/Expo ya lo resuelve. Propón las dependencias grandes (navegación, estado, animación) antes de instalarlas.
-
-## Verificación antes de entregar
-
-El repo no tiene tests ni linter configurados. Como mínimo:
-1. `npx expo export --platform android --output-dir /tmp/oratio-export` (o `--platform web`) para confirmar que el bundle compila (detecta imports rotos y errores de sintaxis). Requiere `pnpm install` previo.
-2. `npx expo-doctor` si tocaste dependencias o `app.json`.
-3. Si cambiaste UI: pide al usuario que lo pruebe en el dev client o usa la skill `run` para la versión web cuando aplique (la cámara no funciona en web).
-4. Relee el diff buscando: hex hardcodeados, pesos sin `APP_FONTS`, `supabase` fuera de `backend/`, efectos sin cleanup, textos sin tildes.
+1. `pnpm test` (Jest: dominio, design system, pantallas, sesión de nivel).
+2. `pnpm verify:bundle` (bundle Android + Hermes).
+3. Si tocaste SQL: `pnpm test:sql` (necesita Postgres local; ver `docs/09`).
+4. Si tocaste `web/`: `cd web && pnpm typecheck && pnpm test && pnpm build`.
+5. Si tocaste diagramas: `node scripts/checkMermaid.cjs`.
+6. Relee el diff: supabase fuera de data/, hex sueltos, acciones críticas sin `confirm`, efectos sin cleanup.
 
 ## Git
 
-- Rama de trabajo: `gestilingo-dev`.
-- Commits estilo Conventional Commits **en español**: `feat: …`, `fix: …`, `chore: …`, `refactor: …` (ver `git log`).
-- `ai_module/` ignora binarios (videos, landmarks, checkpoints): no los agregues.
+Rama `gestilingo-dev`; Conventional Commits en español (`feat:`, `fix:`, `refactor:`, `chore:`, `docs:`). Para mover archivos usa `node scripts/moveModules.cjs moves.json` (reescribe imports).

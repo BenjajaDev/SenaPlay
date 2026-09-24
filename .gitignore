@@ -59,3 +59,4 @@ ai_module/data/processed_landmarks/*
 !ai_module/data/processed_landmarks/.gitkeep
 ai_module/data/models/*
 !ai_module/data/models/.gitkeep
+.expo-export-check/

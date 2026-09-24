@@ -8,7 +8,9 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "build:dev": "eas build --profile development --platform android",
-    "build:preview": "eas build --profile preview --platform android"
+    "build:preview": "eas build --profile preview --platform android",
+    "test": "jest",
+    "verify:bundle": "expo export --platform android --output-dir .expo-export-check && node -e \"require('fs').rmSync('.expo-export-check',{recursive:true,force:true})\""
   },
   "dependencies": {
     "@expo-google-fonts/poppins": "^0.4.1",
@@ -16,11 +18,12 @@
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-navigation/native": "^7.2.2",
     "@react-navigation/native-stack": "^7.14.10",
-    "@supabase/supabase-js": "^2.103.0",
+    "@supabase/supabase-js": "2.105.4",
     "expo": "~57.0.24",
     "expo-camera": "~57.0.5",
     "expo-dev-client": "~57.0.19",
     "expo-font": "~57.0.4",
+    "expo-haptics": "~57.0.3",
     "expo-image-picker": "~57.0.19",
     "expo-linear-gradient": "~57.0.2",
     "expo-linking": "~57.0.10",
@@ -34,5 +37,21 @@
     "react-native-url-polyfill": "^3.0.0",
     "react-native-webview": "13.16.1"
   },
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "@react-native/jest-preset": "~0.86.3",
+    "jest": "^29.7.0",
+    "jest-expo": "~57.0.5"
+  },
+  "jest": {
+    "preset": "jest-expo",
+    "testMatch": [
+      "<rootDir>/src/**/__tests__/**/*.test.js"
+    ],
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/web/",
+      "/ai_module/"
+    ]
+  }
 }

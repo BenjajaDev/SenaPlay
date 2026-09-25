@@ -89,6 +89,25 @@ export type Role = 'user' | 'editor' | 'admin';
 
 export type Profile = { id: string; email: string | null; full_name: string | null; role: Role; created_at: string };
 
+/** Textos de la sección «Nosotros» (site_content, clave `about`). */
+export type AboutContent = {
+  title: string;
+  intro: string;
+  mission: string;
+  vision: string;
+};
+
+export type TeamMember = {
+  id?: string;
+  full_name: string;
+  role: string;
+  bio: string | null;
+  photo_url: string | null;
+  photo_path: string | null;
+  sort_order: number;
+  published: boolean;
+};
+
 export type PublicStats = {
   levels: number;
   exercises: number;

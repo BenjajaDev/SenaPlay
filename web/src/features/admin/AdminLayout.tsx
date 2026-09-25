@@ -2,6 +2,7 @@ import {
   BookOpen,
   Film,
   Flag,
+  HeartHandshake,
   History,
   Home,
   Layers,
@@ -35,6 +36,7 @@ const SECTIONS: { label: string; items: NavItem[] }[] = [
       { to: '/admin/media', label: 'Medios', icon: Film },
     ],
   },
+  { label: 'Sitio web', items: [{ to: '/admin/site/about', label: 'Nosotros', icon: HeartHandshake }] },
   {
     label: 'App móvil',
     items: [

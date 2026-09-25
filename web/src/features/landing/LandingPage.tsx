@@ -2,6 +2,7 @@ import {
   Accessibility,
   BookOpen,
   Camera,
+  Eye,
   Gamepad2,
   Hand,
   Layers,
@@ -10,6 +11,7 @@ import {
   Smartphone,
   Sparkles,
   Sun,
+  Target,
   Users,
   Vibrate,
   Video,
@@ -18,17 +20,17 @@ import {
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useRepositories } from '@/data/RepositoriesProvider';
-import type { PublicStats } from '@/data/types';
+import type { AboutContent, PublicStats, TeamMember } from '@/data/types';
 import { brandIcon } from '@/lib/brand';
 import { env } from '@/lib/env';
 import { useThemeMode } from '@/lib/useThemeMode';
-import { Button, Card, Skeleton } from '@/ui';
+import { Button, Card, Skeleton, SkeletonRows } from '@/ui';
 
 const FEATURES: { icon: LucideIcon; title: string; text: string }[] = [
   { icon: Layers, title: 'Niveles progresivos', text: 'Del alfabeto dactilológico a vocabulario real, con desbloqueo por logros.' },
-  { icon: Camera, title: 'Práctica con IA', text: 'La cámara reconoce tu mano y te corrige la seña en tiempo real.' },
+  { icon: Camera, title: 'Práctica con IA', text: 'La cámara reconoce tu mano y te da retroalimentación sobre la seña en tiempo real.' },
   { icon: BookOpen, title: 'Diccionario LSCh', text: 'Señas con fotos, parámetros y referencias al diccionario del MINEDUC.' },
-  { icon: Gamepad2, title: 'Juegos', text: 'Memoria, quiz contrarreloj y deletreo para reforzar lo aprendido.' },
+  { icon: Gamepad2, title: 'Juegos', text: 'Memoria, quiz contrarreloj y deletreo para entrenar y mantener activa la LSCh.' },
   { icon: Video, title: 'Videos con subtítulos', text: 'Contenido audiovisual accesible para personas oyentes y no oyentes.' },
   { icon: Sparkles, title: 'Motivación diaria', text: 'Rachas, estrellas y celebraciones que hacen del hábito un juego.' },
 ];
@@ -51,15 +53,97 @@ function Metric({ value, label }: { value: number | null | undefined; label: str
   );
 }
 
-/** Landing pública: presenta SeñaPlay, sus características, métricas reales y descargas. */
+const initials = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word[0].toUpperCase())
+    .join('');
+
+function TeamCard({ member }: { member: TeamMember }) {
+  return (
+    <Card variant="raised" className="team-card">
+      {member.photo_url ? (
+        <img className="team-card__photo" src={member.photo_url} alt={`Foto de ${member.full_name}`} loading="lazy" />
+      ) : (
+        <span className="team-card__photo team-card__initials" aria-hidden>
+          {initials(member.full_name)}
+        </span>
+      )}
+      <div className="stack-sm" style={{ gap: 2 }}>
+        <h3>{member.full_name}</h3>
+        {member.role ? <p className="team-card__role">{member.role}</p> : null}
+      </div>
+      {member.bio ? <p className="text-secondary text-small">{member.bio}</p> : null}
+    </Card>
+  );
+}
+
+/** Sección «Nosotros»: textos y equipo editables desde el panel (Sitio web → Nosotros). */
+function AboutSection({ about, team }: { about: AboutContent | undefined; team: TeamMember[] | undefined }) {
+  return (
+    <section id="nosotros" className="section section--tinted" aria-labelledby="nosotros-title">
+      <div className="about">
+        <div className="about__intro stack">
+          <span className="badge">Nosotros</span>
+          <h2 id="nosotros-title" className="section__title" style={{ textAlign: 'left', marginBottom: 0 }}>
+            {about ? about.title : <Skeleton width={240} height={34} />}
+          </h2>
+          {about ? <p className="text-secondary about__text">{about.intro}</p> : <SkeletonRows rows={3} label="Cargando" />}
+        </div>
+        <div className="about__pillars">
+          {[
+            { icon: Target, title: 'Misión', text: about?.mission },
+            { icon: Eye, title: 'Visión', text: about?.vision },
+          ].map(({ icon: Icon, title, text }) => (
+            <Card key={title} variant="raised" className="pillar">
+              <span className="feature__icon">
+                <Icon size={24} aria-hidden />
+              </span>
+              <h3>{title}</h3>
+              {text === undefined ? <SkeletonRows rows={2} label="Cargando" /> : <p className="text-secondary">{text}</p>}
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      {team === undefined ? (
+        <div className="team-grid" style={{ marginTop: 'var(--space-8)' }}>
+          <Skeleton height={220} />
+          <Skeleton height={220} />
+          <Skeleton height={220} />
+        </div>
+      ) : team.length ? (
+        <>
+          <h3 className="about__team-title">El equipo</h3>
+          <div className="team-grid stagger">
+            {team.map((member) => (
+              <TeamCard key={member.id} member={member} />
+            ))}
+          </div>
+        </>
+      ) : null}
+    </section>
+  );
+}
+
+/** Landing pública: presenta SeñaPlay, sus características, el equipo, métricas reales y descargas. */
 export function LandingPage() {
-  const { stats } = useRepositories();
+  const { stats, site } = useRepositories();
   const { mode, toggle } = useThemeMode();
   const [data, setData] = useState<PublicStats | null | undefined>(undefined);
+  const [about, setAbout] = useState<AboutContent | undefined>(undefined);
+  const [team, setTeam] = useState<TeamMember[] | undefined>(undefined);
 
   useEffect(() => {
     stats.publicStats().then(setData);
   }, [stats]);
+
+  useEffect(() => {
+    site.getAbout().then(setAbout);
+    site.listPublishedTeam().then(setTeam);
+  }, [site]);
 
   // Si las métricas fallan (null), cada cifra muestra un guion en vez de un skeleton eterno.
   const pick = (read: (stats: PublicStats) => number) => (data === undefined ? undefined : data === null ? null : read(data));
@@ -77,6 +161,7 @@ export function LandingPage() {
         <nav aria-label="Principal" className="landing-nav__links">
           <a href="#caracteristicas">Características</a>
           <a href="#accesibilidad">Accesibilidad</a>
+          <a href="#nosotros">Nosotros</a>
           <a href="#descargar">Descargar</a>
         </nav>
         <div className="row" style={{ gap: 8 }}>
@@ -93,10 +178,10 @@ export function LandingPage() {
             <span className="badge" style={{ background: 'color-mix(in srgb, white 18%, transparent)', color: 'var(--color-on-header)' }}>
               Lengua de Señas Chilena
             </span>
-            <h1>Aprende a comunicarte en señas, jugando.</h1>
+            <h1>Entrena la Lengua de Señas Chilena, jugando.</h1>
             <p>
-              SeñaPlay combina niveles cortos, juegos y una cámara con inteligencia artificial para que practiques LSCh todos los
-              días, a tu ritmo.
+              SeñaPlay es un espacio de práctica: niveles cortos, juegos y una cámara con inteligencia artificial para ejercitar la
+              LSCh todos los días y fomentar su uso, a tu ritmo.
             </p>
             <div className="row">
               <a className="btn btn--lg hero__cta" href={env.androidUrl || '#descargar'}>
@@ -126,7 +211,7 @@ export function LandingPage() {
         {data === null ? <p className="text-muted text-small" style={{ textAlign: 'center' }}>Métricas no disponibles por ahora.</p> : null}
 
         <section id="caracteristicas" className="section">
-          <h2 className="section__title">Todo lo que necesitas para aprender LSCh</h2>
+          <h2 className="section__title">Todo lo que necesitas para practicar LSCh</h2>
           <div className="features-grid stagger">
             {FEATURES.map(({ icon: Icon, title, text }) => (
               <Card key={title} variant="raised" className="feature">
@@ -153,11 +238,13 @@ export function LandingPage() {
           </div>
         </section>
 
+        <AboutSection about={about} team={team} />
+
         <section id="descargar" className="section">
           <Card variant="brand" className="download">
             <div className="stack-sm">
-              <h2>Empieza hoy, es gratis</h2>
-              <p style={{ opacity: 0.92 }}>Disponible para Android. Crea tu cuenta y completa tu primer nivel en 5 minutos.</p>
+              <h2>¡Empieza hoy!</h2>
+              <p style={{ opacity: 0.92 }}>Disponible para Android. Crea tu cuenta y completa tu primer entrenamiento en 5 minutos.</p>
             </div>
             <div className="row">
               {env.androidUrl ? (

@@ -19,6 +19,8 @@ do $$ begin perform public.save_level('{"id":50,"title":"x"}','[]'); raise notic
 do $$ begin update public.app_config set value='{"enabled":true}' where key='maintenance'; if found then raise notice 'FALLA: user editó config'; else raise notice 'OK user no edita config'; end if; end $$;
 select 'user ve perfiles (solo el suyo): ' || count(*) from public.profiles;
 select 'user lee flags: ' || count(*) from public.feature_flags;
+do $$ begin update public.site_content set value='{"title":"x"}' where key='about'; if found then raise notice 'FALLA: user editó site_content'; else raise notice 'OK user no edita site_content'; end if; end $$;
+do $$ begin insert into public.team_members (full_name) values ('Intrusa'); raise notice 'FALLA'; exception when insufficient_privilege then raise notice 'OK user no agrega integrantes'; end $$;
 set test.uid = '00000000-0000-0000-0000-000000000002';
 select 'editor save_level -> ' || public.save_level('{"id":13,"title":"Saludos","category":"vocabulario","sort_order":13}', '[{"type":"true-false","title":"VF","payload":{"statement":"Hola","answer":true}},{"type":"matching","payload":{"letters":["a","b"]}}]');
 select 'ejercicios nivel 13: ' || string_agg(position || ':' || type, ', ' order by position) from public.exercises where level_id = 13;
@@ -29,6 +31,11 @@ insert into public.media (kind,title,storage_path,public_url,published) values (
 select 'editor ve media: ' || count(*) from public.media;
 insert into storage.objects (bucket_id, name) values ('media', 'video/2.mp4');
 select 'editor subió objeto a media: ok';
+update public.site_content set value = value || '{"mission":"Fomentar la LSCh"}' where key = 'about';
+select 'editor edita misión: ' || (select value ->> 'mission' from public.site_content where key = 'about');
+insert into public.team_members (full_name, role, published) values ('Ana', 'Diseño', true), ('Oculto', 'Dev', false);
+insert into storage.objects (bucket_id, name) values ('media', 'team/ana.jpg');
+select 'editor ve integrantes (incluye ocultos): ' || count(*) from public.team_members;
 do $$ begin insert into public.exercises(level_id,position,type) values (13, 9, 'bailar'); raise notice 'FALLA tipo'; exception when check_violation then raise notice 'OK tipo inválido rechazado'; end $$;
 set test.uid = '00000000-0000-0000-0000-000000000003';
 update public.app_config set value = '{"enabled": true, "title":"Mant.", "message":"m"}' where key = 'maintenance';
@@ -49,5 +56,7 @@ do $$ begin insert into storage.objects (bucket_id, name) values ('avatars', '00
 reset test.uid; set role anon;
 select 'anon ve media publicada: ' || count(*) from public.media;
 select 'anon lee config: ' || count(*) from public.app_config;
+select 'anon lee misión: ' || (select value ->> 'mission' from public.site_content where key = 'about');
+select 'anon ve integrantes publicados: ' || count(*) from public.team_members;
 select 'anon lee auditoria: ' || count(*) from public.config_audit;
 select 'anon stats: ' || public.public_stats()::text;

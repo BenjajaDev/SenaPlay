@@ -83,6 +83,35 @@
 .feature__icon { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; background: var(--gradient-brand); color: var(--color-primary-contrast); }
 .a11y-item { display: grid; gap: var(--space-2); text-align: center; justify-items: center; padding: var(--space-4); }
 .a11y-item h3 { font-size: 18px; }
+
+/* ── Nosotros ────────────────────────────────────────────────────── */
+.about { display: grid; grid-template-columns: 1fr 1.2fr; gap: var(--space-8); align-items: center; }
+.about__intro > .badge { align-self: flex-start; }
+.about__text { font-size: 17px; }
+.about__pillars { display: grid; gap: var(--space-4); grid-template-columns: repeat(2, 1fr); }
+.pillar { display: grid; gap: var(--space-2); align-content: start; }
+.pillar h3 { font-size: 18px; }
+.about__team-title { font-size: 22px; text-align: center; margin: var(--space-12) 0 var(--space-6); }
+.team-grid { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.team-card { display: grid; gap: var(--space-3); justify-items: center; text-align: center; align-content: start; }
+.team-card h3 { font-size: 17px; }
+.team-card__role { color: var(--color-primary); font-weight: 600; font-size: 14px; }
+.team-card__photo {
+  width: 112px;
+  height: 112px;
+  border-radius: var(--radius-xxl);
+  object-fit: cover;
+  box-shadow: var(--shadow-md);
+  transition: transform var(--duration-base) var(--ease-pop), border-radius var(--duration-base);
+}
+.team-card:hover .team-card__photo { transform: scale(1.06); border-radius: 50%; }
+.team-card__initials { display: grid; place-items: center; background: var(--gradient-brand); color: var(--color-primary-contrast); font-size: 34px; font-weight: 800; }
+@media (max-width: 860px) {
+  .about { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  .about__pillars { grid-template-columns: 1fr; }
+}
 .download { display: flex; align-items: center; justify-content: space-between; gap: var(--space-6); flex-wrap: wrap; padding: clamp(24px, 4vw, 48px); border-radius: var(--radius-xxl); }
 .download h2 { font-size: clamp(24px, 3vw, 32px); }
 .download__btn { --btn-bg: #ffffff; --btn-fg: #6e1789; }
@@ -161,5 +190,10 @@
 }
 .dropzone[data-active='true'],
 .dropzone:hover { border-color: var(--color-primary); background: var(--color-primary-soft); }
+
+/* ── Equipo (panel: Sitio web → Nosotros) ────────────────────────── */
+.team-admin-photo { width: 56px; height: 56px; border-radius: var(--radius-lg); object-fit: cover; background: var(--color-surface-sunken); flex-shrink: 0; }
+.photo-picker { display: flex; align-items: center; gap: var(--space-4); }
+.photo-picker__preview { width: 96px; height: 96px; border-radius: var(--radius-xl); object-fit: cover; background: var(--color-surface-sunken); display: grid; place-items: center; color: var(--color-text-muted); flex-shrink: 0; }
 .chip-input { display: flex; flex-wrap: wrap; gap: 6px; }
 .json-preview { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; white-space: pre-wrap; background: var(--color-surface-sunken); border-radius: var(--radius-md); padding: var(--space-3); max-height: 160px; overflow: auto; }

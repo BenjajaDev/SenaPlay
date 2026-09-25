@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 import type { Repositories } from '@/data/repositories';
-import type { FeatureFlag, Level, MediaItem } from '@/data/types';
+import type { AboutContent, FeatureFlag, Level, MediaItem, TeamMember } from '@/data/types';
 
 // Repositorios en memoria para probar pantallas sin Supabase.
 export function fakeRepositories(overrides: Partial<Repositories> = {}): Repositories {
@@ -11,6 +11,16 @@ export function fakeRepositories(overrides: Partial<Repositories> = {}): Reposit
     { key: 'games.quiz', enabled: true, rollout_percentage: 100, starts_at: null, ends_at: null, description: 'Quiz' },
   ];
   const media: MediaItem[] = [];
+  const about: AboutContent = {
+    title: 'Quiénes somos',
+    intro: 'Un equipo que fomenta la LSCh.',
+    mission: 'Fomentar la práctica diaria de la LSCh.',
+    vision: 'Una sociedad donde comunicarse en señas sea cotidiano.',
+  };
+  const team: TeamMember[] = [
+    { id: 't1', full_name: 'Ana Pérez', role: 'Diseño', bio: null, photo_url: null, photo_path: null, sort_order: 0, published: true },
+    { id: 't2', full_name: 'Luis Soto', role: 'Desarrollo', bio: null, photo_url: null, photo_path: null, sort_order: 1, published: false },
+  ];
   return {
     content: {
       listLevels: vi.fn(async () => levels),
@@ -38,6 +48,15 @@ export function fakeRepositories(overrides: Partial<Repositories> = {}): Reposit
     },
     users: { list: vi.fn(async () => []), setRole: vi.fn(async () => {}), getRole: vi.fn(async () => 'admin' as const) },
     stats: { publicStats: vi.fn(async () => ({ levels: 12, exercises: 90, dictionary: 47, vocabulary: 7, videos: 3, learners: 150 })) },
+    site: {
+      getAbout: vi.fn(async () => about),
+      saveAbout: vi.fn(async () => {}),
+      listTeam: vi.fn(async () => team),
+      listPublishedTeam: vi.fn(async () => team.filter((member) => member.published)),
+      saveTeamMember: vi.fn(async () => {}),
+      setTeamMemberPublished: vi.fn(async () => {}),
+      deleteTeamMember: vi.fn(async () => {}),
+    },
     ...overrides,
   };
 }

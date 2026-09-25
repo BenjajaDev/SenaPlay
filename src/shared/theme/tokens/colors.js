@@ -32,6 +32,8 @@ export const lightColors = {
   primarySoft: '#F3DFFB',
   primaryContrast: '#FFFFFF',
   onHeader: '#FFFFFF',
+  // Fondo de controles sobre la cabecera (p. ej. el interruptor de tema).
+  onHeaderSoft: 'rgba(255, 255, 255, 0.2)',
 
   gold: '#F2C94C',
   goldDeep: '#D9AE2C',
@@ -86,6 +88,7 @@ export const darkColors = {
   primarySoft: '#3A3350',
   primaryContrast: '#191106',
   onHeader: '#FFFFFF',
+  onHeaderSoft: 'rgba(255, 255, 255, 0.12)',
 
   gold: '#F2C94C',
   goldDeep: '#D9AE2C',

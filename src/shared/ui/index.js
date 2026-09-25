@@ -11,6 +11,7 @@ export { default as Chip } from './Chip';
 export { default as ProgressBar } from './ProgressBar';
 export { default as Badge, difficultyBadgeProps } from './Badge';
 export { default as SegmentedControl } from './SegmentedControl';
+export { default as ThemeToggle } from './ThemeToggle';
 
 // Moléculas
 export { default as SectionHeader } from './SectionHeader';

@@ -17,6 +17,7 @@
   --color-primary-soft: #F3DFFB;
   --color-primary-contrast: #FFFFFF;
   --color-on-header: #FFFFFF;
+  --color-on-header-soft: rgba(255, 255, 255, 0.2);
   --color-gold: #F2C94C;
   --color-gold-deep: #D9AE2C;
   --color-gold-text: #7A5A00;
@@ -72,6 +73,7 @@
   --color-primary-soft: #3A3350;
   --color-primary-contrast: #191106;
   --color-on-header: #FFFFFF;
+  --color-on-header-soft: rgba(255, 255, 255, 0.12);
   --color-gold: #F2C94C;
   --color-gold-deep: #D9AE2C;
   --color-gold-text: #FCD34D;
@@ -128,6 +130,7 @@
     --color-primary-soft: #3A3350;
     --color-primary-contrast: #191106;
     --color-on-header: #FFFFFF;
+    --color-on-header-soft: rgba(255, 255, 255, 0.12);
     --color-gold: #F2C94C;
     --color-gold-deep: #D9AE2C;
     --color-gold-text: #FCD34D;

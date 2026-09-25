@@ -3,7 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useMemo } from 'react';
 import { Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AppText } from '../../../../shared/ui';
+import { AppText, ThemeToggle } from '../../../../shared/ui';
 import { useAppTheme } from '../../../../shared/theme/ThemeProvider';
 
 /**
@@ -29,19 +29,20 @@ export default function AuthLayout({ title, subtitle, children, footer }) {
           showsVerticalScrollIndicator={false}
         >
           <LinearGradient {...theme.gradients.header} style={[styles.hero, { paddingTop: insets.top + theme.spacing.xxl }]}>
+            <ThemeToggle style={[styles.themeToggle, { top: insets.top + theme.spacing.md }]} />
             <View style={styles.logoWrap}>
-              <Image
-                source={require('../../../../../assets/senaplay-logo.png')}
-                style={styles.logo}
-                resizeMode="contain"
-                accessibilityIgnoresInvertColors
-                accessible
-                accessibilityLabel="Logo de SeñaPlay"
-              />
+              <View style={styles.logoClip}>
+                <Image
+                  source={theme.isDark ? LOGO_DARK : LOGO_LIGHT}
+                  style={styles.logo}
+                  resizeMode="contain"
+                  accessibilityIgnoresInvertColors
+                  accessible
+                  accessibilityRole="image"
+                  accessibilityLabel="SeñaPlay"
+                />
+              </View>
             </View>
-            <AppText variant="display" style={styles.brand}>
-              SeñaPlay
-            </AppText>
             {subtitle ? (
               <AppText variant="subtitle" align="center" style={styles.heroText}>
                 {subtitle}
@@ -68,6 +69,16 @@ export default function AuthLayout({ title, subtitle, children, footer }) {
   );
 }
 
+const LOGO_LIGHT = require('../../../../../assets/senaplay_logotipo_claro.png');
+const LOGO_DARK = require('../../../../../assets/senaplay_logotipo_oscuro.png');
+
+// Los logotipos oficiales (1024 px) traen el nombre "SeñaPlay" y un fondo
+// sólido propio: blanco el claro, #140A1A el oscuro. El dibujo ocupa ~70 % del
+// ancho, así que la imagen se agranda un 20 % dentro de la tarjeta para
+// recortar parte del margen; el fondo de la tarjeta es el de la propia imagen.
+const LOGO_SIZE = 132;
+const LOGO_IMAGE_SIZE = Math.round(LOGO_SIZE * 1.2);
+
 function createStyles(theme) {
   const { colors, spacing, radius } = theme;
   return StyleSheet.create({
@@ -82,18 +93,24 @@ function createStyles(theme) {
       borderBottomLeftRadius: radius.xxl + 8,
       borderBottomRightRadius: radius.xxl + 8,
     },
+    themeToggle: { position: 'absolute', right: spacing.lg },
+    // La sombra va en logoWrap y el recorte en logoClip: en iOS, overflow
+    // 'hidden' en la misma vista también recortaría la sombra.
     logoWrap: {
-      width: 88,
-      height: 88,
-      borderRadius: 44,
-      backgroundColor: '#FFFFFF', // fondo blanco fijo: el logo es a color sobre blanco
-      alignItems: 'center',
-      justifyContent: 'center',
+      width: LOGO_SIZE,
+      height: LOGO_SIZE,
+      borderRadius: radius.xxl,
       marginBottom: spacing.sm,
       ...theme.elevation.md,
     },
-    logo: { width: 66, height: 66 },
-    brand: { color: colors.onHeader },
+    logoClip: {
+      flex: 1,
+      borderRadius: radius.xxl,
+      overflow: 'hidden',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    logo: { width: LOGO_IMAGE_SIZE, height: LOGO_IMAGE_SIZE },
     heroText: { color: colors.onHeader, opacity: 0.95 },
     card: {
       marginTop: -(spacing.xxxl),

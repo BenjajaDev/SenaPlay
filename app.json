@@ -5,16 +5,20 @@
     "scheme": "senaplay",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/app-icon/icon-claro.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.benjajadev.senaplay"
+      "bundleIdentifier": "com.benjajadev.senaplay",
+      "icon": {
+        "light": "./assets/app-icon/icon-claro.png",
+        "dark": "./assets/app-icon/icon-oscuro.png"
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/app-icon/adaptive-foreground-claro.png",
+        "backgroundImage": "./assets/app-icon/adaptive-background-claro.png"
       },
       "permissions": [
         "android.permission.CAMERA",
@@ -23,7 +27,7 @@
       "package": "com.benjajadev.senaplay"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/senaplay_icono_claro.png"
     },
     "plugins": [
       "expo-web-browser",

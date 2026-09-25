@@ -1,6 +1,8 @@
 import { LogIn, ShieldAlert } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { Link, Navigate, useLocation } from 'react-router-dom';
+import { brandIcon } from '@/lib/brand';
+import { useThemeMode } from '@/lib/useThemeMode';
 import { Button, Card, TextField, useFeedback } from '@/ui';
 import { useAuth } from './AuthProvider';
 
@@ -8,6 +10,7 @@ import { useAuth } from './AuthProvider';
 export function LoginPage() {
   const auth = useAuth();
   const { runBlocking } = useFeedback();
+  const { mode } = useThemeMode();
   const location = useLocation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -33,7 +36,7 @@ export function LoginPage() {
     <main className="auth-page">
       <Card variant="raised" className="auth-card stack">
         <Link to="/" className="brand-link" aria-label="Volver al inicio">
-          <img src="/logo.png" alt="" width={48} height={48} />
+          <img src={brandIcon(mode)} alt="" width={48} height={48} />
           <span>SeñaPlay</span>
         </Link>
         <div className="stack-sm" style={{ gap: 4 }}>

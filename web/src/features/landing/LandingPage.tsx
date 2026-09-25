@@ -19,6 +19,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useRepositories } from '@/data/RepositoriesProvider';
 import type { PublicStats } from '@/data/types';
+import { brandIcon } from '@/lib/brand';
 import { env } from '@/lib/env';
 import { useThemeMode } from '@/lib/useThemeMode';
 import { Button, Card, Skeleton } from '@/ui';
@@ -70,7 +71,7 @@ export function LandingPage() {
       </a>
       <header className="landing-nav">
         <Link to="/" className="brand-link" aria-label="SeñaPlay, inicio">
-          <img src="/logo.png" alt="" width={40} height={40} />
+          <img src={brandIcon(mode)} alt="" width={40} height={40} />
           <span>SeñaPlay</span>
         </Link>
         <nav aria-label="Principal" className="landing-nav__links">

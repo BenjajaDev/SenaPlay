@@ -18,6 +18,7 @@ import {
 import { useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthProvider';
+import { brandIcon } from '@/lib/brand';
 import { useThemeMode } from '@/lib/useThemeMode';
 import { Badge, Button, useFeedback } from '@/ui';
 
@@ -71,7 +72,7 @@ export function AdminLayout() {
 
       <aside className="admin__sidebar" data-open={open} aria-label="Navegación del panel">
         <Link to="/" className="brand-link">
-          <img src="/logo.png" alt="" width={36} height={36} />
+          <img src={brandIcon(mode)} alt="" width={36} height={36} />
           <span>SeñaPlay</span>
         </Link>
         <nav className="admin__nav">

@@ -43,6 +43,16 @@ describe('portal web', () => {
     expect(screen.getByRole('link', { name: /Panel/ })).toHaveAttribute('href', '/admin');
   });
 
+  test('el ícono del nav cambia con el tema', async () => {
+    const user = userEvent.setup();
+    renderAt('/');
+    const icon = () => document.querySelector('.brand-link img') as HTMLImageElement;
+    const initial = icon().getAttribute('src');
+    await user.click(screen.getByRole('button', { name: /Usar tema/ }));
+    expect(icon().getAttribute('src')).not.toBe(initial);
+    expect(icon().getAttribute('src')).toMatch(/^\/brand\/icono-(claro|oscuro)\.png$/);
+  });
+
   test('eliminar un nivel exige confirmación', async () => {
     const user = userEvent.setup();
     const repos = renderAt('/admin/levels');

@@ -1,6 +1,7 @@
 /* ── Marca ───────────────────────────────────────────────────────── */
 .brand-link { display: inline-flex; align-items: center; gap: 10px; font-weight: 900; font-size: 20px; color: var(--color-text-primary); text-decoration: none; }
-.brand-link img { border-radius: 50%; background: #fff; }
+/* El ícono ya trae su forma de cuadrado redondeado con esquinas transparentes. */
+.brand-link img { border-radius: 22%; }
 
 /* ── Landing ─────────────────────────────────────────────────────── */
 .landing-nav {

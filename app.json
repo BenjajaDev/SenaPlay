@@ -53,6 +53,11 @@
       ],
       "expo-font"
     ],
-    "owner": "benjajadev"
+    "owner": "benjajadev",
+    "extra": {
+      "eas": {
+        "projectId": "637a0163-f12b-4c08-a231-abe6ca68bf47"
+      }
+    }
   }
 }

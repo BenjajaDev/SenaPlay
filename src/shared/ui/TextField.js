@@ -44,7 +44,12 @@ const TextField = forwardRef(function TextField(
   return (
     <View style={[styles.container, style]}>
       {label ? <Text style={styles.label}>{label}</Text> : null}
+      {/* collapsable={false}: el estilo de foco agrega `elevation`, y en Android
+          (Fabric) eso cambia si esta View existe como vista nativa. Al cambiar,
+          el TextInput se re-cuelga en otro padre, pierde el foco y Android se lo
+          pasa al campo vecino, que hace lo mismo: el foco rebota sin parar. */}
       <View
+        collapsable={false}
         style={[
           styles.field,
           multiline && styles.fieldMultiline,

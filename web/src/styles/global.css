@@ -134,7 +134,9 @@ img {
   text-decoration: none;
   white-space: nowrap;
 }
-.btn:hover:not(:disabled) { filter: brightness(1.05); box-shadow: var(--shadow-sm); }
+.btn:hover:not(:disabled) { filter: brightness(1.05); box-shadow: var(--shadow-sm); transform: translateY(-1px); }
+.btn svg { transition: transform var(--duration-base) var(--ease-pop); }
+.btn:hover:not(:disabled) svg { transform: scale(1.12); }
 .btn:active:not(:disabled) { transform: scale(0.97); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn--secondary { --btn-bg: var(--color-surface-raised); --btn-fg: var(--color-primary); --btn-border: var(--color-primary); }
@@ -159,6 +161,31 @@ img {
 .card--brand { background: var(--gradient-header); color: var(--color-on-header); border-color: transparent; }
 .card--interactive { cursor: pointer; transition: transform var(--duration-fast) var(--ease-enter), box-shadow var(--duration-fast); }
 .card--interactive:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+/* ── Hover compartido (landing y panel) ──────────────────────────── */
+/* Las tarjetas que forman grillas se elevan al pasar el mouse. Los
+   contenedores grandes (formularios, tablas) no, para no distraer.
+   Con «reducir movimiento» las transiciones quedan en 1 ms (ver al final). */
+.hover-lift,
+:is(.grid-2, .grid-3, .media-grid, .stagger) > .card {
+  transition: transform var(--duration-base) var(--ease-enter), box-shadow var(--duration-base), border-color var(--duration-base);
+}
+.hover-lift:hover,
+:is(.grid-2, .grid-3, .media-grid, .stagger) > .card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: color-mix(in srgb, var(--color-primary) 35%, var(--color-border));
+}
+.input:hover:not(:disabled):not(:focus),
+.select:hover:not(:disabled):not(:focus),
+.textarea:hover:not(:disabled):not(:focus) { border-color: color-mix(in srgb, var(--color-primary) 55%, var(--color-border)); }
+.switch:hover .switch__track { filter: brightness(1.08); }
+.switch:hover .switch__track::after { transform: scale(1.08); }
+.switch:hover input:checked + .switch__track::after { transform: translateX(20px) scale(1.08); }
+.badge { transition: transform var(--duration-fast) var(--ease-pop); }
+.badge:hover { transform: scale(1.06); }
+.stat-tile__icon { transition: transform var(--duration-base) var(--ease-pop); }
+.stat-tile:hover .stat-tile__icon { transform: scale(1.12) rotate(-6deg); }
 
 /* ── Campos ──────────────────────────────────────────────────────── */
 .field { display: flex; flex-direction: column; gap: 6px; }
@@ -244,7 +271,8 @@ img {
 .table th,
 .table td { padding: 12px 14px; border-bottom: 1px solid var(--color-border); vertical-align: middle; }
 .table tr:last-child td { border-bottom: none; }
-.table tbody tr:hover { background: var(--color-background-soft); }
+.table tbody tr { transition: background var(--duration-fast), box-shadow var(--duration-fast); }
+.table tbody tr:hover { background: var(--color-background-soft); box-shadow: inset 3px 0 0 var(--color-primary); }
 
 /* ── Diálogo ─────────────────────────────────────────────────────── */
 .dialog-backdrop {
@@ -312,7 +340,9 @@ img {
   animation: shimmer 1.3s ease-in-out infinite;
 }
 
-.stagger > * { animation: rise-in 420ms var(--ease-enter) both; }
+/* `backwards` (no `both`): al terminar, la animación suelta el transform para
+   que las animaciones de hover puedan moverlo. */
+.stagger > * { animation: rise-in 420ms var(--ease-enter) backwards; }
 .stagger > *:nth-child(2) { animation-delay: 60ms; }
 .stagger > *:nth-child(3) { animation-delay: 120ms; }
 .stagger > *:nth-child(4) { animation-delay: 180ms; }

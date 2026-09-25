@@ -95,8 +95,8 @@ export function StatTile({ icon: Icon, label, value, tone = 'brand' }: { icon: L
   };
   const [bg, fg] = colors[tone];
   return (
-    <div className="card row" style={{ gap: 14 }}>
-      <span style={{ width: 44, height: 44, borderRadius: 12, display: 'grid', placeItems: 'center', background: bg, color: fg }}>
+    <div className="card row stat-tile hover-lift" style={{ gap: 14 }}>
+      <span className="stat-tile__icon" style={{ width: 44, height: 44, borderRadius: 12, display: 'grid', placeItems: 'center', background: bg, color: fg }}>
         <Icon size={22} aria-hidden />
       </span>
       <div>

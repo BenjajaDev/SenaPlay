@@ -21,6 +21,7 @@ select 'user ve perfiles (solo el suyo): ' || count(*) from public.profiles;
 select 'user lee flags: ' || count(*) from public.feature_flags;
 do $$ begin update public.site_content set value='{"title":"x"}' where key='about'; if found then raise notice 'FALLA: user editó site_content'; else raise notice 'OK user no edita site_content'; end if; end $$;
 do $$ begin insert into public.team_members (full_name) values ('Intrusa'); raise notice 'FALLA'; exception when insufficient_privilege then raise notice 'OK user no agrega integrantes'; end $$;
+do $$ begin insert into public.publications (title) values ('Spam'); raise notice 'FALLA'; exception when insufficient_privilege then raise notice 'OK user no publica'; end $$;
 set test.uid = '00000000-0000-0000-0000-000000000002';
 select 'editor save_level -> ' || public.save_level('{"id":13,"title":"Saludos","category":"vocabulario","sort_order":13}', '[{"type":"true-false","title":"VF","payload":{"statement":"Hola","answer":true}},{"type":"matching","payload":{"letters":["a","b"]}}]');
 select 'ejercicios nivel 13: ' || string_agg(position || ':' || type, ', ' order by position) from public.exercises where level_id = 13;
@@ -36,6 +37,12 @@ select 'editor edita misión: ' || (select value ->> 'mission' from public.site_
 insert into public.team_members (full_name, role, published) values ('Ana', 'Diseño', true), ('Oculto', 'Dev', false);
 insert into storage.objects (bucket_id, name) values ('media', 'team/ana.jpg');
 select 'editor ve integrantes (incluye ocultos): ' || count(*) from public.team_members;
+insert into public.publications (title, summary, category, event_date, published) values
+  ('Congreso LSCh', 'Presentamos SeñaPlay', 'congreso', '2026-09-01', true),
+  ('Prueba con estudiantes', 'Borrador', 'prueba', null, false);
+insert into storage.objects (bucket_id, name) values ('media', 'publications/congreso.jpg');
+select 'editor ve publicaciones (incluye borradores): ' || count(*) || ' · autor registrado: ' || bool_and(created_by = auth.uid()) from public.publications;
+do $$ begin insert into public.publications (title, category) values ('x', 'fiesta'); raise notice 'FALLA categoría'; exception when check_violation then raise notice 'OK categoría inválida rechazada'; end $$;
 do $$ begin insert into public.exercises(level_id,position,type) values (13, 9, 'bailar'); raise notice 'FALLA tipo'; exception when check_violation then raise notice 'OK tipo inválido rechazado'; end $$;
 set test.uid = '00000000-0000-0000-0000-000000000003';
 update public.app_config set value = '{"enabled": true, "title":"Mant.", "message":"m"}' where key = 'maintenance';
@@ -58,5 +65,7 @@ select 'anon ve media publicada: ' || count(*) from public.media;
 select 'anon lee config: ' || count(*) from public.app_config;
 select 'anon lee misión: ' || (select value ->> 'mission' from public.site_content where key = 'about');
 select 'anon ve integrantes publicados: ' || count(*) from public.team_members;
+select 'anon ve publicaciones publicadas: ' || count(*) from public.publications;
+do $$ begin update public.publications set published = true; if found then raise notice 'FALLA: anon editó publicaciones'; else raise notice 'OK anon no edita publicaciones'; end if; end $$;
 select 'anon lee auditoria: ' || count(*) from public.config_audit;
 select 'anon stats: ' || public.public_stats()::text;

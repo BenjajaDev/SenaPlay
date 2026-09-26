@@ -108,6 +108,60 @@ export type TeamMember = {
   published: boolean;
 };
 
+// ── Secciones de la landing (site_content, una clave por sección) ──────
+
+/** Íconos que el panel ofrece para las tarjetas de la landing (ver lib/siteIcons.ts). */
+export type SiteIconKey =
+  | 'layers'
+  | 'camera'
+  | 'book'
+  | 'gamepad'
+  | 'video'
+  | 'sparkles'
+  | 'vibrate'
+  | 'accessibility'
+  | 'hand'
+  | 'heart'
+  | 'users'
+  | 'star'
+  | 'smartphone'
+  | 'megaphone'
+  | 'graduation';
+
+export type SectionItem = { icon: SiteIconKey; title: string; text: string };
+
+export type LandingSections = {
+  hero: { badge: string; title: string; text: string; primaryLabel: string; secondaryLabel: string };
+  metrics: { visible: boolean; title: string };
+  features: { visible: boolean; title: string; items: SectionItem[] };
+  accessibility: { visible: boolean; title: string; items: SectionItem[] };
+  publications: { visible: boolean; title: string; intro: string };
+  download: { visible: boolean; title: string; text: string };
+  footer: { text: string };
+};
+
+export type SectionKey = keyof LandingSections;
+
+// ── Publicaciones ──────────────────────────────────────────────────────
+
+export type PublicationCategory = 'congreso' | 'actividad' | 'prueba' | 'noticia' | 'otro';
+
+export type Publication = {
+  id?: string;
+  title: string;
+  summary: string;
+  body: string | null;
+  category: PublicationCategory;
+  /** Fecha del evento en formato AAAA-MM-DD. */
+  event_date: string | null;
+  location: string | null;
+  link_url: string | null;
+  cover_url: string | null;
+  cover_path: string | null;
+  published: boolean;
+  created_at?: string;
+};
+
 export type PublicStats = {
   levels: number;
   exercises: number;

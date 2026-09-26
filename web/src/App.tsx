@@ -21,6 +21,8 @@ const RemoteConfigPage = lazy(() => import('@/features/admin/config/RemoteConfig
 const FeatureFlagsPage = lazy(() => import('@/features/admin/config/FeatureFlagsPage').then((m) => ({ default: m.FeatureFlagsPage })));
 const AuditPage = lazy(() => import('@/features/admin/config/AuditPage').then((m) => ({ default: m.AuditPage })));
 const AboutPage = lazy(() => import('@/features/admin/site/AboutPage').then((m) => ({ default: m.AboutPage })));
+const SectionsPage = lazy(() => import('@/features/admin/site/SectionsPage').then((m) => ({ default: m.SectionsPage })));
+const PublicationsPage = lazy(() => import('@/features/admin/site/PublicationsPage').then((m) => ({ default: m.PublicationsPage })));
 const UsersPage = lazy(() => import('@/features/admin/users/UsersPage').then((m) => ({ default: m.UsersPage })));
 
 const fallback = (
@@ -50,6 +52,8 @@ export function AppRoutes() {
           <Route path="dictionary" element={<DictionaryPage />} />
           <Route path="vocabulary" element={<VocabularyPage />} />
           <Route path="media" element={<MediaPage />} />
+          <Route path="site/sections" element={<SectionsPage />} />
+          <Route path="site/publications" element={<PublicationsPage />} />
           <Route path="site/about" element={<AboutPage />} />
           <Route path="config" element={<RequireStaff admin><RemoteConfigPage /></RequireStaff>} />
           <Route path="flags" element={<RequireStaff admin><FeatureFlagsPage /></RequireStaff>} />

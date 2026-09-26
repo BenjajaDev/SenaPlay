@@ -1,5 +1,14 @@
 import { describe, expect, test, vi } from 'vitest';
-import { createContentRepository, createMediaRepository, kindFromMime, RepositoryError, safeFileName } from '@/data/repositories';
+import {
+  createContentRepository,
+  createMediaRepository,
+  DEFAULT_SECTIONS,
+  kindFromMime,
+  mergeSections,
+  normalizeUrl,
+  RepositoryError,
+  safeFileName,
+} from '@/data/repositories';
 
 function fakeClient({ rpc, insertError }: { rpc?: ReturnType<typeof vi.fn>; insertError?: string } = {}) {
   const remove = vi.fn(async () => ({ error: null }));
@@ -41,6 +50,28 @@ describe('repositorios del portal', () => {
     await expect(
       repo.saveLevel({ id: 1, title: 'x', description: '', category: 'alfabeto', available: true, sort_order: 0 }, []),
     ).rejects.toThrow('No tienes permisos para realizar esta acción.');
+  });
+
+  test('secciones: completa con los textos por defecto y descarta valores de tipo incorrecto', () => {
+    const merged = mergeSections([
+      { key: 'hero', value: { title: 'Nuevo título', text: 42 } },
+      { key: 'features', value: { visible: 'no', items: [{ icon: 'inexistente', title: 'Juegos' }, 'basura'] } },
+      { key: 'otra', value: { title: 'ignorada' } },
+    ]);
+    expect(merged.hero.title).toBe('Nuevo título');
+    expect(merged.hero.text).toBe(DEFAULT_SECTIONS.hero.text);
+    expect(merged.features.visible).toBe(true);
+    expect(merged.features.items).toEqual([{ icon: 'sparkles', title: 'Juegos', text: '' }]);
+    expect(merged.download).toEqual(DEFAULT_SECTIONS.download);
+    expect(mergeSections([])).toEqual(DEFAULT_SECTIONS);
+  });
+
+  test('publicaciones: solo enlaces web válidos', () => {
+    expect(normalizeUrl('ejemplo.cl/congreso')).toBe('https://ejemplo.cl/congreso');
+    expect(normalizeUrl('http://ejemplo.cl')).toBe('http://ejemplo.cl/');
+    expect(normalizeUrl('  ')).toBeNull();
+    expect(normalizeUrl('no es un enlace')).toBeNull();
+    expect(normalizeUrl('javascript:alert(1)')).toBeNull();
   });
 
   test('medios: tipo por MIME, nombres seguros y limpieza si falla el registro', async () => {

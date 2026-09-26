@@ -11,9 +11,14 @@ import type {
   LevelWithExercises,
   MediaItem,
   MediaKind,
+  LandingSections,
   Profile,
+  Publication,
   PublicStats,
   Role,
+  SectionItem,
+  SectionKey,
+  SiteIconKey,
   TeamMember,
   VocabularySign,
 } from './types';
@@ -214,7 +219,7 @@ export function createConfigRepository(client: SupabaseClient) {
   };
 }
 
-// ── Contenido del sitio (sección «Nosotros») ─────────────────────────
+// ── Contenido del sitio (secciones de la landing y «Nosotros») ──────
 export const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
 
 /**
@@ -232,16 +237,119 @@ export const DEFAULT_ABOUT: AboutContent = {
     'Ser la herramienta de referencia en Chile para practicar la LSCh, contribuyendo a una sociedad más inclusiva donde comunicarse en señas sea parte de la vida diaria.',
 };
 
-export function createSiteRepository(client: SupabaseClient) {
-  const uploadPhoto = async (file: File) => {
-    if (!file.type.startsWith('image/')) throw new RepositoryError('La foto debe ser una imagen (PNG, JPG o WebP).');
-    if (file.size > MAX_PHOTO_BYTES) throw new RepositoryError('La foto supera el máximo de 5 MB.');
-    const path = `team/${crypto.randomUUID()}-${safeFileName(file.name)}`;
-    const { error } = await client.storage.from(MEDIA_BUCKET).upload(path, file, { contentType: file.type, upsert: false });
-    if (error) throw new RepositoryError(toUserMessage(error, 'No se pudo subir la foto.'));
-    return { path, url: client.storage.from(MEDIA_BUCKET).getPublicUrl(path).data.publicUrl };
-  };
+export const SITE_ICON_KEYS: SiteIconKey[] = [
+  'layers',
+  'camera',
+  'book',
+  'gamepad',
+  'video',
+  'sparkles',
+  'vibrate',
+  'accessibility',
+  'hand',
+  'heart',
+  'users',
+  'star',
+  'smartphone',
+  'megaphone',
+  'graduation',
+];
 
+/**
+ * Textos por defecto de cada sección de la landing. Se guardan en
+ * site_content con una clave por sección; lo que falte en la base se completa
+ * con estos valores, así la landing nunca queda vacía ni se rompe si alguien
+ * guardó una versión antigua de la sección.
+ */
+export const DEFAULT_SECTIONS: LandingSections = {
+  hero: {
+    badge: 'Lengua de Señas Chilena',
+    title: 'Entrena la Lengua de Señas Chilena, jugando.',
+    text: 'SeñaPlay es un espacio de práctica: niveles cortos, juegos y una cámara con inteligencia artificial para ejercitar la LSCh todos los días y fomentar su uso, a tu ritmo.',
+    primaryLabel: 'Descargar para Android',
+    secondaryLabel: 'Conocer más',
+  },
+  metrics: { visible: true, title: 'SeñaPlay en números' },
+  features: {
+    visible: true,
+    title: 'Todo lo que necesitas para practicar LSCh',
+    items: [
+      { icon: 'layers', title: 'Niveles progresivos', text: 'Del alfabeto dactilológico a vocabulario real, con desbloqueo por logros.' },
+      { icon: 'camera', title: 'Práctica con IA', text: 'La cámara reconoce tu mano y te da retroalimentación sobre la seña en tiempo real.' },
+      { icon: 'book', title: 'Diccionario LSCh', text: 'Señas con fotos, parámetros y referencias al diccionario del MINEDUC.' },
+      { icon: 'gamepad', title: 'Juegos', text: 'Memoria, quiz contrarreloj y deletreo para entrenar y mantener activa la LSCh.' },
+      { icon: 'video', title: 'Videos con subtítulos', text: 'Contenido audiovisual accesible para personas oyentes y no oyentes.' },
+      { icon: 'sparkles', title: 'Motivación diaria', text: 'Rachas, estrellas y celebraciones que hacen del hábito un juego.' },
+    ],
+  },
+  accessibility: {
+    visible: true,
+    title: 'Accesible para personas oyentes y no oyentes',
+    items: [
+      { icon: 'vibrate', title: 'Feedback multimodal', text: 'Cada acierto o error combina color, icono, texto y vibración: nunca depende del audio.' },
+      { icon: 'accessibility', title: 'WCAG 2.1 AA', text: 'Contraste verificado automáticamente, lector de pantalla y tamaño táctil mínimo de 44px.' },
+      { icon: 'hand', title: 'Hecha para la comunidad Sorda', text: 'La seña es la protagonista: grande, clara y bajo tu control, sin nada que se mueva solo.' },
+    ],
+  },
+  publications: {
+    visible: true,
+    title: 'Publicaciones',
+    intro: 'Congresos, actividades con la comunidad Sorda, pruebas con usuarios y novedades del proyecto.',
+  },
+  download: {
+    visible: true,
+    title: '¡Empieza hoy!',
+    text: 'Disponible para Android. Crea tu cuenta y completa tu primer entrenamiento en 5 minutos.',
+  },
+  footer: { text: 'Hecho con la comunidad Sorda de Chile' },
+};
+
+export const SECTION_KEYS = Object.keys(DEFAULT_SECTIONS) as SectionKey[];
+
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
+
+function sanitizeItems(value: unknown, fallback: SectionItem[]): SectionItem[] {
+  if (!Array.isArray(value)) return fallback;
+  return value.filter(isRecord).map((item) => ({
+    icon: SITE_ICON_KEYS.includes(item.icon as SiteIconKey) ? (item.icon as SiteIconKey) : 'sparkles',
+    title: typeof item.title === 'string' ? item.title : '',
+    text: typeof item.text === 'string' ? item.text : '',
+  }));
+}
+
+/**
+ * Combina lo guardado con los valores por defecto, campo por campo y solo si
+ * el tipo coincide con el del defecto (un booleano guardado como texto, por
+ * ejemplo, se descarta). Pura: se prueba sin Supabase.
+ */
+export function mergeSections(rows: { key: string; value: unknown }[]): LandingSections {
+  const stored = new Map(rows.map((row) => [row.key, row.value]));
+  const merged = {} as Record<SectionKey, unknown>;
+  SECTION_KEYS.forEach((key) => {
+    const defaults = DEFAULT_SECTIONS[key] as Record<string, unknown>;
+    const value = stored.get(key);
+    const section: Record<string, unknown> = { ...defaults };
+    if (isRecord(value)) {
+      Object.keys(defaults).forEach((field) => {
+        if (field === 'items') section.items = sanitizeItems(value.items, defaults.items as SectionItem[]);
+        else if (typeof value[field] === typeof defaults[field]) section[field] = value[field];
+      });
+    }
+    merged[key] = section;
+  });
+  return merged as LandingSections;
+}
+
+async function uploadImage(client: SupabaseClient, folder: string, file: File) {
+  if (!file.type.startsWith('image/')) throw new RepositoryError('La imagen debe ser PNG, JPG o WebP.');
+  if (file.size > MAX_PHOTO_BYTES) throw new RepositoryError('La imagen supera el máximo de 5 MB.');
+  const path = `${folder}/${crypto.randomUUID()}-${safeFileName(file.name)}`;
+  const { error } = await client.storage.from(MEDIA_BUCKET).upload(path, file, { contentType: file.type, upsert: false });
+  if (error) throw new RepositoryError(toUserMessage(error, 'No se pudo subir la imagen.'));
+  return { path, url: client.storage.from(MEDIA_BUCKET).getPublicUrl(path).data.publicUrl };
+}
+
+export function createSiteRepository(client: SupabaseClient) {
   return {
     /** Nunca falla: si no hay datos, devuelve el texto por defecto. */
     async getAbout(): Promise<AboutContent> {
@@ -256,6 +364,20 @@ export function createSiteRepository(client: SupabaseClient) {
 
     async saveAbout(about: AboutContent) {
       await run(client.from('site_content').upsert({ key: 'about', value: about }), 'No se pudo guardar la sección Nosotros.');
+    },
+
+    /** Todas las secciones de la landing en una consulta. Nunca falla: ante un error, textos por defecto. */
+    async getSections(): Promise<LandingSections> {
+      try {
+        const { data, error } = await client.from('site_content').select('key, value').in('key', SECTION_KEYS);
+        return mergeSections(error || !data ? [] : data);
+      } catch {
+        return DEFAULT_SECTIONS;
+      }
+    },
+
+    async saveSection<K extends SectionKey>(key: K, value: LandingSections[K]) {
+      await run(client.from('site_content').upsert({ key, value }), 'No se pudo guardar la sección.');
     },
 
     /** Para el panel: incluye integrantes ocultos (RLS los muestra solo a staff). */
@@ -279,7 +401,7 @@ export function createSiteRepository(client: SupabaseClient) {
      * nueva para no dejar archivos huérfanos.
      */
     async saveTeamMember(member: TeamMember, photo?: File | null) {
-      const uploaded = photo ? await uploadPhoto(photo) : null;
+      const uploaded = photo ? await uploadImage(client, 'team', photo) : null;
       const row = {
         full_name: member.full_name.trim(),
         role: member.role.trim(),
@@ -310,6 +432,91 @@ export function createSiteRepository(client: SupabaseClient) {
   };
 }
 
+// ── Publicaciones (congresos, actividades, pruebas…) ─────────────────
+const PUBLICATION_COLUMNS = 'id, title, summary, body, category, event_date, location, link_url, cover_url, cover_path, published, created_at';
+
+/** Acepta solo enlaces http(s); agrega https:// si el editor lo omitió. */
+export function normalizeUrl(value: string | null | undefined): string | null {
+  const trimmed = value?.trim();
+  if (!trimmed) return null;
+  const withScheme = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  try {
+    const url = new URL(withScheme);
+    return url.hostname.includes('.') ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
+export function createPublicationsRepository(client: SupabaseClient) {
+  // Lo más reciente primero; las publicaciones sin fecha van al final.
+  const feed = (published: boolean) => {
+    const query = client.from('publications').select(PUBLICATION_COLUMNS);
+    return (published ? query.eq('published', true) : query)
+      .order('event_date', { ascending: false, nullsFirst: false })
+      .order('created_at', { ascending: false });
+  };
+
+  return {
+    /** Para el panel: incluye borradores (RLS los muestra solo a staff). */
+    async list(): Promise<Publication[]> {
+      return run(feed(false), 'No se pudieron cargar las publicaciones.');
+    },
+
+    /** Para la landing: solo publicadas; ante un error, lista vacía. */
+    async listPublished(): Promise<Publication[]> {
+      try {
+        const { data, error } = await feed(true);
+        return error || !data ? [] : (data as Publication[]);
+      } catch {
+        return [];
+      }
+    },
+
+    /**
+     * Guarda la publicación y, si viene, su portada nueva (`removeCover`
+     * quita la actual). Igual que las fotos del equipo: la imagen anterior se
+     * borra solo si el guardado resultó, y la nueva si falló.
+     */
+    async save(publication: Publication, cover?: File | null, removeCover = false) {
+      if (publication.link_url?.trim() && !normalizeUrl(publication.link_url)) {
+        throw new RepositoryError('El enlace no es una dirección web válida.');
+      }
+      const uploaded = cover ? await uploadImage(client, 'publications', cover) : null;
+      const keepCover = !uploaded && !removeCover;
+      const row = {
+        title: publication.title.trim(),
+        summary: publication.summary.trim(),
+        body: publication.body?.trim() || null,
+        category: publication.category,
+        event_date: publication.event_date || null,
+        location: publication.location?.trim() || null,
+        link_url: normalizeUrl(publication.link_url),
+        published: publication.published,
+        cover_url: uploaded ? uploaded.url : keepCover ? publication.cover_url : null,
+        cover_path: uploaded ? uploaded.path : keepCover ? publication.cover_path : null,
+      };
+      try {
+        const query = publication.id ? client.from('publications').update(row).eq('id', publication.id) : client.from('publications').insert(row);
+        await run(query, 'No se pudo guardar la publicación.');
+      } catch (error) {
+        if (uploaded) await client.storage.from(MEDIA_BUCKET).remove([uploaded.path]);
+        throw error;
+      }
+      if (!keepCover && publication.cover_path) await client.storage.from(MEDIA_BUCKET).remove([publication.cover_path]);
+    },
+
+    async setPublished(id: string, published: boolean) {
+      await run(client.from('publications').update({ published }).eq('id', id), 'No se pudo actualizar la publicación.');
+    },
+
+    async remove(publication: Publication) {
+      await run(client.from('publications').delete().eq('id', publication.id as string), 'No se pudo eliminar la publicación.');
+      if (publication.cover_path) await client.storage.from(MEDIA_BUCKET).remove([publication.cover_path]);
+    },
+  };
+}
+
 // ── Usuarios y métricas ──────────────────────────────────────────────
 export function createUsersRepository(client: SupabaseClient) {
   return {
@@ -336,6 +543,7 @@ export function createStatsRepository(client: SupabaseClient) {
         return null;
       }
     },
+
   };
 }
 
@@ -346,6 +554,7 @@ export type Repositories = {
   users: ReturnType<typeof createUsersRepository>;
   stats: ReturnType<typeof createStatsRepository>;
   site: ReturnType<typeof createSiteRepository>;
+  publications: ReturnType<typeof createPublicationsRepository>;
 };
 
 export function createRepositories(client: SupabaseClient): Repositories {
@@ -356,5 +565,6 @@ export function createRepositories(client: SupabaseClient): Repositories {
     users: createUsersRepository(client),
     stats: createStatsRepository(client),
     site: createSiteRepository(client),
+    publications: createPublicationsRepository(client),
   };
 }

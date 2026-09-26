@@ -7,16 +7,19 @@ import {
   Home,
   Layers,
   LayoutDashboard,
+  LayoutTemplate,
   LogOut,
   Menu,
   Moon,
+  Newspaper,
   Settings2,
   Sun,
   Type,
   Users,
+  X,
   type LucideIcon,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthProvider';
 import { brandIcon } from '@/lib/brand';
@@ -36,7 +39,14 @@ const SECTIONS: { label: string; items: NavItem[] }[] = [
       { to: '/admin/media', label: 'Medios', icon: Film },
     ],
   },
-  { label: 'Sitio web', items: [{ to: '/admin/site/about', label: 'Nosotros', icon: HeartHandshake }] },
+  {
+    label: 'Sitio web',
+    items: [
+      { to: '/admin/site/sections', label: 'Secciones de la landing', icon: LayoutTemplate },
+      { to: '/admin/site/publications', label: 'Publicaciones', icon: Newspaper },
+      { to: '/admin/site/about', label: 'Nosotros', icon: HeartHandshake },
+    ],
+  },
   {
     label: 'App móvil',
     items: [
@@ -55,6 +65,14 @@ export function AdminLayout() {
   const { mode, toggle } = useThemeMode();
   const [open, setOpen] = useState(false);
 
+  // En móvil el menú es un panel superpuesto: Escape lo cierra, como un diálogo.
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKey = (event: KeyboardEvent) => event.key === 'Escape' && setOpen(false);
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [open]);
+
   const signOut = async () => {
     if (await confirm({ title: '¿Cerrar sesión?', message: 'Tendrás que volver a ingresar para administrar.', tone: 'warning', confirmLabel: 'Cerrar sesión' })) {
       await auth.signOut();
@@ -67,17 +85,25 @@ export function AdminLayout() {
         Saltar al contenido
       </a>
       <div className="admin__topbar">
-        <Button variant="ghost" icon={Menu} aria-label="Abrir menú" aria-expanded={open} onClick={() => setOpen((v) => !v)} />
+        <Button
+          variant="ghost"
+          icon={open ? X : Menu}
+          aria-label={open ? 'Cerrar menú' : 'Abrir menú'}
+          aria-expanded={open}
+          aria-controls="admin-sidebar"
+          onClick={() => setOpen((v) => !v)}
+        />
         <strong>SeñaPlay · Panel</strong>
         <Button variant="ghost" icon={mode === 'dark' ? Sun : Moon} aria-label="Cambiar tema" onClick={toggle} />
       </div>
 
-      <aside className="admin__sidebar" data-open={open} aria-label="Navegación del panel">
+      {open ? <div className="admin__backdrop" aria-hidden onClick={() => setOpen(false)} /> : null}
+      <aside id="admin-sidebar" className="admin__sidebar" data-open={open} aria-label="Navegación del panel">
         <Link to="/" className="brand-link">
           <img src={brandIcon(mode)} alt="" width={36} height={36} />
           <span>SeñaPlay</span>
         </Link>
-        <nav className="admin__nav">
+        <nav className="admin__nav admin__nav--scroll">
           {SECTIONS.map((section) => (
             <div key={section.label} className="admin__nav">
               <span className="admin__section-label">{section.label}</span>

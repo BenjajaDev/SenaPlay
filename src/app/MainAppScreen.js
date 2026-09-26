@@ -17,8 +17,10 @@ import QuickQuizGameScreen from '../features/games/presentation/QuickQuizGameScr
 import { useCatalog } from '../features/levels/presentation/CatalogContext';
 import LevelSessionScreen from '../features/levels/presentation/LevelSessionScreen';
 import LevelsTabScreen from '../features/levels/presentation/LevelsTabScreen';
+import { exerciseKey } from '../features/levels/domain/exerciseRotation';
 import ProfileActionsModal from '../features/profile/presentation/ProfileActionsModal';
 import ProfileTabScreen from '../features/profile/presentation/ProfileTabScreen';
+import { describeAnswer } from '../features/progress/domain/mistakes';
 import ProgressTabScreen from '../features/progress/presentation/ProgressTabScreen';
 import useUserProgress from '../features/progress/presentation/useUserProgress';
 import AnnouncementBanner from '../features/remoteConfig/presentation/AnnouncementBanner';
@@ -59,7 +61,7 @@ export default function MainAppScreen() {
   const insets = useSafeAreaInsets();
   const theme = useAppTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
-  const { auth, events } = useServices();
+  const { auth, events, mistakes } = useServices();
   const { user, refreshUser } = useSession();
   const { getLevelById, loading: catalogLoading } = useCatalog();
   const { isEnabled } = useRemoteConfig();
@@ -71,6 +73,20 @@ export default function MainAppScreen() {
   const [activeGame, setActiveGame] = useState(null);
   const [isProfileMenuVisible, setIsProfileMenuVisible] = useState(false);
   const [editTrigger, setEditTrigger] = useState(0);
+  const [focusKeys, setFocusKeys] = useState([]);
+  const [frequentMistakes, setFrequentMistakes] = useState(null);
+
+  // Al abrir Progreso se leen los errores frecuentes (locales, al instante) y
+  // se reintenta enviar los que quedaron en cola sin conexión.
+  useEffect(() => {
+    if (activeTab !== 'progress' || !user?.id) return undefined;
+    let mounted = true;
+    mistakes.getFrequent(user.id, { limit: 5 }).then((list) => mounted && setFrequentMistakes(list));
+    mistakes.flush(user.id);
+    return () => {
+      mounted = false;
+    };
+  }, [activeTab, user?.id, mistakes]);
 
   // Si una pestaña se desactiva remotamente mientras está abierta, volver a Niveles.
   useEffect(() => {
@@ -89,7 +105,27 @@ export default function MainAppScreen() {
       });
       return;
     }
-    setActiveLevelId(levelId);
+    // Los ejercicios que más le cuestan en este nivel entran primero al sorteo.
+    mistakes
+      .focusKeys(user?.id, levelId)
+      .catch(() => [])
+      .then((keys) => {
+        setFocusKeys(keys);
+        setActiveLevelId(levelId);
+      });
+  };
+
+  const handleMistake = ({ exercise, answer, gameOver }) => {
+    mistakes.record(user?.id, {
+      levelId: activeLevelId,
+      exerciseKey: exerciseKey(exercise),
+      type: exercise?.type,
+      title: exercise?.title,
+      sign: exercise?.sign || exercise?.signs?.join(' ') || null,
+      // En «emparejar» la respuesta son ids internos de cartas: no se guarda.
+      given: exercise?.type === 'matching' ? null : describeAnswer(answer),
+      gameOver,
+    });
   };
 
   const handleLogout = async () => {
@@ -125,6 +161,9 @@ export default function MainAppScreen() {
         <LevelSessionScreen
           level={level}
           startingLives={lives.available}
+          rotateExercises
+          focusKeys={focusKeys}
+          onMistake={handleMistake}
           onBack={closeLevel}
           onComplete={handleLevelComplete}
           onLifeLost={() => events.emit(APP_EVENTS.LIFE_LOST, { amount: 1 })}
@@ -139,7 +178,18 @@ export default function MainAppScreen() {
     if (activeTab === 'videos') return <VideosTabScreen />;
     if (activeTab === 'games') return <GamesTabScreen onOpenGame={setActiveGame} />;
     if (activeTab === 'progress') {
-      return <ProgressTabScreen levelProgress={levelProgress} userStats={stats} isLoading={!progressLoaded} />;
+      return (
+        <ProgressTabScreen
+          levelProgress={levelProgress}
+          userStats={stats}
+          isLoading={!progressLoaded}
+          frequentMistakes={frequentMistakes}
+          onOpenLevel={(levelId) => {
+            setActiveTab('levels');
+            openLevel(levelId);
+          }}
+        />
+      );
     }
     if (activeTab === 'profile') {
       return (

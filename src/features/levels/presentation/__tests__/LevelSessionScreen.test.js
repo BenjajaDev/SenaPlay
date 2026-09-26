@@ -14,7 +14,7 @@ const level = new LevelBuilder(1)
   .build();
 
 async function setup(props = {}) {
-  const handlers = { onComplete: jest.fn(), onLifeLost: jest.fn(), onBack: jest.fn() };
+  const handlers = { onComplete: jest.fn(), onLifeLost: jest.fn(), onMistake: jest.fn(), onBack: jest.fn() };
   await render(
     <SafeAreaProvider initialMetrics={metrics}>
       <AppThemeProvider>
@@ -29,7 +29,7 @@ async function setup(props = {}) {
 
 describe('LevelSessionScreen', () => {
   test('juega un nivel completo: incompleto, error, pista, acierto y celebración', async () => {
-    const { onComplete, onLifeLost } = await setup();
+    const { onComplete, onLifeLost, onMistake } = await setup();
 
     // Verificar sin responder: aviso, sin perder vida.
     await fireEvent.press(screen.getByText('Verificar'));
@@ -46,6 +46,10 @@ describe('LevelSessionScreen', () => {
     await fireEvent.press(screen.getByText('Verificar'));
     expect(await screen.findByText('Intentar de nuevo')).toBeTruthy();
     expect(onLifeLost).toHaveBeenCalledTimes(1);
+    // El error se informa con el ejercicio y la respuesta dada (métrica de errores).
+    expect(onMistake).toHaveBeenCalledWith(
+      expect.objectContaining({ answer: 'A', gameOver: false, exercise: expect.objectContaining({ sign: 'b' }) }),
+    );
     expect(screen.getByLabelText('Vidas: 2 de 3')).toBeTruthy();
     await fireEvent.press(screen.getByText('Intentar de nuevo'));
 

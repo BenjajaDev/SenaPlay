@@ -3,6 +3,7 @@ import { createAuthRepository } from '../../features/auth/data/SupabaseAuthRepos
 import { createCatalogRepository } from '../../features/levels/data/CatalogRepository';
 import { LEVELS_CATALOG } from '../../features/levels/data/local/levelsCatalog';
 import { createProfileRepository } from '../../features/profile/data/SupabaseProfileRepository';
+import { createMistakesRepository } from '../../features/progress/data/MistakesRepository';
 import { createProgressRepository } from '../../features/progress/data/ProgressRepository';
 import { createRemoteConfigRepository } from '../../features/remoteConfig/data/RemoteConfigRepository';
 import { DICTIONARY_ENTRIES } from '../../features/signs/data/local/dictionaryData';
@@ -28,6 +29,7 @@ export function createServices({ supabase = defaultSupabase, storage = jsonStora
     profile: createProfileRepository(supabase),
     catalog: createCatalogRepository({ supabase, storage, localLevels: LEVELS_CATALOG }),
     progress: createProgressRepository({ storage }),
+    mistakes: createMistakesRepository({ supabase, storage }),
     signs: createSignsRepository({
       supabase,
       storage,

@@ -3,9 +3,10 @@ import { StyleSheet, View } from 'react-native';
 import { AppText, Card } from '../../../../shared/ui';
 import { useAppTheme } from '../../../../shared/theme/ThemeProvider';
 import OptionTile from './OptionTile';
+import { SignSpotlight } from './SignStrip';
 
-/** Verdadero o falso sobre una afirmación. */
-export default function TrueFalseExercise({ exercise, answer, onAnswerChange, disabled }) {
+/** Verdadero o falso sobre una afirmación; si trae `sign`, la seña se muestra arriba. */
+export default function TrueFalseExercise({ exercise, answer, onAnswerChange, disabled, onHint }) {
   const theme = useAppTheme();
   const options = [
     { value: 'true', label: 'Verdadero', icon: 'checkmark-circle', color: theme.colors.successText },
@@ -14,6 +15,7 @@ export default function TrueFalseExercise({ exercise, answer, onAnswerChange, di
 
   return (
     <View style={styles.block}>
+      {exercise.sign ? <SignSpotlight sign={exercise.sign} size={130} onHint={onHint} /> : null}
       <Card variant="gradient" padding="lg">
         <AppText variant="bodyStrong" align="center" style={styles.statement}>
           “{exercise.statement}”

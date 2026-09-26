@@ -19,7 +19,7 @@ const NOTICE_MS = 2600;
  *
  * La pantalla solo pinta `state` y llama a las acciones.
  */
-export default function useLevelSession({ level, startingLives, scoringRules, onLifeLost, onComplete }) {
+export default function useLevelSession({ level, startingLives, scoringRules, onLifeLost, onMistake, onComplete }) {
   const total = level.exercises.length;
   const [state, dispatch] = useReducer(sessionReducer, { total, maxLives: startingLives }, createInitialSession);
   const [answer, setAnswer] = useState(null);
@@ -47,6 +47,8 @@ export default function useLevelSession({ level, startingLives, scoringRules, on
       haptics.error();
       announce(`Incorrecto. ${state.feedback?.message || ''} Te quedan ${state.lives} vidas.`);
       onLifeLost?.();
+      // Métrica de errores: qué ejercicio, qué respondió y si lo dejó sin vidas.
+      onMistake?.({ exercise, answer, gameOver: state.status === SESSION_STATUS.GAME_OVER });
     } else if (state.hits > prev.hits) {
       haptics.success();
       announce('¡Correcto!');

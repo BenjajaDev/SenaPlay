@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, BackHandler, ScrollView, StyleSheet, View } from 'react-native';
 import useReducedMotion from '../../../core/a11y/useReducedMotion';
 import { AppText, Button, Card, MessageDialog, ProgressBar, ScreenHeader, useFeedback } from '../../../shared/ui';
 import { useAppTheme } from '../../../shared/theme/ThemeProvider';
 import { useRemoteConfig } from '../../remoteConfig/presentation/RemoteConfigProvider';
+import { pickSessionExercises } from '../domain/exerciseRotation';
 import { SESSION_STATUS } from '../domain/sessionMachine';
 import { EXERCISE_COMPONENTS } from './exercises';
 import FeedbackPanel from './session/FeedbackPanel';
@@ -25,9 +26,21 @@ import useLevelSession from './session/useLevelSession';
  *   startingLives  vidas iniciales (config remota / pool de vidas)
  *   onComplete     (resultado) → al terminar; el shell guarda el progreso
  *   onLifeLost     () → cada error (descuenta del pool si aplica)
+ *   onMistake      ({ exercise, answer, gameOver }) → cada error, para las métricas
+ *   rotateExercises sortea los ejercicios de cada intento (domain/exerciseRotation)
+ *   focusKeys      ejercicios que el usuario suele fallar: entran primero al sortear
  *   onBack         salir de la sesión
  */
-export default function LevelSessionScreen({ level, startingLives = 3, onComplete, onLifeLost, onBack }) {
+export default function LevelSessionScreen({
+  level: baseLevel,
+  startingLives = 3,
+  rotateExercises = false,
+  focusKeys,
+  onComplete,
+  onLifeLost,
+  onMistake,
+  onBack,
+}) {
   const theme = useAppTheme();
   const reducedMotion = useReducedMotion();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -35,13 +48,28 @@ export default function LevelSessionScreen({ level, startingLives = 3, onComplet
   const { confirm } = useFeedback();
   const hintsEnabled = config.difficulty?.hintsEnabled !== false;
 
+  // Cada intento (incluido «Intentar de nuevo») sortea otros ejercicios del
+  // mismo largo; sin rotación se juega el nivel tal como está escrito.
+  const [roll, setRoll] = useState(0);
+  const level = useMemo(
+    () => (rotateExercises ? { ...baseLevel, exercises: pickSessionExercises(baseLevel, { focusKeys: roll === 0 ? focusKeys : [] }) } : baseLevel),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [baseLevel, rotateExercises, roll],
+  );
+
   const { state, exercise, answer, hint, result, hasProgress, exerciseKey, actions } = useLevelSession({
     level,
     startingLives: Math.max(1, startingLives),
     scoringRules: config.scoring,
     onLifeLost,
+    onMistake,
     onComplete,
   });
+
+  const restart = (lives) => {
+    setRoll((prev) => prev + 1);
+    actions.restart(lives);
+  };
 
   // Borde luminoso de la tarjeta del ejercicio al responder.
   const glow = useRef(new Animated.Value(0)).current;
@@ -183,7 +211,7 @@ export default function LevelSessionScreen({ level, startingLives = 3, onComplet
         }
         primaryText={startingLives > 0 ? 'Intentar de nuevo' : 'Salir'}
         secondaryText={startingLives > 0 ? 'Salir' : undefined}
-        onPrimaryPress={startingLives > 0 ? () => actions.restart(Math.max(1, startingLives)) : onBack}
+        onPrimaryPress={startingLives > 0 ? () => restart(Math.max(1, startingLives)) : onBack}
         onSecondaryPress={onBack}
         onRequestClose={onBack}
       />
@@ -194,7 +222,7 @@ export default function LevelSessionScreen({ level, startingLives = 3, onComplet
         levelTitle={level.title}
         showConfetti={isEnabled('levels.celebration')}
         onContinue={onBack}
-        onReplay={() => actions.restart(Math.max(1, startingLives))}
+        onReplay={() => restart(Math.max(1, startingLives))}
       />
     </View>
   );

@@ -4,11 +4,12 @@ import { AppText, Card, ProgressBar, SectionHeader, SkeletonList, StatCard, Stag
 import { useAppTheme } from '../../../shared/theme/ThemeProvider';
 import { useCatalog } from '../../levels/presentation/CatalogContext';
 import { currentStreak, toLocalISODate } from '../domain/streak';
+import FrequentMistakesCard from './FrequentMistakesCard';
 
 const plural = (n, singular, pluralWord) => `${n} ${n === 1 ? singular : pluralWord}`;
 
 /** Resumen de actividad: métricas, racha y detalle por nivel (del catálogo real). */
-export default function ProgressTabScreen({ levelProgress, userStats, isLoading }) {
+export default function ProgressTabScreen({ levelProgress, userStats, isLoading, frequentMistakes, onOpenLevel }) {
   const theme = useAppTheme();
   const { levels } = useCatalog();
 
@@ -60,6 +61,8 @@ export default function ProgressTabScreen({ levelProgress, userStats, isLoading 
         </AppText>
         <ProgressBar value={totalLevels ? completedCount / totalLevels : 0} gradient="reward" label="Avance total" />
       </Card>
+
+      <FrequentMistakesCard items={frequentMistakes} onPractice={onOpenLevel} />
 
       <Card padding="lg" style={styles.panel}>
         <AppText variant="heading">Detalle por nivel</AppText>

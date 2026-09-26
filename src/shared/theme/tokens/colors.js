@@ -63,6 +63,8 @@ export const lightColors = {
   focusRing: '#D333FF',
   overlay: 'rgba(43, 23, 51, 0.35)',
   scrim: 'rgba(20, 12, 28, 0.55)',
+  // Fondo casi opaco para ver una foto a pantalla completa (texto encima: onHeader).
+  photoBackdrop: 'rgba(14, 8, 20, 0.94)',
   shadow: '#2B1733',
   skeletonBase: '#EDE2F5',
   skeletonHighlight: '#F9F3FD',
@@ -118,6 +120,7 @@ export const darkColors = {
   focusRing: '#FFCF55',
   overlay: 'rgba(0, 0, 0, 0.45)',
   scrim: 'rgba(0, 0, 0, 0.6)',
+  photoBackdrop: 'rgba(0, 0, 0, 0.94)',
   shadow: '#000000',
   skeletonBase: '#262038',
   skeletonHighlight: '#322A48',

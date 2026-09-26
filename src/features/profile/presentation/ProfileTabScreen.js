@@ -6,7 +6,9 @@ import { useServices } from '../../../core/di/ServicesProvider';
 import haptics from '../../../core/feedback/haptics';
 import { AppText, Button, Card, SectionHeader, SegmentedControl, TextField, useFeedback } from '../../../shared/ui';
 import BottomSheet from '../../../shared/ui/feedback/BottomSheet';
-import { useAppTheme } from '../../../shared/theme/ThemeProvider';
+import { FONT_SCALES, useAppTheme } from '../../../shared/theme/ThemeProvider';
+import AvatarViewer from './AvatarViewer';
+import ChangePasswordSheet from './ChangePasswordSheet';
 import usePreferences from './usePreferences';
 
 const GENDERS = [
@@ -61,6 +63,9 @@ export default function ProfileTabScreen({ user, onLogout, onRefreshUser, editTr
   const [form, setForm] = useState({ fullName: '', phone: '', birthdate: '', gender: '' });
   const [formError, setFormError] = useState('');
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [photoMenuVisible, setPhotoMenuVisible] = useState(false);
+  const [viewerVisible, setViewerVisible] = useState(false);
+  const [passwordVisible, setPasswordVisible] = useState(false);
   const lastEditTrigger = useRef(editTrigger ?? 0);
 
   const openEdit = useCallback(() => {
@@ -121,6 +126,10 @@ export default function ProfileTabScreen({ user, onLogout, onRefreshUser, editTr
   };
 
   const handlePickAvatar = async () => {
+    // Se cierran el menú y el visor antes de abrir la galería (dos modales
+    // superpuestos en Android pueden dejar la galería detrás).
+    setPhotoMenuVisible(false);
+    setViewerVisible(false);
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (permission.status !== 'granted') {
       notify({ tone: 'warning', title: 'Sin permiso', message: 'Permite el acceso a tus fotos para cambiar tu imagen.' });
@@ -167,10 +176,11 @@ export default function ProfileTabScreen({ user, onLogout, onRefreshUser, editTr
 
       <Card variant="gradient" padding="xl" style={styles.profileCard}>
         <Pressable
-          onPress={handlePickAvatar}
+          onPress={() => (avatarUrl ? setPhotoMenuVisible(true) : handlePickAvatar())}
           disabled={isUploadingAvatar}
           accessibilityRole="button"
-          accessibilityLabel="Cambiar foto de perfil"
+          accessibilityLabel={avatarUrl ? 'Opciones de tu foto de perfil' : 'Elegir foto de perfil'}
+          accessibilityHint={avatarUrl ? 'Ver en grande o cambiarla' : undefined}
           style={styles.avatarWrapper}
         >
           {avatarUrl ? (
@@ -182,7 +192,7 @@ export default function ProfileTabScreen({ user, onLogout, onRefreshUser, editTr
             {isUploadingAvatar ? (
               <ActivityIndicator size="small" color={theme.colors.primaryContrast} />
             ) : (
-              <Ionicons name="camera" size={14} color={theme.colors.primaryContrast} />
+              <Ionicons name={avatarUrl ? 'expand' : 'camera'} size={14} color={theme.colors.primaryContrast} />
             )}
           </View>
         </Pressable>
@@ -222,9 +232,33 @@ export default function ProfileTabScreen({ user, onLogout, onRefreshUser, editTr
           }}
           theme={theme}
         />
+        <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
+        <View style={styles.fontBlock}>
+          <View style={styles.prefRow}>
+            <Ionicons name="text-outline" size={20} color={theme.colors.primary} />
+            <View style={styles.flex}>
+              <AppText variant="bodyStrong">Tamaño de letra</AppText>
+              <AppText variant="caption" tone="secondary">
+                Se suma al tamaño que elegiste en tu teléfono
+              </AppText>
+            </View>
+          </View>
+          <SegmentedControl
+            options={FONT_SCALES.map(({ key, label }) => ({ key, label }))}
+            value={theme.fontScaleKey}
+            onChange={(key) => {
+              haptics.selection();
+              theme.setFontScale(key);
+            }}
+          />
+          <AppText variant="caption" tone="secondary" style={styles.fontPreview}>
+            Así se verán los textos: «Practica la seña de la letra A».
+          </AppText>
+        </View>
       </Card>
 
       <Button label="Editar mis datos" icon="create-outline" onPress={openEdit} />
+      <Button label="Cambiar contraseña" icon="key-outline" variant="secondary" onPress={() => setPasswordVisible(true)} />
       <Button label="Cerrar sesión" icon="log-out-outline" variant="danger" onPress={onLogout} />
 
       <BottomSheet
@@ -276,6 +310,29 @@ export default function ProfileTabScreen({ user, onLogout, onRefreshUser, editTr
           </View>
         ) : null}
       </BottomSheet>
+
+      <BottomSheet visible={photoMenuVisible} title="Foto de perfil" onClose={() => setPhotoMenuVisible(false)}>
+        <Button
+          label="Ver foto"
+          icon="expand-outline"
+          variant="secondary"
+          onPress={() => {
+            setPhotoMenuVisible(false);
+            setViewerVisible(true);
+          }}
+        />
+        <Button label="Cambiar foto" icon="camera-outline" onPress={handlePickAvatar} />
+      </BottomSheet>
+
+      <AvatarViewer
+        visible={viewerVisible}
+        uri={avatarUrl}
+        name={meta.full_name}
+        onClose={() => setViewerVisible(false)}
+        onChangePhoto={handlePickAvatar}
+      />
+
+      <ChangePasswordSheet visible={passwordVisible} user={user} onClose={() => setPasswordVisible(false)} />
     </View>
   );
 }
@@ -302,5 +359,7 @@ const styles = StyleSheet.create({
   prefRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 },
   divider: { height: 1 },
   genderBlock: { gap: 6 },
+  fontBlock: { gap: 8, paddingBottom: 4 },
+  fontPreview: { textAlign: 'center' },
   errorRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
 });

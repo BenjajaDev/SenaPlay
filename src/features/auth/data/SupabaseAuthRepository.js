@@ -154,5 +154,26 @@ export function createAuthRepository(supabase) {
       const result = await run(() => supabase.auth.updateUser({ password }), 'No se pudo actualizar la contraseña.');
       return result.ok ? ok() : result;
     },
+
+    /**
+     * Cambio de contraseña desde Perfil. Si la cuenta es de correo, primero se
+     * comprueba la contraseña actual (así un teléfono desbloqueado en manos
+     * ajenas no basta para cambiarla). Cuentas creadas con Google u otro
+     * proveedor no tienen contraseña previa: `currentPassword` se omite.
+     */
+    async changePassword({ email, currentPassword, newPassword }) {
+      if (currentPassword !== undefined) {
+        const check = await run(
+          () => supabase.auth.signInWithPassword({ email: String(email || '').trim(), password: currentPassword }),
+          'No se pudo comprobar tu contraseña actual.',
+        );
+        if (!check.ok) {
+          const wrong = /invalid login credentials/i.test(check.cause?.message || '');
+          return wrong ? fail('La contraseña actual no es correcta.', { code: 'wrong_password' }) : check;
+        }
+      }
+      const result = await run(() => supabase.auth.updateUser({ password: newPassword }), 'No se pudo cambiar la contraseña.');
+      return result.ok ? ok() : result;
+    },
   };
 }

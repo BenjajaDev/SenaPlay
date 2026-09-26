@@ -41,6 +41,7 @@
   --color-focus-ring: #D333FF;
   --color-overlay: rgba(43, 23, 51, 0.35);
   --color-scrim: rgba(20, 12, 28, 0.55);
+  --color-photo-backdrop: rgba(14, 8, 20, 0.94);
   --color-shadow: #2B1733;
   --color-skeleton-base: #EDE2F5;
   --color-skeleton-highlight: #F9F3FD;
@@ -97,6 +98,7 @@
   --color-focus-ring: #FFCF55;
   --color-overlay: rgba(0, 0, 0, 0.45);
   --color-scrim: rgba(0, 0, 0, 0.6);
+  --color-photo-backdrop: rgba(0, 0, 0, 0.94);
   --color-shadow: #000000;
   --color-skeleton-base: #262038;
   --color-skeleton-highlight: #322A48;
@@ -154,6 +156,7 @@
     --color-focus-ring: #FFCF55;
     --color-overlay: rgba(0, 0, 0, 0.45);
     --color-scrim: rgba(0, 0, 0, 0.6);
+    --color-photo-backdrop: rgba(0, 0, 0, 0.94);
     --color-shadow: #000000;
     --color-skeleton-base: #262038;
     --color-skeleton-highlight: #322A48;

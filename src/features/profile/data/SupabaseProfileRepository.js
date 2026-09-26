@@ -47,12 +47,14 @@ export function createProfileRepository(supabase) {
     async uploadAvatar(user, localUri) {
       if (!user?.id) return fail('Inicia sesión para cambiar tu foto.');
       try {
+        // arrayBuffer() en vez de blob(): el Blob de React Native copia la
+        // imagen al almacén nativo y la relee en base64 (lento y con aviso).
         const response = await fetch(localUri);
-        const blob = await response.blob();
+        const bytes = await response.arrayBuffer();
         const path = `${user.id}/avatar.jpg`;
         const { error: uploadError } = await supabase.storage
           .from(AVATAR_BUCKET)
-          .upload(path, blob, { contentType: 'image/jpeg', upsert: true });
+          .upload(path, bytes, { contentType: 'image/jpeg', upsert: true });
         if (uploadError) return fail(toUserMessage(uploadError, 'No se pudo subir la foto.'), uploadError);
 
         const { data: urlData } = supabase.storage.from(AVATAR_BUCKET).getPublicUrl(path);

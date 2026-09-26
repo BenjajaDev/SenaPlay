@@ -147,6 +147,14 @@ describe('portal web', () => {
     expect(screen.getByRole('link', { name: /Usuarios registrados: 150/ })).toHaveAttribute('href', '/admin/users');
   });
 
+  test('el resumen muestra los ejercicios donde más se equivocan los usuarios', async () => {
+    renderAt('/admin');
+    const table = await screen.findByRole('table');
+    expect(within(table).getByText('42')).toBeInTheDocument();
+    expect(within(table).getByText('«D»')).toBeInTheDocument();
+    expect(within(table).getByRole('link', { name: 'Nivel 1' })).toHaveAttribute('href', '/admin/levels/1');
+  });
+
   test('el ícono del nav cambia con el tema', async () => {
     const user = userEvent.setup();
     renderAt('/');

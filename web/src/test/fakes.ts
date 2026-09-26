@@ -77,6 +77,19 @@ export function fakeRepositories(overrides: Partial<Repositories> = {}): Reposit
     users: { list: vi.fn(async () => []), setRole: vi.fn(async () => {}), getRole: vi.fn(async () => 'admin' as const) },
     stats: {
       publicStats: vi.fn(async () => ({ levels: 12, exercises: 90, dictionary: 47, vocabulary: 7, videos: 3, learners: 150 })),
+      mistakeStats: vi.fn(async () => [
+        {
+          level_id: 1,
+          exercise_key: 'multiple-choice:b',
+          exercise_type: 'multiple-choice',
+          exercise_title: '¿Qué letra representa esta SEÑA?',
+          sign: 'b',
+          mistakes: 42,
+          people: 17,
+          game_overs: 5,
+          top_answer: 'D',
+        },
+      ]),
     },
     site: {
       getAbout: vi.fn(async () => about),

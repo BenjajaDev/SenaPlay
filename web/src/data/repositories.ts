@@ -12,6 +12,7 @@ import type {
   MediaItem,
   MediaKind,
   LandingSections,
+  MistakeStat,
   Profile,
   Publication,
   PublicStats,
@@ -544,6 +545,10 @@ export function createStatsRepository(client: SupabaseClient) {
       }
     },
 
+    /** Ejercicios que más fallan los usuarios en los últimos `days` días (RPC solo para staff). */
+    async mistakeStats(limit = 10, days = 30): Promise<MistakeStat[]> {
+      return run(client.rpc('mistake_stats', { p_limit: limit, p_days: days }), 'No se pudieron cargar los errores frecuentes.');
+    },
   };
 }
 

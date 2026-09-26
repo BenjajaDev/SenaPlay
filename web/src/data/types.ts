@@ -162,6 +162,19 @@ export type Publication = {
   created_at?: string;
 };
 
+/** Fila de mistake_stats(): ejercicios con más errores en la app (solo staff). */
+export type MistakeStat = {
+  level_id: number;
+  exercise_key: string;
+  exercise_type: string;
+  exercise_title: string | null;
+  sign: string | null;
+  mistakes: number;
+  people: number;
+  game_overs: number;
+  top_answer: string | null;
+};
+
 export type PublicStats = {
   levels: number;
   exercises: number;

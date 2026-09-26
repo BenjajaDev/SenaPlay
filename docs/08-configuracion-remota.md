@@ -14,7 +14,7 @@ sequenceDiagram
 
   ADM->>DB: upsert app_config / feature_flags (RLS: is_admin)
   DB->>DB: trigger → config_audit
-  Note over APP: al abrir la app o volver a primer plano (≥ 5 min)
+  Note over APP: al abrir, al volver a primer plano (≥ 15 s), cada 60 s abierta<br/>y al instante por Realtime (migración 008)
   APP->>C: getCached() → aplica al instante
   APP->>DB: select app_config, feature_flags
   DB-->>APP: filas
@@ -22,6 +22,8 @@ sequenceDiagram
   APP->>C: guarda instantánea
   APP-->>APP: EventBus REMOTE_CONFIG_UPDATED
 ```
+
+`app_config` y `feature_flags` están en la publicación `supabase_realtime`: un cambio en el panel llega a las apps abiertas en segundos. Si Realtime no está disponible, el sondeo cada 60 s (solo en primer plano) lo cubre. Si el panel apaga el juego o la pestaña que el usuario tiene abierta, la app lo cierra y avisa.
 
 Si Supabase no responde se usa la última configuración guardada. Si no existe ninguna, se usan los **defaults**, que reproducen exactamente el comportamiento original.
 

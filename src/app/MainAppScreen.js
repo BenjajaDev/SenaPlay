@@ -11,7 +11,7 @@ import DynamicSignMonitorScreen from '../features/camera/presentation/DynamicSig
 import SignPracticeScreen from '../features/camera/presentation/SignPracticeScreen';
 import SpellingGameScreen from '../features/camera/presentation/SpellingGameScreen';
 import DictionaryTabScreen from '../features/dictionary/presentation/DictionaryTabScreen';
-import GamesTabScreen from '../features/games/presentation/GamesTabScreen';
+import GamesTabScreen, { GAMES } from '../features/games/presentation/GamesTabScreen';
 import MemoryGameScreen from '../features/games/presentation/MemoryGameScreen';
 import QuickQuizGameScreen from '../features/games/presentation/QuickQuizGameScreen';
 import { useCatalog } from '../features/levels/presentation/CatalogContext';
@@ -92,6 +92,15 @@ export default function MainAppScreen() {
   useEffect(() => {
     if (activeTab === 'videos' && !isEnabled('videos.enabled')) setActiveTab('levels');
   }, [activeTab, isEnabled]);
+
+  // Igual con los juegos: si el panel apaga el que está abierto, se cierra y se avisa.
+  useEffect(() => {
+    const game = GAMES.find((item) => item.id === activeGame);
+    if (game?.flag && !isEnabled(game.flag)) {
+      setActiveGame(null);
+      notify({ tone: 'info', title: 'Juego no disponible', message: `«${game.title}» se desactivó por ahora.` });
+    }
+  }, [activeGame, isEnabled, notify]);
 
   const closeLevel = () => setActiveLevelId(null);
   const closeGame = () => setActiveGame(null);

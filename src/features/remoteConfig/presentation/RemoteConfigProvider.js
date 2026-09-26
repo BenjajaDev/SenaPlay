@@ -12,8 +12,13 @@ import {
   mergeRemoteConfig,
 } from '../domain/remoteConfig';
 
-// Al volver la app a primer plano se refresca, pero no más seguido que esto.
-const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
+// Los cambios del panel llegan al instante por Realtime; además se consulta
+// cada POLL_INTERVAL_MS con la app abierta (por si Realtime no está activo o
+// se cortó el socket) y al volver a primer plano, sin repetir antes de
+// FOREGROUND_THROTTLE_MS.
+const POLL_INTERVAL_MS = 60 * 1000;
+const FOREGROUND_THROTTLE_MS = 15 * 1000;
+const REALTIME_DEBOUNCE_MS = 400;
 
 const RemoteConfigContext = createContext({
   status: 'ready',
@@ -41,7 +46,15 @@ export function RemoteConfigProvider({ userId, isAdmin = false, children }) {
   const refresh = useCallback(async () => {
     lastFetchRef.current = Date.now();
     const next = await repository.fetch();
-    setSnapshot(next);
+    // Con el sondeo periódico casi siempre llega lo mismo: solo se actualiza
+    // (y se re-renderiza la app) si de verdad cambió algo.
+    setSnapshot((prev) => {
+      const same =
+        prev &&
+        JSON.stringify(prev.configRows) === JSON.stringify(next.configRows) &&
+        JSON.stringify(prev.flagRows) === JSON.stringify(next.flagRows);
+      return same ? prev : next;
+    });
     setStatus('ready');
   }, [repository]);
 
@@ -57,13 +70,29 @@ export function RemoteConfigProvider({ userId, isAdmin = false, children }) {
     refresh().catch(() => setStatus('ready'));
 
     const subscription = AppState.addEventListener('change', (next) => {
-      if (next === 'active' && Date.now() - lastFetchRef.current > REFRESH_INTERVAL_MS) {
+      if (next === 'active' && Date.now() - lastFetchRef.current > FOREGROUND_THROTTLE_MS) {
         refresh().catch(() => {});
       }
     });
+
+    // Solo con la app en primer plano: en segundo plano no se gasta red ni batería.
+    const poll = setInterval(() => {
+      if (AppState.currentState === 'active') refresh().catch(() => {});
+    }, POLL_INTERVAL_MS);
+
+    // Un cambio en el panel suele tocar varias filas seguidas: se agrupan.
+    let debounce = null;
+    const unsubscribe = repository.subscribe?.(() => {
+      clearTimeout(debounce);
+      debounce = setTimeout(() => refresh().catch(() => {}), REALTIME_DEBOUNCE_MS);
+    });
+
     return () => {
       mounted = false;
       subscription.remove();
+      clearInterval(poll);
+      clearTimeout(debounce);
+      unsubscribe?.();
     };
   }, [repository, refresh]);
 

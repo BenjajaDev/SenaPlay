@@ -38,5 +38,27 @@ export function createRemoteConfigRepository({ supabase, storage }) {
         return { configRows: [], flagRows: [], fetchedAt: null, source: 'default' };
       }
     },
+
+    /**
+     * Avisa cuando el panel cambia `app_config` o `feature_flags` (Supabase
+     * Realtime), para aplicar el cambio en segundos y no recién al reabrir la
+     * app. Devuelve la función para desuscribirse. Si Realtime no está
+     * disponible, no hace nada: el refresco periódico cubre ese caso.
+     */
+    subscribe(onChange) {
+      if (!supabase?.channel) return () => {};
+      try {
+        const channel = supabase
+          .channel(`remote-config-${Date.now()}`)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'app_config' }, () => onChange())
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'feature_flags' }, () => onChange())
+          .subscribe();
+        return () => {
+          supabase.removeChannel(channel);
+        };
+      } catch {
+        return () => {};
+      }
+    },
   };
 }

@@ -84,7 +84,10 @@ export default function LevelSessionScreen({ level, startingLives = 3, onComplet
   const registry = exercise ? EXERCISE_COMPONENTS[exercise.type] : null;
   const ExerciseComponent = registry?.Component;
   const answering = state.status === SESSION_STATUS.ANSWERING;
-  const progress = state.status === SESSION_STATUS.COMPLETED ? 1 : state.index / level.exercises.length;
+  // Un acierto cuenta apenas se responde (no al tocar «Continuar»), así la
+  // barra avanza junto con el feedback verde.
+  const answered = state.index + (state.feedback?.kind === 'correct' ? 1 : 0);
+  const progress = state.status === SESSION_STATUS.COMPLETED ? 1 : answered / level.exercises.length;
   const accent = state.feedback?.kind === 'correct' ? theme.colors.success : theme.colors.danger;
 
   return (

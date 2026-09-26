@@ -1,5 +1,5 @@
 import * as Haptics from 'expo-haptics';
-import { Platform } from 'react-native';
+import { Platform, Vibration } from 'react-native';
 
 // Capa fina sobre expo-haptics con un vocabulario de intención (acierto,
 // error, selección…) en vez de patrones sueltos por pantalla.
@@ -29,11 +29,30 @@ export function isHapticsEnabled() {
   return remoteEnabled && userEnabled;
 }
 
-function run(effect) {
+// En Android, expo-haptics usa la «respuesta táctil» del sistema, que muchos
+// teléfonos traen desactivada o muy suave: la app parecía no vibrar nunca.
+// Ahí se usan patrones del vibrador (ms: [espera, vibra, espera, vibra…]),
+// que respetan el modo silencio pero no dependen de ese ajuste. En iOS se
+// mantiene el Taptic Engine vía expo-haptics.
+export const ANDROID_PATTERNS = Object.freeze({
+  success: [0, 45],
+  error: [0, 70, 60, 70],
+  warning: [0, 110],
+  selection: [0, 15],
+  tap: [0, 20],
+  impact: [0, 35],
+  celebrate: [0, 50, 90, 50, 90, 140],
+});
+
+function run(intent, effect) {
   if (!isHapticsEnabled() || Platform.OS === 'web') return;
-  // expo-haptics puede fallar en dispositivos sin motor de vibración (o en un
-  // dev client sin el módulo nativo): se ignora, el feedback visual ya está.
+  // Puede fallar en dispositivos sin motor de vibración (o en un dev client
+  // sin el módulo nativo): se ignora, el feedback visual ya está.
   try {
+    if (Platform.OS === 'android') {
+      Vibration.vibrate(ANDROID_PATTERNS[intent]);
+      return;
+    }
     effect()?.catch?.(() => {});
   } catch {
     /* sin háptica disponible */
@@ -41,14 +60,14 @@ function run(effect) {
 }
 
 export const haptics = {
-  success: () => run(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)),
-  error: () => run(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)),
-  warning: () => run(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)),
-  selection: () => run(() => Haptics.selectionAsync()),
-  tap: () => run(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)),
-  impact: () => run(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)),
+  success: () => run('success', () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)),
+  error: () => run('error', () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)),
+  warning: () => run('warning', () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)),
+  selection: () => run('selection', () => Haptics.selectionAsync()),
+  tap: () => run('tap', () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)),
+  impact: () => run('impact', () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)),
   celebrate: () =>
-    run(async () => {
+    run('celebrate', async () => {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       await new Promise((resolve) => setTimeout(resolve, 140));
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);

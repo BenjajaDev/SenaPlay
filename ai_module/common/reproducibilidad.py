@@ -31,7 +31,8 @@ def commit_actual() -> str:
             ["git", "rev-parse", "HEAD"], cwd=DIR_AI, text=True, stderr=subprocess.DEVNULL
         ).strip()
         sucio = subprocess.check_output(
-            ["git", "status", "--porcelain", "--untracked-files=no"],
+            # Código y configuración (incluidos archivos nuevos); no datos ni resultados.
+            ["git", "status", "--porcelain", "--untracked-files=all", "--", "*.py", "*.yaml"],
             cwd=DIR_AI, text=True, stderr=subprocess.DEVNULL,
         ).strip()
         return f"{commit}-dirty" if sucio else commit

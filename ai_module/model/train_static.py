@@ -214,6 +214,30 @@ def _features_de_lote(X_raw: np.ndarray) -> np.ndarray:
 
 # ── Entrenamiento ─────────────────────────────────────────────────────────────
 
+def construir_pipeline(modelo: str = "rf") -> Pipeline:
+    """
+    Pipeline escalado + clasificador. Separado de `entrenar` para que
+    training/eval_static.py evalúe exactamente el mismo modelo con
+    validación agrupada, sin duplicar su configuración.
+    """
+    if modelo == "svm":
+        clasificador = SVC(kernel="rbf", C=10, gamma="scale", probability=True)
+    else:
+        # RandomForest es más robusto con pocos datos y no necesita escalar
+        clasificador = RandomForestClassifier(
+            n_estimators=200,
+            max_depth=None,
+            min_samples_leaf=2,
+            random_state=42,
+            n_jobs=-1,
+        )
+
+    # Pipeline: escalado (importante para SVM) + clasificador
+    return Pipeline([
+        ("escalador", StandardScaler()),
+        ("clasificador", clasificador),
+    ])
+
 def entrenar(directorio_datos: str, ruta_salida: str, modelo: str = "rf",
              n_aug: int = 4):
     """
@@ -244,24 +268,7 @@ def entrenar(directorio_datos: str, ruta_salida: str, modelo: str = "rf",
     X_train = _features_de_lote(X_raw_train)
     X_test = _features_de_lote(X_raw_test)
 
-    # Elegir clasificador
-    if modelo == "svm":
-        clasificador = SVC(kernel="rbf", C=10, gamma="scale", probability=True)
-    else:
-        # RandomForest es más robusto con pocos datos y no necesita escalar
-        clasificador = RandomForestClassifier(
-            n_estimators=200,
-            max_depth=None,
-            min_samples_leaf=2,
-            random_state=42,
-            n_jobs=-1,
-        )
-
-    # Pipeline: escalado (importante para SVM) + clasificador
-    pipeline = Pipeline([
-        ("escalador", StandardScaler()),
-        ("clasificador", clasificador),
-    ])
+    pipeline = construir_pipeline(modelo)
 
     print("[Entrenamiento] Entrenando...")
     pipeline.fit(X_train, y_train)

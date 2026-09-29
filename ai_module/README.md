@@ -1,5 +1,12 @@
 # ai_module — IA de señas de SeñaPlay
 
+> **Pipeline dinámico actual:** la comparación TCN / LSTM / GRU con validación agrupada por
+> señante, la exportación a `models_saved/dinamico.pt` y la incorporación de lotes están
+> documentadas en [`docs/ai/README.md`](../docs/ai/README.md) (comandos `python -m data.manifest`,
+> `python -m training.run_all`, `python -m training.select_model`, `python -m training.add_batch`).
+> Lo que sigue describe el flujo legado de `scripts/`, que sigue funcionando: su preprocesamiento
+> ahora delega en `preprocessing/` y reproduce el mismo vector de 527 valores.
+
 Dos pipelines independientes conviven acá:
 
 - **Estático** (alfabeto LSCh, una mano, sin movimiento) — `data/extract_landmarks.py`

@@ -1,16 +1,40 @@
-mediapipe>=0.10.9
-opencv-python>=4.8.1
-numpy>=1.26.0
-scikit-learn>=1.4.0
-torch>=2.1.0
-fastapi>=0.109.0
-uvicorn[standard]>=0.27.0
-pandas>=2.1.0
-tqdm>=4.66.0
-python-multipart>=0.0.9
-pydantic>=2.5.0
-joblib>=1.3.0
-matplotlib>=3.8.0
-requests>=2.31.0
-roboflow>=1.1.0
-pyyaml>=6.0
+# Versiones fijadas del módulo de IA (Python 3.11).
+#
+# Verificadas en conjunto: `pytest` completo y `uvicorn server:app` con estas
+# versiones exactas. scikit-learn 1.9.0 es la versión con la que se entrenó
+# models_saved/estatico.pkl, y mediapipe 0.10.35 es la del pipeline de
+# extracción del dataset: cambiar cualquiera de las dos puede alterar el
+# modelo estático o los landmarks extraídos.
+#
+# Las versiones realmente usadas en cada corrida quedan en
+# results/<corrida>/entorno.json (fuente para la sección de metodología).
+
+# Núcleo
+numpy==2.4.6
+torch==2.14.0
+scikit-learn==1.9.0
+joblib==1.6.0
+pandas==3.0.6
+pyyaml==6.0.1
+
+# Extracción de landmarks
+mediapipe==0.10.35
+opencv-python==5.0.0.93
+
+# Servidor
+fastapi==0.141.1
+uvicorn[standard]==0.54.0
+pydantic==2.13.5
+python-multipart==0.0.32
+
+# Figuras y utilidades
+matplotlib==3.11.2
+tqdm==4.70.1
+requests==2.33.1
+
+# Pruebas
+pytest==9.1.1
+httpx==0.28.1
+
+# Solo para data/download_datasets.py (descarga del alfabeto desde Roboflow)
+roboflow==1.5.1

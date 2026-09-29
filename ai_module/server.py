@@ -25,9 +25,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
 
-from scripts.dataset_config_utils import cargar_config
-from scripts.extract_landmarks import _extraer_video
-
 app = FastAPI(title="SeñaPlay IA de Señas", version="0.2.0")
 
 # Permitir peticiones desde cualquier origen (WebView de React Native incluida)
@@ -55,6 +52,14 @@ with open(_RUTA_REFERENCIA, "r", encoding="utf-8") as _archivo:
 _modelo_estatico = None
 _modelo_dinamico = None
 
+# Modelo dinámico: el exportado por training/select_model.py (arquitectura y
+# preprocesamiento en dinamico.meta.json) y, si no existe, el TCN legado de
+# scripts/train_model.py.
+RUTAS_MODELO_DINAMICO = [
+    os.path.join(_DIRECTORIO, "models_saved", "dinamico.pt"),
+    os.path.join(_DIRECTORIO, "data", "models", "dinamico_tcn.pt"),
+]
+
 
 def _obtener_modelo_estatico():
     """Carga el clasificador estático (RandomForest) si aún no está en memoria."""
@@ -70,12 +75,15 @@ def _obtener_modelo_estatico():
 
 
 def _obtener_modelo_dinamico():
-    """Carga el clasificador dinámico (TCN) si aún no está en memoria."""
+    """Carga el clasificador dinámico (TCN, LSTM o GRU según su meta) si aún no está en memoria."""
     global _modelo_dinamico
     if _modelo_dinamico is None:
+        ruta = next((r for r in RUTAS_MODELO_DINAMICO if os.path.exists(r)), None)
+        if ruta is None:
+            print("[IA] No hay modelo dinámico exportado")
+            return None
         try:
             from model.predict import ClasificadorDinamico
-            ruta = os.path.join(_DIRECTORIO, "data", "models", "dinamico_tcn.pt")
             _modelo_dinamico = ClasificadorDinamico(ruta)
         except Exception as e:
             print(f"[IA] No se pudo cargar el modelo dinámico: {e}")
@@ -91,20 +99,19 @@ class FrameMano(BaseModel):
 
 
 class SecuenciaMano(BaseModel):
-    # Para señas con movimiento: N frames YA VECTORIZADOS con
-    # scripts.holistic_pipeline.frame_a_vector (manos + pose superior + cara
-    # reducida, 527 valores/frame) — NO landmarks crudos de mano. La app
-    # todavía no arma este vector en vivo (ver ai_module/README.md); este
-    # endpoint queda listo para cuando el WebView capture holístico también.
+    # Para señas con movimiento: N frames YA VECTORIZADOS en el formato 1.0
+    # (manos + pose superior + cara reducida, 527 valores/frame; ver
+    # docs/ai/feature_spec.md) — NO landmarks crudos de mano. El servidor les
+    # aplica el mismo remuestreo y bloques temporales que usó el entrenamiento.
     frames: list[list[float]]
     fps: Optional[float] = 15.0  # Cuadros por segundo de la captura
 
 
 class VideoSena(BaseModel):
     # Clip corto grabado en el WebView (MediaRecorder) con la misma cámara que
-    # ya usa el visor de manos. Se procesa con el mismo pipeline Python que
-    # generó el dataset de entrenamiento (holistic_pipeline / extract_landmarks),
-    # así que no hay riesgo de desajuste entre captura en vivo y entrenamiento.
+    # ya usa el visor de manos. Se procesa con el mismo módulo compartido
+    # (preprocessing/) que generó el dataset de entrenamiento, así que no hay
+    # riesgo de desajuste entre captura en vivo y entrenamiento.
     video_base64: str
     mime: str = "video/webm"
 
@@ -185,19 +192,22 @@ def clasificar_seña_estatica(req: FrameMano):
 def clasificar_seña_dinamica(req: SecuenciaMano):
     """
     Clasifica una seña con movimiento a partir de una secuencia de vectores
-    holísticos (ver SecuenciaMano). Requiere haber entrenado el modelo:
-    python scripts/train_model.py
+    holísticos (ver SecuenciaMano). Requiere haber exportado el modelo:
+    python -m training.select_model
     """
     modelo = _obtener_modelo_dinamico()
     if modelo is None:
         raise HTTPException(
             503,
             "Modelo dinámico no disponible. "
-            "Primero entrénalo ejecutando: python scripts/train_model.py"
+            "Primero entrénalo ejecutando: python -m training.select_model"
         )
 
     frames = np.array(req.frames, dtype=np.float32)
-    seña, confianza = modelo.predecir(frames)
+    try:
+        seña, confianza = modelo.predecir(frames)
+    except ValueError as e:
+        raise HTTPException(422, str(e))
     return {"seña": seña, "confianza": round(float(confianza), 4)}
 
 
@@ -206,15 +216,15 @@ def clasificar_seña_video(req: VideoSena):
     """
     Clasifica una seña con movimiento a partir de un clip de video (grabado en
     el WebView). Extrae los landmarks holísticos con el mismo pipeline que
-    generó el dataset de entrenamiento (scripts.extract_landmarks) y clasifica
-    con el modelo dinámico. Requiere haberlo entrenado: python scripts/train_model.py
+    generó el dataset de entrenamiento (preprocessing.extraction) y clasifica
+    con el modelo dinámico. Requiere haberlo exportado: python -m training.select_model
     """
     modelo = _obtener_modelo_dinamico()
     if modelo is None:
         raise HTTPException(
             503,
             "Modelo dinámico no disponible. "
-            "Primero entrénalo ejecutando: python scripts/train_model.py"
+            "Primero entrénalo ejecutando: python -m training.select_model"
         )
 
     sufijo = ".webm" if "webm" in req.mime else ".mp4"
@@ -224,29 +234,23 @@ def clasificar_seña_video(req: VideoSena):
             archivo_temp.write(base64.b64decode(req.video_base64))
             ruta_temp = archivo_temp.name
 
-        config = cargar_config()
-        cfg_extraccion = config["extraccion"]
-        matriz, stats = _extraer_video(
-            ruta_temp,
-            fps_muestreo=cfg_extraccion["fps_muestreo"],
-            confianza_deteccion=cfg_extraccion["confianza_deteccion"],
-            confianza_landmarks=cfg_extraccion["confianza_landmarks"],
-        )
+        from preprocessing.extraction import extraer_video
+        secuencia = extraer_video(ruta_temp, modelo.cfg_extraccion)
     except Exception as e:
         raise HTTPException(422, f"No se pudo procesar el video: {e}")
     finally:
         if ruta_temp and os.path.exists(ruta_temp):
             os.remove(ruta_temp)
 
-    if matriz.shape[0] == 0:
+    if len(secuencia) == 0:
         raise HTTPException(422, "No se detectaron frames válidos en el video")
 
-    seña, confianza = modelo.predecir(matriz)
+    seña, confianza = modelo.predecir_cruda(secuencia)
     return {
         "seña": seña,
         "confianza": round(float(confianza), 4),
-        "frames_procesados": stats["frames"],
-        "ratio_con_mano": stats["ratio_con_mano"],
+        "frames_procesados": len(secuencia),
+        "ratio_con_mano": round(1.0 - secuencia.ratio_sin_manos(), 3),
     }
 
 

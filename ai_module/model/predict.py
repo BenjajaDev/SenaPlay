@@ -3,12 +3,10 @@ Módulo de inferencia (predicción) para señas estáticas y dinámicas.
 
 ClasificadorEstatico  → modelo scikit-learn (RandomForest/SVM) guardado en .pkl.
                         Recibe 21 landmarks CRUDOS de MediaPipe (x,y,z ~0-1).
-ClasificadorDinamico  → TCN de PyTorch (model/tcn.py) guardado en .pt.
-                        Recibe una secuencia YA VECTORIZADA por
-                        scripts/holistic_pipeline.frame_a_vector (T, 527) —
-                        NO landmarks crudos. Ver ai_module/README.md, sección
-                        "De captura en vivo a clasificación dinámica", para
-                        por qué esto todavía no está conectado a la app.
+ClasificadorDinamico  → TCN, LSTM o GRU de PyTorch (models/), según el meta
+                        del modelo exportado. Recibe landmarks crudos de un
+                        video (/clasificar_video) o vectores de 527 valores en
+                        formato 1.0 (/clasificar_secuencia).
 """
 
 import numpy as np
@@ -65,50 +63,52 @@ class ClasificadorEstatico:
 
 class ClasificadorDinamico:
     """
-    Carga el TCN entrenado con scripts/train_model.py y lo usa para predecir
-    señas dinámicas a partir de una secuencia YA VECTORIZADA (ver
-    scripts/holistic_pipeline.frame_a_vector), no de landmarks crudos.
+    Carga el modelo dinámico exportado por training/select_model.py
+    (models_saved/dinamico.pt + dinamico.meta.json) o el TCN legado de
+    scripts/train_model.py. La arquitectura (TCN, LSTM o GRU) y el
+    preprocesamiento se reconstruyen desde el meta; el preprocesamiento es el
+    mismo módulo compartido que usó el entrenamiento (preprocessing/).
     """
 
     def __init__(self, ruta_modelo: str):
         if not os.path.exists(ruta_modelo):
             raise FileNotFoundError(f"Modelo dinámico no encontrado en: {ruta_modelo}")
 
-        import torch
-        payload = torch.load(ruta_modelo, map_location="cpu")
-        self._etiquetas: list[str] = payload["etiquetas"]
-        self._longitud_secuencia: int = payload["longitud_secuencia"]
-        self._entrada: int = payload["entrada"]
+        from models import checkpoint
+        from preprocessing.pipeline import Preprocesador
+        from preprocessing.spec import FeatureSpec
 
-        from model.tcn import ModeloTCN
-        self._modelo = ModeloTCN(entrada=self._entrada, clases=len(self._etiquetas))
-        self._modelo.load_state_dict(payload["estado"])
-        self._modelo.eval()
-        print(f"[ClasificadorDinamico] Cargado. Clases: {self._etiquetas}")
+        self._modelo, self.meta = checkpoint.cargar(ruta_modelo)
+        self._etiquetas: list[str] = list(self.meta["clases"])
+        spec = FeatureSpec.desde_config(self.meta["preprocesamiento"])
+        self._preprocesador = Preprocesador(spec)
+        self._longitud_secuencia = spec.T
+        print(f"[ClasificadorDinamico] {self.meta['arquitectura'].upper()} "
+              f"(features {spec.version}, T={spec.T}). Clases: {self._etiquetas}")
 
-    def _ajustar_longitud(self, secuencia: np.ndarray) -> np.ndarray:
-        """Interpola/trunca la secuencia (T, F) a la longitud que espera el modelo."""
-        from scripts.holistic_pipeline import remuestrear_temporal
-        return remuestrear_temporal(secuencia, self._longitud_secuencia)
+    @property
+    def cfg_extraccion(self) -> dict:
+        """Parámetros de MediaPipe con los que se extrajo el dataset de entrenamiento."""
+        return dict(self._preprocesador.spec.extraccion)
 
-    def predecir(self, secuencia_features: np.ndarray) -> tuple[str, float]:
-        """
-        secuencia_features: array (T, entrada) ya producido por
-        scripts.holistic_pipeline.frame_a_vector / secuencia_a_matriz para
-        cada frame de la seña (NO landmarks crudos de mano).
-        Devuelve: (nombre_seña, confianza)
-        """
+    def _clasificar(self, entrada: np.ndarray) -> tuple[str, float]:
         import torch
         import torch.nn.functional as F
 
-        secuencia = self._ajustar_longitud(secuencia_features)
-        tensor = torch.tensor(secuencia, dtype=torch.float32).unsqueeze(0)  # (1, T, entrada)
-
+        tensor = torch.from_numpy(entrada).unsqueeze(0)  # (1, T, dim_entrada)
         with torch.no_grad():
-            logits = self._modelo(tensor)
-            probabilidades = F.softmax(logits, dim=-1)[0]
-            indice = probabilidades.argmax().item()
-            confianza = float(probabilidades[indice])
+            probabilidades = F.softmax(self._modelo(tensor), dim=-1)[0]
+        indice = int(probabilidades.argmax().item())
+        return self._etiquetas[indice], float(probabilidades[indice])
 
-        nombre = self._etiquetas[indice]
-        return nombre, confianza
+    def predecir(self, secuencia_features: np.ndarray) -> tuple[str, float]:
+        """
+        secuencia_features: (N, 527) vectores en formato 1.0 (el contrato de
+        /clasificar_secuencia). Lanza ValueError si el modelo usa una
+        especificación de features que no se puede derivar de ese formato.
+        """
+        return self._clasificar(self._preprocesador.desde_vectores_v1(secuencia_features))
+
+    def predecir_cruda(self, secuencia) -> tuple[str, float]:
+        """secuencia: preprocessing.extraction.SecuenciaCruda (lo que usa /clasificar_video)."""
+        return self._clasificar(self._preprocesador.desde_cruda(secuencia))

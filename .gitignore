@@ -60,3 +60,5 @@ ai_module/data/processed_landmarks/*
 ai_module/data/models/*
 !ai_module/data/models/.gitkeep
 .expo-export-check/
+# ai_module: respaldos automáticos del modelo dinámico exportado
+ai_module/models_saved/historial/

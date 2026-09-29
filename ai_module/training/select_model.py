@@ -175,6 +175,9 @@ def main(argv=None) -> int:
         extra["seleccion"] = {"criterio": "mayor F1 macro; empate dentro de 1 DE → menor latencia",
                               "corrida": elegida["directorio"],
                               "f1_macro_cv": elegida["metricas"]["f1_macro"]}
+        # add_batch compara contra esta corrida (el "antes")
+        extra["evaluacion_cv"] = {"corrida": elegida["directorio"],
+                                  "f1_macro_cv": elegida["metricas"]["f1_macro"]}
     if args.solo_seleccionar:
         return 0
 

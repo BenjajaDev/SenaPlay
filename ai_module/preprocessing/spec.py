@@ -222,6 +222,17 @@ def _doc(spec: FeatureSpec) -> str:
         f"`feature_spec_version`: **{spec.version}**. Generado con "
         "`python -m preprocessing.spec --doc` desde `config/preprocesamiento/features.yaml`.",
         "",
+        "## Versiones",
+        "",
+        "| Versión | Cambios |",
+        "|---|---|",
+        "| 1.0 | Vector legado de `scripts/holistic_pipeline.py`: 527 valores por frame, manos en "
+        "marco local, marco neutro si falta la pose, sin bloques temporales, T = 60. "
+        "Se reproduce con `FeatureSpec.v1()`. |",
+        "| 2.0 | Mismo orden base. Agrega: subconjuntos de pose y cara configurables, índices "
+        "faciales congelados, marco de manos configurable (`local` o `corporal`), marco por "
+        "frame vecino cuando falta la pose, y bloques de velocidad y aceleración. |",
+        "",
         "## 1. Vector base por frame",
         "",
         "El orden es el mismo de la versión 1.0 (vector legado de 527 valores). "

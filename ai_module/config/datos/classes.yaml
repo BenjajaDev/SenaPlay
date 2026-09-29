@@ -1,0 +1,23 @@
+# Tipo de cada clase del dataset de VIDEOS (carpetas de data/raw_videos/).
+# data/manifest.py lo usa para llenar la columna sign_type del manifiesto.
+# Una carpeta que no aparezca aquí se marca como `discarded` con el motivo
+# "clase sin tipo en classes.yaml", para no mezclar clases sin revisar.
+#
+# CONFIRMADO por el autor (2026-09-29):
+#   - F es ESTÁTICA (no entra a la comparación temporal).
+#   - Las dinámicas del experimento son las 9 clases del modelo TCN ya
+#     entrenado (config/dataset_config.yaml). De las primeras pruebas
+#     (G, F, X, S, Z), G, X, S y Z son dinámicas.
+dinamicas:
+  - G
+  - J
+  - Mi
+  - Nombre
+  - Presento
+  - S
+  - X
+  - Yo
+  - Z
+
+estaticas:
+  - F

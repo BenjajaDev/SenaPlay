@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useServices } from '../../../core/di/ServicesProvider';
@@ -17,6 +16,7 @@ import {
 } from '../../../shared/ui';
 import { useAppTheme } from '../../../shared/theme/ThemeProvider';
 import { formatDuration } from '../data/MediaRepository';
+import VideoPlayerScreen from './VideoPlayerScreen';
 
 const normalizeText = (value) =>
   String(value || '')
@@ -29,7 +29,7 @@ const normalizeText = (value) =>
  * web. Muestra si el video trae subtítulos (CC): la app sirve a personas
  * oyentes y no oyentes, y los videos con voz deben ser accesibles.
  */
-export default function VideosTabScreen() {
+export default function VideosTabScreen({ onScrollToTop }) {
   const theme = useAppTheme();
   const { media } = useServices();
   const { notify } = useFeedback();
@@ -37,6 +37,8 @@ export default function VideosTabScreen() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('Todos');
+  // Video en reproducción: se ve aquí mismo, sin abrir el navegador.
+  const [selected, setSelected] = useState(null);
 
   useEffect(() => {
     let mounted = true;
@@ -60,13 +62,32 @@ export default function VideosTabScreen() {
     );
   }, [videos, query, category]);
 
-  const openVideo = async (video) => {
+  const openVideo = (video) => {
     if (!video.url) {
       notify({ tone: 'info', title: 'Muy pronto', message: 'Este video todavía no está publicado.' });
       return;
     }
-    await WebBrowser.openBrowserAsync(video.url);
+    setSelected(video);
+    onScrollToTop?.();
   };
+
+  if (selected) {
+    return (
+      <VideoPlayerScreen
+        video={selected}
+        videos={filtered.length ? filtered : videos}
+        onSelect={(next) => {
+          setSelected(next);
+          // «Más videos» está abajo: se vuelve arriba, al reproductor.
+          onScrollToTop?.();
+        }}
+        onBack={() => {
+          setSelected(null);
+          onScrollToTop?.();
+        }}
+      />
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -99,7 +120,7 @@ export default function VideosTabScreen() {
                 padding="md"
                 onPress={() => openVideo(video)}
                 accessibilityLabel={`${video.title}, ${video.category}${video.durationSeconds ? `, ${formatDuration(video.durationSeconds)}` : ''}${video.captionsUrl ? ', con subtítulos' : ''}`}
-                accessibilityHint="Abre el video"
+                accessibilityHint="Reproduce el video dentro de la app"
               >
                 <View style={styles.row}>
                   <View style={[styles.thumb, { backgroundColor: theme.colors.primarySoft, borderRadius: theme.radius.md }]}>

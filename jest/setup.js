@@ -10,3 +10,10 @@ jest.mock('expo-haptics', () => ({
   NotificationFeedbackType: { Success: 'success', Error: 'error', Warning: 'warning' },
   ImpactFeedbackStyle: { Light: 'light', Medium: 'medium', Heavy: 'heavy' },
 }));
+
+// WebView es nativo: en Jest se reemplaza por una vista simple (el
+// reproductor de videos y la cámara lo importan al cargar el módulo).
+jest.mock('react-native-webview', () => {
+  const { View } = require('react-native');
+  return { WebView: (props) => <View testID={props.testID} /> };
+});

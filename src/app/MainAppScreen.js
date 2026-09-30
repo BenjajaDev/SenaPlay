@@ -1,8 +1,9 @@
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import useReducedMotion from '../core/a11y/useReducedMotion';
 import { useServices } from '../core/di/ServicesProvider';
 import { APP_EVENTS } from '../core/events/EventBus';
 import { useSession } from '../features/auth/presentation/SessionProvider';
@@ -74,6 +75,12 @@ export default function MainAppScreen() {
   const [isProfileMenuVisible, setIsProfileMenuVisible] = useState(false);
   const [editTrigger, setEditTrigger] = useState(0);
   const [focusKeys, setFocusKeys] = useState([]);
+  const scrollRef = useRef(null);
+  const reducedMotion = useReducedMotion();
+  const scrollToTop = useCallback(
+    () => scrollRef.current?.scrollTo({ y: 0, animated: !reducedMotion }),
+    [reducedMotion],
+  );
   const [frequentMistakes, setFrequentMistakes] = useState(null);
 
   // Al abrir Progreso se leen los errores frecuentes (locales, al instante) y
@@ -184,7 +191,7 @@ export default function MainAppScreen() {
     if (activeGame === 'memory') return <MemoryGameScreen onBack={closeGame} />;
     if (activeGame === 'quiz') return <QuickQuizGameScreen onBack={closeGame} />;
     if (activeTab === 'dictionary') return <DictionaryTabScreen />;
-    if (activeTab === 'videos') return <VideosTabScreen />;
+    if (activeTab === 'videos') return <VideosTabScreen onScrollToTop={scrollToTop} />;
     if (activeTab === 'games') return <GamesTabScreen onOpenGame={setActiveGame} />;
     if (activeTab === 'progress') {
       return (
@@ -256,6 +263,10 @@ export default function MainAppScreen() {
           </View>
         ) : null}
 
+        {/* Fijo bajo la cabecera (fuera del scroll) y en todas las pestañas,
+            incluido el Diccionario: un aviso nuevo se ve apenas llega. */}
+        {showChrome ? <AnnouncementBanner style={styles.banner} /> : null}
+
         {usesFixedLayout ? (
           <View style={[styles.content, styles.flex, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 12 }]}>
             <FadeInView key={contentKey} style={styles.flex}>
@@ -270,13 +281,13 @@ export default function MainAppScreen() {
           </View>
         ) : (
           <ScrollView
+            ref={scrollRef}
             contentContainerStyle={[
               styles.content,
               activeGame ? { flexGrow: 1, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 12 } : null,
             ]}
             showsVerticalScrollIndicator={false}
           >
-            {showChrome ? <AnnouncementBanner /> : null}
             <FadeInView key={contentKey}>{renderContent()}</FadeInView>
           </ScrollView>
         )}
@@ -325,6 +336,7 @@ function createStyles(theme) {
     },
     profileTrigger: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
     avatar: { width: 36, height: 36, borderRadius: 18, borderWidth: 2, borderColor: theme.colors.primary },
+    banner: { marginHorizontal: theme.spacing.lg, marginTop: theme.spacing.md, marginBottom: 0 },
     content: { paddingHorizontal: theme.spacing.lg, paddingTop: theme.spacing.md + 2, paddingBottom: theme.spacing.xxl },
   });
 }

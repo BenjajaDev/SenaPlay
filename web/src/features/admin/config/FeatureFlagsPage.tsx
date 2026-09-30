@@ -2,11 +2,10 @@ import { Flag, Plus, Save, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRepositories } from '@/data/RepositoriesProvider';
 import type { FeatureFlag } from '@/data/types';
+import { rangeError } from '@/lib/datetime';
 import { useResource } from '@/lib/useResource';
-import { Badge, Button, Card, Dialog, EmptyState, PageHeader, SkeletonRows, Switch, TextField, useFeedback } from '@/ui';
+import { Badge, Button, Card, DateTimeField, Dialog, EmptyState, PageHeader, SkeletonRows, Switch, TextField, useFeedback } from '@/ui';
 
-const toLocalInput = (iso: string | null) => (iso ? iso.slice(0, 16) : '');
-const fromLocalInput = (value: string) => (value ? new Date(value).toISOString() : null);
 const KEY_RE = /^[a-z][a-zA-Z0-9]*(\.[a-zA-Z0-9]+)+$/;
 
 function flagStatus(flag: FeatureFlag): { label: string; tone: 'success' | 'warning' | 'neutral' | 'info' } {
@@ -39,6 +38,10 @@ export function FeatureFlagsPage() {
   const patch = (key: string, value: Partial<FeatureFlag>) => setDrafts((prev) => ({ ...prev, [key]: { ...prev[key], ...value } }));
 
   const save = async (flag: FeatureFlag, isNew = false) => {
+    if (rangeError(flag.starts_at, flag.ends_at)) {
+      notify({ tone: 'warning', message: 'La fecha de fin debe ser posterior al inicio.' });
+      return;
+    }
     try {
       const done = await confirm({
         title: isNew ? `¿Crear el flag «${flag.key}»?` : `¿Publicar «${flag.key}»?`,
@@ -128,8 +131,15 @@ export function FeatureFlagsPage() {
                     </Button>
                     <Button variant="ghost" size="sm" icon={Trash2} aria-label={`Eliminar ${flag.key}`} onClick={() => remove(flag)} />
                   </div>
-                  <TextField label="Inicio (opcional)" type="datetime-local" value={toLocalInput(flag.starts_at)} onChange={(e) => patch(flag.key, { starts_at: fromLocalInput(e.target.value) })} />
-                  <TextField label="Fin (opcional)" type="datetime-local" value={toLocalInput(flag.ends_at)} onChange={(e) => patch(flag.key, { ends_at: fromLocalInput(e.target.value) })} />
+                  <DateTimeField label="Inicio (opcional)" hint="Sin fecha: activo desde ya." value={flag.starts_at} onChange={(iso) => patch(flag.key, { starts_at: iso })} />
+                  <DateTimeField
+                    label="Fin (opcional)"
+                    defaultTime="23:59"
+                    hint="Sin fecha: sin término."
+                    value={flag.ends_at}
+                    error={rangeError(flag.starts_at, flag.ends_at)}
+                    onChange={(iso) => patch(flag.key, { ends_at: iso })}
+                  />
                 </div>
               </Card>
             );

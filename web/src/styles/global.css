@@ -192,6 +192,15 @@ img {
 .field__label { font-size: 13px; font-weight: 600; color: var(--color-text-primary); }
 .field__hint { font-size: 12px; color: var(--color-text-secondary); }
 .field__error { display: flex; gap: 6px; align-items: center; font-size: 12px; color: var(--color-danger-text); }
+/* Fecha + hora (ver ui/DateTimeField). */
+.datetime-field { display: flex; flex-direction: column; gap: 6px; border: 0; padding: 0; margin: 0; min-width: 0; }
+.datetime-field legend { padding: 0; margin-bottom: 6px; }
+.datetime-field__row { display: flex; align-items: center; gap: var(--space-2); }
+.datetime-field__row .input { flex: 1 1 auto; min-width: 0; }
+.datetime-field__row .datetime-field__time { flex: 0 0 7.5rem; }
+.datetime-field__icon { color: var(--color-primary); flex-shrink: 0; }
+.datetime-field[aria-invalid='true'] .input { border-color: var(--color-danger); }
+.datetime-field .field__hint::first-letter { text-transform: uppercase; }
 .input,
 .select,
 .textarea {

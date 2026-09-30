@@ -36,7 +36,8 @@ function PublicationDialog({ publication, onClose, onSaved }: { publication: Pub
   const [cover, setCover] = useState<File | null>(null);
   const [removeCover, setRemoveCover] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  // Mientras la confirmación está abierta, Escape no debe cerrar también el formulario.
+  // Mientras la confirmación está abierta, Escape no debe cerrar también el
+  // formulario (Dialog lee `dismissible` por ref, sin re-enfocar campos).
   const [confirming, setConfirming] = useState(false);
 
   useEffect(() => {

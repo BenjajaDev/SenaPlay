@@ -36,20 +36,34 @@ export function Dialog({ open, tone = 'info', icon, title, message, children, ac
   const toneConfig = TONES[tone];
   const Icon = icon || toneConfig.icon;
 
+  // onClose/dismissible se leen desde refs: las páginas suelen pasar
+  // `onClose={() => …}` nuevo en cada render, y si fuera dependencia del
+  // efecto de foco, cada tecla re-enfocaba el primer campo (se escribía en
+  // «Descripción» y el texto aparecía en «Título»).
+  const onCloseRef = useRef(onClose);
+  const dismissibleRef = useRef(dismissible);
+  onCloseRef.current = onClose;
+  dismissibleRef.current = dismissible;
+
+  // Foco inicial y retorno del foco: solo al abrir y al cerrar.
   useEffect(() => {
     if (!open) return undefined;
     const previous = document.activeElement as HTMLElement | null;
     const focusable = panelRef.current?.querySelector<HTMLElement>('input, select, textarea, button:not([data-autofocus-skip])');
     (focusable || panelRef.current)?.focus();
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && dismissible) onClose?.();
-    };
-    document.addEventListener('keydown', onKey);
     return () => {
-      document.removeEventListener('keydown', onKey);
       previous?.focus?.();
     };
-  }, [open, dismissible, onClose]);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && dismissibleRef.current) onCloseRef.current?.();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [open]);
 
   if (!open) return null;
 

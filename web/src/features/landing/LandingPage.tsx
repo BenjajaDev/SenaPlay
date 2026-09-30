@@ -90,7 +90,7 @@ function AboutSection({ about, team }: { about: AboutContent | undefined; team: 
         </div>
       ) : team.length ? (
         <>
-          <h3 className="about__team-title">El equipo</h3>
+          <h3 className="about__team-title">Nuestro equipo</h3>
           <div className="team-grid stagger">
             {team.map((member) => (
               <TeamCard key={member.id} member={member} />

@@ -2,8 +2,9 @@ import { Heart, Megaphone, Plus, Save, Sliders, Smartphone, Trash2, Trophy, Wren
 import { useEffect, useState, type ReactNode } from 'react';
 import { useRepositories } from '@/data/RepositoriesProvider';
 import { compareVersions, mergeRemoteConfig, type Announcement, type RemoteConfigShape } from '@/lib/domain';
+import { rangeError } from '@/lib/datetime';
 import { useResource } from '@/lib/useResource';
-import { Badge, Button, Card, EmptyState, PageHeader, SelectField, SkeletonRows, Switch, TextArea, TextField, useFeedback } from '@/ui';
+import { Badge, Button, Card, DateTimeField, EmptyState, PageHeader, SelectField, SkeletonRows, Switch, TextArea, TextField, useFeedback } from '@/ui';
 
 type Section = keyof RemoteConfigShape;
 
@@ -30,14 +31,12 @@ function SectionCard({ icon, title, subtitle, dirty, onSave, children }: { icon:
   );
 }
 
-const toLocalInput = (iso?: string) => (iso ? iso.slice(0, 16) : '');
-const fromLocalInput = (value: string) => (value ? new Date(value).toISOString() : undefined);
 
 /**
  * Configuración remota de la app móvil (solo administradores). Cada sección
  * se publica por separado, con confirmación que muestra el valor nuevo; la
- * app aplica los cambios en su próximo refresco (al abrirse o volver a primer
- * plano) sin publicar una versión nueva.
+ * app los aplica en segundos (aviso por Realtime al publicar) sin publicar
+ * una versión nueva.
  */
 export function RemoteConfigPage() {
   const { config } = useRepositories();
@@ -58,6 +57,10 @@ export function RemoteConfigPage() {
     setDraft((prev) => (prev ? { ...prev, [key]: Array.isArray(value) ? value : { ...(prev[key] as object), ...(value as object) } } : prev));
 
   const publish = async (key: Section, label: string, extraWarning?: string) => {
+    if (key === 'announcements' && draft.announcements.some((item) => rangeError(item.startsAt, item.endsAt))) {
+      notify({ tone: 'warning', message: 'Revisa las fechas: el «Hasta» debe ser posterior al «Desde».' });
+      return;
+    }
     try {
       const done = await confirm({
         title: `¿Publicar «${label}»?`,
@@ -98,7 +101,12 @@ export function RemoteConfigPage() {
           dirty={isDirty('maintenance')}
           onSave={() => publish('maintenance', 'Modo mantenimiento', draft.maintenance.enabled ? 'Esto BLOQUEARÁ la app para todos los usuarios.' : undefined)}
         >
-          <Switch label="Activar mantenimiento" checked={draft.maintenance.enabled} onChange={(enabled) => patch('maintenance', { enabled })} />
+          <Switch
+            label="Activar mantenimiento"
+            description="Los administradores siguen entrando (con un aviso fijo en la app); para ver la pantalla de mantenimiento, prueba con una cuenta de usuario."
+            checked={draft.maintenance.enabled}
+            onChange={(enabled) => patch('maintenance', { enabled })}
+          />
           <div className="grid-2">
             <TextField label="Título" value={draft.maintenance.title} onChange={(e) => patch('maintenance', { title: e.target.value })} />
             <TextArea label="Mensaje" rows={2} value={draft.maintenance.message} onChange={(e) => patch('maintenance', { message: e.target.value })} />
@@ -123,8 +131,15 @@ export function RemoteConfigPage() {
                   onChange={(e) => updateAnnouncement(index, { tone: e.target.value as Announcement['tone'] })}
                   options={[{ value: 'info', label: 'Información' }, { value: 'success', label: 'Novedad' }, { value: 'warning', label: 'Advertencia' }, { value: 'danger', label: 'Urgente' }]}
                 />
-                <TextField label="Desde" type="datetime-local" value={toLocalInput(item.startsAt)} onChange={(e) => updateAnnouncement(index, { startsAt: fromLocalInput(e.target.value) })} />
-                <TextField label="Hasta" type="datetime-local" value={toLocalInput(item.endsAt)} onChange={(e) => updateAnnouncement(index, { endsAt: fromLocalInput(e.target.value) })} />
+                <DateTimeField label="Desde" hint="Sin fecha: se muestra de inmediato." value={item.startsAt} onChange={(iso) => updateAnnouncement(index, { startsAt: iso || undefined })} />
+                <DateTimeField
+                  label="Hasta"
+                  defaultTime="23:59"
+                  hint="Sin fecha: no se oculta sola."
+                  value={item.endsAt}
+                  error={rangeError(item.startsAt, item.endsAt)}
+                  onChange={(iso) => updateAnnouncement(index, { endsAt: iso || undefined })}
+                />
               </div>
               <TextArea label="Mensaje" rows={2} value={item.message || ''} onChange={(e) => updateAnnouncement(index, { message: e.target.value })} />
               <div className="row-between">

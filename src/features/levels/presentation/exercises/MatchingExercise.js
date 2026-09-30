@@ -5,8 +5,10 @@ import SignImage from '../../../signs/presentation/SignImage';
 import { evaluateMatchingPair } from '../../domain/evaluateAnswer';
 import OptionTile from './OptionTile';
 import { shuffle } from './useSlots';
+import { letterLabel } from '../../domain/exerciseRotation';
 
-const upper = (value) => String(value || '').toLocaleUpperCase('es');
+// letterLabel: 'n~' se muestra «Ñ» (las claves de seña usan n~).
+const upper = (value) => letterLabel(value || '');
 
 function buildCards(letters) {
   const cards = [];

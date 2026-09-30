@@ -3,8 +3,10 @@ import { AppText } from '../../../../shared/ui';
 import OptionTile from './OptionTile';
 import SignStrip from './SignStrip';
 import useSlots from './useSlots';
+import { letterLabel } from '../../domain/exerciseRotation';
 
-const upper = (value) => String(value || '').toLocaleUpperCase('es');
+// letterLabel: 'n~' se muestra «Ñ» (las claves de seña usan n~).
+const upper = (value) => letterLabel(value || '');
 
 /**
  * Armar una palabra con letras: `build-word` (la palabra es visible) e

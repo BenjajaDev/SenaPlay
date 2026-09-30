@@ -2,8 +2,10 @@ import { StyleSheet, View } from 'react-native';
 import { AppText } from '../../../../shared/ui';
 import OptionTile from './OptionTile';
 import SignStrip from './SignStrip';
+import { letterLabel } from '../../domain/exerciseRotation';
 
-const upper = (value) => String(value || '').toLocaleUpperCase('es');
+// letterLabel: 'n~' se muestra «Ñ» (las claves de seña usan n~).
+const upper = (value) => letterLabel(value || '');
 
 /** Seleccionar varias letras que corresponden a una secuencia de señas. */
 export default function RecognitionExercise({ exercise, answer, onAnswerChange, disabled, onHint }) {

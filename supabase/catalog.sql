@@ -1,6 +1,6 @@
 -- ============================================================
 -- Catalogo de niveles de SeñaPlay (generado automaticamente)
--- Generado el: 2026-06-06T19:28:16.147Z
+-- Generado el: 2026-09-30T02:05:36.637Z
 -- Pegar completo en Supabase -> SQL Editor -> Run
 -- ============================================================
 
@@ -56,11 +56,11 @@ insert into public.exercises (level_id, position, type, title, hint, payload) va
 insert into public.exercises (level_id, position, type, title, hint, payload) values (2, 6, 'typing', 'Escribe la letra correcta para esta SEÑA', 'El meñique traza una J en el aire.', $j${"sign":"j","answer":"J"}$j$::jsonb);
 
 insert into public.levels (id, title, description, category, available, sort_order) values (3, 'Letras K-Ñ', 'Introduce combinaciones con mayor precisión manual.', 'alfabeto', true, 2);
-insert into public.exercises (level_id, position, type, title, hint, payload) values (3, 0, 'matching', 'Empareja las SEÑAS con sus letras', NULL, $j${"letters":["k","l","m","n","N~"]}$j$::jsonb);
+insert into public.exercises (level_id, position, type, title, hint, payload) values (3, 0, 'matching', 'Empareja las SEÑAS con sus letras', NULL, $j${"letters":["k","l","m","n","ñ"]}$j$::jsonb);
 insert into public.exercises (level_id, position, type, title, hint, payload) values (3, 1, 'multiple-choice', '¿Qué letra representa esta SEÑA?', 'El índice y el medio quedan levantados y separados, con el pulgar apoyado entre ambos.', $j${"sign":"k","options":["L","K","N"],"correct":"K"}$j$::jsonb);
-insert into public.exercises (level_id, position, type, title, hint, payload) values (3, 2, 'ordering', 'Ordena las letras en secuencia alfabética', NULL, $j${"letters":["K","L","M","N","N~"]}$j$::jsonb);
+insert into public.exercises (level_id, position, type, title, hint, payload) values (3, 2, 'ordering', 'Ordena las letras en secuencia alfabética', NULL, $j${"letters":["K","L","M","N","Ñ"]}$j$::jsonb);
 insert into public.exercises (level_id, position, type, title, hint, payload) values (3, 3, 'multiple-choice', '¿Qué letra representa esta SEÑA?', 'El índice y el medio van rectos apuntando hacia abajo; el anular y el meñique se esconden.', $j${"sign":"n","options":["Ñ","M","N"],"correct":"N"}$j$::jsonb);
-insert into public.exercises (level_id, position, type, title, hint, payload) values (3, 4, 'typing', 'Escribe la letra correcta para esta SEÑA', 'Igual que la N (índice y medio hacia abajo), pero con un movimiento oscilatorio de la mano.', $j${"sign":"n~","answer":"Ñ"}$j$::jsonb);
+insert into public.exercises (level_id, position, type, title, hint, payload) values (3, 4, 'typing', 'Escribe la letra correcta para esta SEÑA', 'Igual que la N (índice y medio hacia abajo), pero con un movimiento oscilatorio de la mano.', $j${"sign":"ñ","answer":"Ñ"}$j$::jsonb);
 insert into public.exercises (level_id, position, type, title, hint, payload) values (3, 5, 'true-false', '¿Es correcta esta afirmación?', 'El pulgar y el índice se extienden y separan formando una L; los demás dedos se esconden.', $j${"statement":"La SEÑA de la L se hace formando una L con el pulgar e índice.","answer":true}$j$::jsonb);
 insert into public.exercises (level_id, position, type, title, hint, payload) values (3, 6, 'multiple-choice', '¿Qué letra representa esta SEÑA?', 'Pulgar e índice extendidos formando una L.', $j${"sign":"l","options":["K","L","N"],"correct":"L"}$j$::jsonb);
 

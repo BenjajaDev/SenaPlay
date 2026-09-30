@@ -72,8 +72,10 @@ export const EXERCISE_TYPES = {
     fields: {
       statement: { type: 'text', required: true },
       answer: { type: 'boolean', required: true },
-      // Opcional: muestra una seña sobre la afirmación («Esta SEÑA es la letra M»).
+      // Opcional: muestra una seña sobre la afirmación («Esta SEÑA es la letra M»)
+      // o varias deletreadas («Estas SEÑAS forman la palabra Hola»).
       sign: { type: 'sign', required: false },
+      signs: { type: 'signs', required: false, min: 1 },
     },
   },
 };

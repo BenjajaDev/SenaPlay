@@ -10,21 +10,23 @@ import {
   evaluateFlags,
   evaluateRemoteState,
   mergeRemoteConfig,
+  nextScheduleChange,
 } from '../domain/remoteConfig';
 
 // Los cambios del panel llegan al instante por Realtime; además se consulta
 // cada POLL_INTERVAL_MS con la app abierta (por si Realtime no está activo o
 // se cortó el socket) y al volver a primer plano, sin repetir antes de
 // FOREGROUND_THROTTLE_MS.
-const POLL_INTERVAL_MS = 60 * 1000;
-const FOREGROUND_THROTTLE_MS = 15 * 1000;
+const POLL_INTERVAL_MS = 30 * 1000;
+const FOREGROUND_THROTTLE_MS = 5 * 1000;
 const REALTIME_DEBOUNCE_MS = 400;
+const MAX_SCHEDULE_WAIT_MS = 60 * 60 * 1000;
 
 const RemoteConfigContext = createContext({
   status: 'ready',
   config: DEFAULT_REMOTE_CONFIG,
   flags: DEFAULT_FLAGS,
-  remoteState: { gate: null, updateAvailable: false, announcements: [] },
+  remoteState: { gate: null, maintenanceBypassed: false, updateAvailable: false, announcements: [] },
   isEnabled: (key) => DEFAULT_FLAGS[key] ?? false,
   refresh: async () => {},
 });
@@ -96,10 +98,31 @@ export function RemoteConfigProvider({ userId, isAdmin = false, children }) {
     };
   }, [repository, refresh]);
 
+  // «Ahora» con el que se evalúan ventanas de fechas (avisos y flags). Avanza
+  // justo cuando algo programado empieza o termina, y al volver a primer plano.
+  const [clock, setClock] = useState(() => Date.now());
+  const config = useMemo(() => mergeRemoteConfig(snapshot?.configRows), [snapshot]);
+
+  useEffect(() => {
+    const next = nextScheduleChange(config, snapshot?.flagRows, clock);
+    if (!next) return undefined;
+    // +250 ms para caer después del límite; tope de 1 h por los límites de setTimeout
+    // y por si el reloj del teléfono cambia mientras tanto.
+    const delay = Math.min(Math.max(next - Date.now() + 250, 250), MAX_SCHEDULE_WAIT_MS);
+    const timer = setTimeout(() => setClock(Date.now()), delay);
+    return () => clearTimeout(timer);
+  }, [config, snapshot, clock]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (next) => {
+      if (next === 'active') setClock(Date.now());
+    });
+    return () => subscription.remove();
+  }, []);
+
   const value = useMemo(() => {
-    const config = mergeRemoteConfig(snapshot?.configRows);
-    const flags = evaluateFlags(snapshot?.flagRows, { userId });
-    const remoteState = evaluateRemoteState(config, { appVersion: env.appVersion, isAdmin });
+    const flags = evaluateFlags(snapshot?.flagRows, { userId, now: clock });
+    const remoteState = evaluateRemoteState(config, { appVersion: env.appVersion, isAdmin, now: clock });
     return {
       status,
       config,
@@ -108,7 +131,7 @@ export function RemoteConfigProvider({ userId, isAdmin = false, children }) {
       isEnabled: (key) => Boolean(flags[key]),
       refresh,
     };
-  }, [snapshot, status, userId, isAdmin, refresh]);
+  }, [config, snapshot, status, userId, isAdmin, refresh, clock]);
 
   useEffect(() => {
     setHapticsEnabled(value.flags['feedback.haptics'] !== false);

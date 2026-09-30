@@ -14,7 +14,7 @@ const TONE_ICON = { info: 'megaphone', success: 'sparkles', warning: 'alert-circ
  * mantenimientos programados). Se muestran arriba del contenido y el usuario
  * puede descartarlos; el descarte se recuerda por id.
  */
-export default function AnnouncementBanner() {
+export default function AnnouncementBanner({ style }) {
   const theme = useAppTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const { remoteState, config } = useRemoteConfig();
@@ -25,7 +25,7 @@ export default function AnnouncementBanner() {
   }, []);
 
   const pending = remoteState.announcements.filter((item) => !dismissed.includes(item.id));
-  const items = remoteState.updateAvailable
+  const updates = remoteState.updateAvailable
     ? [
         {
           id: `update-${config.appVersion.recommended}`,
@@ -37,6 +37,19 @@ export default function AnnouncementBanner() {
         ...pending,
       ].filter((item) => !dismissed.includes(item.id))
     : pending;
+  // Aviso fijo (no descartable) para administradores durante el mantenimiento.
+  const items = remoteState.maintenanceBypassed
+    ? [
+        {
+          id: 'maintenance-admin',
+          tone: 'warning',
+          title: 'Modo mantenimiento activo',
+          message: 'Los usuarios ven la pantalla de mantenimiento. Tú puedes entrar porque eres administrador.',
+          dismissible: false,
+        },
+        ...updates,
+      ]
+    : updates;
 
   if (!items.length) return null;
   const current = items[0];
@@ -51,7 +64,7 @@ export default function AnnouncementBanner() {
 
   return (
     <View
-      style={[styles.banner, { borderLeftColor: accent, backgroundColor: theme.colors[`${tone}Soft`] || theme.colors.infoSoft }]}
+      style={[styles.banner, { borderLeftColor: accent, backgroundColor: theme.colors[`${tone}Soft`] || theme.colors.infoSoft }, style]}
       accessibilityRole="alert"
       accessibilityLiveRegion="polite"
     >

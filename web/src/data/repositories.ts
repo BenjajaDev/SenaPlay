@@ -187,13 +187,35 @@ export function createMediaRepository(client: SupabaseClient) {
 }
 
 // ── Configuración remota ─────────────────────────────────────────────
+/** Canal y evento que escucha la app móvil (RemoteConfigRepository.subscribe). */
+export const REMOTE_CONFIG_CHANNEL = 'remote-config';
+export const REMOTE_CONFIG_EVENT = 'changed';
+
 export function createConfigRepository(client: SupabaseClient) {
+  /**
+   * Avisa a las apps abiertas que la configuración cambió (Realtime
+   * Broadcast por HTTP). No depende de que las tablas estén en la
+   * publicación de Realtime ni de RLS: la app recibe el aviso y vuelve a
+   * leer. Es «mejor esfuerzo»: si falla, lo guardado ya está guardado y la
+   * app lo toma en su siguiente sondeo.
+   */
+  const notifyApps = async (what: string) => {
+    try {
+      const channel = client.channel(REMOTE_CONFIG_CHANNEL);
+      await channel.httpSend(REMOTE_CONFIG_EVENT, { what, at: new Date().toISOString() });
+      await client.removeChannel(channel);
+    } catch {
+      /* sin Realtime: la app lo recoge al sondear */
+    }
+  };
+
   return {
     async getConfig(): Promise<ConfigRow[]> {
       return run(client.from('app_config').select('*').order('key'), 'No se pudo cargar la configuración.');
     },
     async setConfig(key: string, value: unknown) {
       await run(client.from('app_config').upsert({ key, value }), 'No se pudo guardar la configuración.');
+      await notifyApps(`config:${key}`);
     },
     async listFlags(): Promise<FeatureFlag[]> {
       return run(client.from('feature_flags').select('*').order('key'), 'No se pudieron cargar los flags.');
@@ -210,9 +232,11 @@ export function createConfigRepository(client: SupabaseClient) {
         }),
         'No se pudo guardar el flag.',
       );
+      await notifyApps(`flag:${flag.key}`);
     },
     async deleteFlag(key: string) {
       await run(client.from('feature_flags').delete().eq('key', key), 'No se pudo eliminar el flag.');
+      await notifyApps(`flag:${key}`);
     },
     async listAudit(limit = 50): Promise<AuditEntry[]> {
       return run(client.from('config_audit').select('*').order('changed_at', { ascending: false }).limit(limit), 'No se pudo cargar el historial.');

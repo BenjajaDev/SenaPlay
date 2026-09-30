@@ -2,6 +2,10 @@ import { storageKey } from '../../../core/storage/jsonStorage';
 
 const CACHE_KEY = storageKey('remoteConfig', 'v1');
 
+// Deben coincidir con web/src/data/repositories.ts (REMOTE_CONFIG_*).
+export const REMOTE_CONFIG_CHANNEL = 'remote-config';
+export const REMOTE_CONFIG_EVENT = 'changed';
+
 /**
  * Lee `app_config` y `feature_flags` de Supabase (lectura pública por RLS).
  *
@@ -40,19 +44,30 @@ export function createRemoteConfigRepository({ supabase, storage }) {
     },
 
     /**
-     * Avisa cuando el panel cambia `app_config` o `feature_flags` (Supabase
-     * Realtime), para aplicar el cambio en segundos y no recién al reabrir la
-     * app. Devuelve la función para desuscribirse. Si Realtime no está
-     * disponible, no hace nada: el refresco periódico cubre ese caso.
+     * Avisa cuando el panel cambia la configuración, para aplicarla en
+     * segundos y no recién al reabrir la app. Dos vías sobre un mismo canal:
+     *
+     *   broadcast «changed»   lo envía el panel al publicar (no depende de la
+     *                         publicación de Realtime ni de RLS)
+     *   postgres_changes      cambios en app_config / feature_flags hechos
+     *                         por cualquier medio (migración 008)
+     *
+     * Además, cada vez que el canal (re)conecta se refresca: recupera lo que
+     * haya cambiado mientras el socket estuvo caído o la app en segundo plano.
+     * Devuelve la función para desuscribirse. Sin Realtime no hace nada: el
+     * sondeo periódico cubre ese caso.
      */
     subscribe(onChange) {
       if (!supabase?.channel) return () => {};
       try {
         const channel = supabase
-          .channel(`remote-config-${Date.now()}`)
+          .channel(REMOTE_CONFIG_CHANNEL)
+          .on('broadcast', { event: REMOTE_CONFIG_EVENT }, () => onChange())
           .on('postgres_changes', { event: '*', schema: 'public', table: 'app_config' }, () => onChange())
           .on('postgres_changes', { event: '*', schema: 'public', table: 'feature_flags' }, () => onChange())
-          .subscribe();
+          .subscribe((status) => {
+            if (status === 'SUBSCRIBED') onChange();
+          });
         return () => {
           supabase.removeChannel(channel);
         };

@@ -94,6 +94,23 @@ export function evaluateFlags(rows = [], { userId, now = Date.now() } = {}) {
 }
 
 /**
+ * Próximo instante (ms) en que algo programado cambia de estado: el inicio o
+ * fin de un aviso, o de la ventana de un flag. La app agenda un re-cálculo
+ * para ese momento; sin esto, un aviso programado «desde las 15:00» recién
+ * aparecía al reabrir la app. null si no hay nada pendiente.
+ */
+export function nextScheduleChange(config, flagRows = [], now = Date.now()) {
+  const instants = [
+    ...(config?.announcements || []).flatMap((item) => [item?.startsAt || item?.starts_at, item?.endsAt || item?.ends_at]),
+    ...flagRows.flatMap((row) => [row?.starts_at || row?.startsAt, row?.ends_at || row?.endsAt]),
+  ]
+    .filter(Boolean)
+    .map((value) => new Date(value).getTime())
+    .filter((time) => Number.isFinite(time) && time > now);
+  return instants.length ? Math.min(...instants) : null;
+}
+
+/**
  * Estado derivado que la app necesita para decidir qué mostrar:
  *   gate: 'maintenance' | 'updateRequired' | null   (bloquea la app)
  *   updateAvailable: hay versión recomendada más nueva (aviso no bloqueante)
@@ -103,10 +120,13 @@ export function evaluateRemoteState(config, { appVersion, now = Date.now(), isAd
   const minimum = config.appVersion?.minimum || '0';
   const recommended = config.appVersion?.recommended || minimum;
   const updateRequired = compareVersions(appVersion, minimum) < 0;
-  const maintenance = Boolean(config.maintenance?.enabled) && !isAdmin;
+  const maintenanceOn = Boolean(config.maintenance?.enabled);
+  const maintenance = maintenanceOn && !isAdmin;
 
   return {
     gate: maintenance ? 'maintenance' : updateRequired ? 'updateRequired' : null,
+    // Los administradores entran igual, pero deben saber que está activo.
+    maintenanceBypassed: maintenanceOn && isAdmin,
     updateAvailable: !updateRequired && compareVersions(appVersion, recommended) < 0,
     announcements: (config.announcements || []).filter((item) => item && inWindow(item, now)),
   };

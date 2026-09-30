@@ -37,8 +37,8 @@ export default function RootNavigator() {
     if (session.status === 'signedOut') setRoute((prev) => (prev.name === 'main' ? { name: 'login' } : prev));
   }, [session.status]);
 
-  if (remoteState.gate) return <AppGateScreen gate={remoteState.gate} />;
-
+  // Primero se espera la sesión (y su rol): decidir el mantenimiento antes
+  // mostraba la pantalla de bloqueo a administradores por un instante.
   if (session.status === 'loading') {
     return (
       <View style={styles.loader}>
@@ -46,6 +46,8 @@ export default function RootNavigator() {
       </View>
     );
   }
+
+  if (remoteState.gate) return <AppGateScreen gate={remoteState.gate} />;
 
   const go = (name, params = {}) => setRoute({ name, ...params });
 

@@ -21,13 +21,39 @@ export function SessionProvider({ children }) {
   const [user, setUser] = useState(null);
   const [role, setRole] = useState('user');
   const holdRef = useRef(false);
+  // Evita que una respuesta lenta pise a una sesión más nueva.
+  const sequenceRef = useRef(0);
+  // Rol ya conocido del usuario actual: los refrescos de token no esperan
+  // otra consulta (se revalida en segundo plano).
+  const roleCacheRef = useRef({ id: null, role: 'user' });
 
   const applySession = useCallback(
     async (session) => {
+      const ticket = ++sequenceRef.current;
       const nextUser = session?.user ?? null;
+      let nextRole = 'user';
+      if (nextUser) {
+        const cached = roleCacheRef.current;
+        // El rol se resuelve ANTES de marcar la sesión como iniciada. Antes se
+        // entraba como 'user' y un instante después pasaba a 'admin': el
+        // mantenimiento aparecía y desaparecía solo para los administradores.
+        nextRole = cached.id === nextUser.id ? cached.role : await profile.getRole(nextUser.id);
+        roleCacheRef.current = { id: nextUser.id, role: nextRole };
+        if (cached.id === nextUser.id) {
+          profile.getRole(nextUser.id).then((fresh) => {
+            if (fresh !== roleCacheRef.current.role && roleCacheRef.current.id === nextUser.id) {
+              roleCacheRef.current = { id: nextUser.id, role: fresh };
+              setRole(fresh);
+            }
+          });
+        }
+      } else {
+        roleCacheRef.current = { id: null, role: 'user' };
+      }
+      if (ticket !== sequenceRef.current) return;
       setUser(nextUser);
+      setRole(nextRole);
       setStatus(nextUser ? 'signedIn' : 'signedOut');
-      setRole(nextUser ? await profile.getRole(nextUser.id) : 'user');
       events.emit(APP_EVENTS.SESSION_CHANGED, { user: nextUser });
     },
     [profile, events],

@@ -4,6 +4,7 @@ import {
   evaluateFlags,
   evaluateRemoteState,
   mergeRemoteConfig,
+  nextScheduleChange,
   rolloutBucket,
 } from '../remoteConfig';
 
@@ -35,6 +36,9 @@ describe('remote config', () => {
     expect(evaluateRemoteState(config, { appVersion: '1.0.0' }).gate).toBe('maintenance');
     expect(evaluateRemoteState(config, { appVersion: '1.0.0', isAdmin: true }).gate).toBe('updateRequired');
     expect(evaluateRemoteState(mergeRemoteConfig([]), { appVersion: '1.0.0' }).gate).toBeNull();
+    // El administrador entra, pero se le avisa que el mantenimiento está activo.
+    expect(evaluateRemoteState(config, { appVersion: '1.0.0', isAdmin: true }).maintenanceBypassed).toBe(true);
+    expect(evaluateRemoteState(config, { appVersion: '1.0.0' }).maintenanceBypassed).toBe(false);
   });
 
   test('avisos solo dentro de su ventana de fechas', () => {
@@ -68,5 +72,19 @@ describe('remote config', () => {
     expect(flags['events.navidad']).toBe(false);
     expect(flags['beta.zero']).toBe(false);
     expect(rolloutBucket('x', 'u1')).toBe(rolloutBucket('x', 'u1'));
+  });
+
+  test('agenda el próximo inicio o fin de avisos y flags (para mostrarlos a la hora exacta)', () => {
+    const now = new Date('2026-09-29T12:00:00Z').getTime();
+    const config = mergeRemoteConfig([
+      { key: 'announcements', value: [{ id: 'a', startsAt: '2026-09-29T15:00:00Z', endsAt: '2026-09-30T00:00:00Z' }, { id: 'b', endsAt: '2026-09-01T00:00:00Z' }] },
+    ]);
+    const flags = [{ key: 'events.x', starts_at: '2026-09-29T13:30:00Z', ends_at: null }];
+    expect(nextScheduleChange(config, flags, now)).toBe(new Date('2026-09-29T13:30:00Z').getTime());
+    expect(nextScheduleChange(config, [], now)).toBe(new Date('2026-09-29T15:00:00Z').getTime());
+    expect(nextScheduleChange(mergeRemoteConfig([]), [], now)).toBeNull();
+    // Al llegar la hora, el aviso pasa a estar vigente.
+    const at = new Date('2026-09-29T15:00:01Z').getTime();
+    expect(evaluateRemoteState(config, { appVersion: '1.0.0', now: at }).announcements.map((item) => item.id)).toEqual(['a']);
   });
 });

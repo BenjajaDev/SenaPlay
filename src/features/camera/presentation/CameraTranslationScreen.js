@@ -33,13 +33,14 @@ const MS_PAUSA_ESPACIO = 1800;
  * Traducción de señas en tiempo real.
  *
  * Va acumulando en texto lo que reconoce la IA, aplicando el tracking de arriba
- * para no repetir letras ni registrar transiciones. Es deletreo continuo: cuando
- * el modelo dinámico esté entrenado, las señas léxicas entrarán por el mismo
- * camino (llegan como 'sena-dinamica') y se insertarán como palabras completas.
+ * para no repetir letras ni registrar transiciones. Los dos modelos corren en
+ * sincronía: las letras con la mano quieta vienen del modelo estático, y cada
+ * movimiento lo resuelve el dinámico — una letra con movimiento (G, J, S, X, Z)
+ * se agrega al deletreo y una seña léxica (Yo, Mi, Nombre…) como palabra.
  */
 export default function CameraTranslationScreen({ onBack }) {
   const insets = useSafeAreaInsets();
-  const recog = useSignRecognition();
+  const recog = useSignRecognition({ capturaDinamica: true });
   // Umbral ajustable desde el panel web (difficulty.aiConfidenceThreshold).
   const { config } = useRemoteConfig();
   const umbralConfianza = Number(config.difficulty?.aiConfidenceThreshold) || UMBRAL_CONFIANZA;
@@ -71,7 +72,13 @@ export default function CameraTranslationScreen({ onBack }) {
     // Las señas con movimiento ya vienen resueltas tras analizar la secuencia
     // completa, así que no necesitan el filtro de estabilidad.
     if (iaResultado.dinamica) {
-      setTexto((t) => t + sena);
+      haptics.tap();
+      setTexto((t) => {
+        if (sena.length === 1) return t + sena;
+        // Seña léxica: palabra completa, separada de lo que haya antes.
+        const base = t && !t.endsWith(' ') ? `${t} ` : t;
+        return `${base}${sena} `;
+      });
       ultimaConfirmada.current = { sena, cuando: ahora };
       setCandidata(null);
       return;

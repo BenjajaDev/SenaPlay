@@ -79,9 +79,12 @@ export const SIGNS = [
 ];
 
 // ── Palabras para el juego de Deletreo ─────────────────────────────────────────
-// Las letras estáticas las reconoce el servidor; J/Z (con movimiento) se resuelven
-// por trayectoria en el WebView (ver CONFIG_MOV en handTrackingHtml.js).
-export const PALABRAS = ['HOLA', 'AMIGO', 'MAMA', 'CASA', 'AMOR', 'GATO', 'PERA'];
+// Las letras con la mano quieta las reconoce el modelo estático; las que llevan
+// movimiento, el dinámico (ver useSignRecognition({ capturaDinamica })). JUGO y
+// GATO muestran a ambos en sincronía: J y G son las letras dinámicas que el
+// modelo reconoce con más solidez hoy. S, X y Z todavía se confunden entre sí
+// y la Ñ no tiene datos, así que no entran en el juego hasta reentrenar.
+export const PALABRAS = ['HOLA', 'JUGO', 'MAMA', 'LUNA', 'GATO', 'AMOR', 'PATO', 'PERA', 'MANO'];
 
 // Confianza mínima de la IA para dar por buena una letra del deletreo.
 export const UMBRAL_DELETREO = 0.55;

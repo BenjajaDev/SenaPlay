@@ -79,6 +79,8 @@ MANO_BASE_MEDIO = 9
 # codos + muñecas). Ver mediapipe.tasks.python.vision.pose_landmarker.PoseLandmark.
 POSE_HOMBRO_IZQ = 11
 POSE_HOMBRO_DER = 12
+POSE_MUÑECA_IZQ = 15
+POSE_MUÑECA_DER = 16
 N_POSE_SUPERIOR = 17  # índices 0..16 inclusive
 
 

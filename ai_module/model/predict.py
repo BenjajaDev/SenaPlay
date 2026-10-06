@@ -6,14 +6,17 @@ ClasificadorEstatico  → modelo scikit-learn (RandomForest/SVM) guardado en .pk
 ClasificadorDinamico  → TCN de PyTorch (model/tcn.py) guardado en .pt.
                         Recibe una secuencia YA VECTORIZADA por
                         scripts/holistic_pipeline.frame_a_vector (T, 527) —
-                        NO landmarks crudos. Ver ai_module/README.md, sección
-                        "De captura en vivo a clasificación dinámica", para
-                        por qué esto todavía no está conectado a la app.
+                        NO landmarks crudos. Incluye la clase CLASE_SIN_SEÑA
+                        (ver scripts/generar_negativos.py) para rechazar
+                        tramos de movimiento que no son una seña dinámica.
 """
 
 import numpy as np
 import joblib
 import os
+
+# Clase de rechazo del modelo dinámico: "esto no es una seña con movimiento".
+CLASE_SIN_SEÑA = "ninguna"
 
 
 # ── Clasificador estático (señas que no tienen movimiento) ────────────────────
@@ -91,12 +94,13 @@ class ClasificadorDinamico:
         from scripts.holistic_pipeline import remuestrear_temporal
         return remuestrear_temporal(secuencia, self._longitud_secuencia)
 
-    def predecir(self, secuencia_features: np.ndarray) -> tuple[str, float]:
+    def probabilidades(self, secuencia_features: np.ndarray) -> list[tuple[str, float]]:
         """
+        Todas las clases con su probabilidad, de mayor a menor.
+
         secuencia_features: array (T, entrada) ya producido por
         scripts.holistic_pipeline.frame_a_vector / secuencia_a_matriz para
         cada frame de la seña (NO landmarks crudos de mano).
-        Devuelve: (nombre_seña, confianza)
         """
         import torch
         import torch.nn.functional as F
@@ -105,10 +109,11 @@ class ClasificadorDinamico:
         tensor = torch.tensor(secuencia, dtype=torch.float32).unsqueeze(0)  # (1, T, entrada)
 
         with torch.no_grad():
-            logits = self._modelo(tensor)
-            probabilidades = F.softmax(logits, dim=-1)[0]
-            indice = probabilidades.argmax().item()
-            confianza = float(probabilidades[indice])
+            probs = F.softmax(self._modelo(tensor), dim=-1)[0].tolist()
 
-        nombre = self._etiquetas[indice]
-        return nombre, confianza
+        return sorted(zip(self._etiquetas, probs), key=lambda par: -par[1])
+
+    def predecir(self, secuencia_features: np.ndarray) -> tuple[str, float]:
+        """Devuelve (nombre_seña, confianza) de la clase más probable."""
+        nombre, confianza = self.probabilidades(secuencia_features)[0]
+        return nombre, float(confianza)

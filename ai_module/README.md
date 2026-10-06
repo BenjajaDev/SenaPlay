@@ -3,8 +3,12 @@
 Dos pipelines independientes conviven acá:
 
 - **Estático** (alfabeto LSCh, una mano, sin movimiento) — `data/extract_landmarks.py`
-  → `model/train_static.py` → `models_saved/estatico.pkl`. Ya entrenado y en
-  producción (98% test). No lo toca nada de lo que describe este README.
+  → `model/train_static.py` → `models_saved/estatico.pkl`. 21 letras: excluye
+  las que llevan movimiento (G, J, Ñ, S, X, Z). Entrena con Roboflow
+  (`data/landmarks_estaticos`) + Kaggle (`data/landmarks_kaggle`, fotos de
+  varias personas). ~94% en test/CV y ~84% con personas que no vio al entrenar
+  (antes, con las 26 letras y solo Roboflow: ~71% con personas nuevas).
+  No lo toca nada de lo que describe este README.
 - **Dinámico** (señas con movimiento, repertorio de palabras) — el pipeline
   nuevo que describe este documento: `scripts/` + `config/` + `data/raw_videos/`
   → `data/processed_landmarks/` → `data/models/dinamico_tcn.pt`.
@@ -220,21 +224,47 @@ otra persona) es invisible para `scripts/train_model.py`.
 
 ---
 
-## 5. De captura en vivo a clasificación dinámica (todavía no conectado)
+## 5. Los dos modelos en sincronía (captura en vivo)
 
-`server.py::/clasificar_secuencia` y `model/predict.py::ClasificadorDinamico`
-ya están listos para el TCN — reciben una secuencia de vectores de 527
-valores (los mismos que produce `frame_a_vector`), NO landmarks crudos de
-mano.
+Las pantallas de Traducción en vivo y Deletreo usan ambos modelos a la vez
+(`useSignRecognition({ capturaDinamica: true })` en
+`src/features/camera/presentation/signCamera.js`):
 
-La app (WebView de `src/screens/games/handTrackingHtml.js`) hoy solo captura
-manos en vivo con `@mediapipe/hands` (JS, vía CDN) para la clasificación
-ESTÁTICA — no arma pose ni cara. Conectar la clasificación dinámica en vivo
-requeriría que el WebView corra un pipeline holístico equivalente en JS
-(`@mediapipe/holistic` o Tasks API para Web) y reproduzca exactamente
-`frame_a_vector` en el cliente. Es una extensión razonable pero no estaba en
-el alcance de este cambio (que solo pedía capturar completo en el pipeline
-de ENTRENAMIENTO, y simplificar la VISUALIZACIÓN en vivo a puntos de mano).
+1. **Mano quieta → estático.** El WebView manda los 21 landmarks cada ~500 ms
+   a `/clasificar` (alfabeto sin movimiento).
+2. **Mano en movimiento → dinámico.** El WebView guarda un búfer circular de
+   cuadros JPEG (15 fps, 480 px). Cuando detecta un tramo con movimiento
+   (sección 6b de `handTrackingHtml.js`), manda los cuadros del tramo, más
+   400 ms previos al movimiento, a `/clasificar_frames`. El servidor corre el
+   MISMO pipeline holístico del entrenamiento (no se reimplementa
+   `frame_a_vector` en JS) y clasifica con el TCN.
+3. **Rechazo, en dos barreras.** El servidor responde `es_seña: false` (con
+   `motivo`) y la app sigue con el estático cuando:
+   - el TCN responde su clase `ninguna` (negativos sintéticos de mano quieta
+     y deletreo estático, ver `scripts/generar_negativos.py`; sin ella el
+     softmax respondía cualquier seña con ~90% de confianza), o
+   - la muñeca más activa se desplaza menos de `MOVIMIENTO_MIN_MUÑECA`
+     (0.08 anchos de hombro, en `server.py`). En el dataset real el mínimo
+     es ~0.09; los negativos quedan en ~0.05. Esta barrera existe porque la
+     clase `ninguna` todavía generaliza poco (3/9 negativos de test).
+     Calibrarla con grabaciones reales de deletreo si deja pasar transiciones.
+
+   Lo más efectivo para mejorar el rechazo es grabar negativos REALES:
+   videos deletreando con letras estáticas en `data/raw_videos/ninguna/`.
+   `generar_negativos.py` solo reemplaza los sintéticos (`ninguna_sint-*`).
+4. **Respaldo.** Si el servidor no tiene el modelo dinámico o no responde, se
+   usa la lectura por trayectoria (J/Z) que ya hace el WebView.
+
+`/clasificar_secuencia` (vectores de 527 ya armados) y `/clasificar_video`
+(clip grabado con botón, pantalla de monitoreo) siguen disponibles.
+
+Al agregar videos o señas nuevas al dinámico, regenerar los negativos antes
+de reentrenar:
+
+```bash
+python scripts/generar_negativos.py
+python scripts/train_model.py
+```
 
 ---
 

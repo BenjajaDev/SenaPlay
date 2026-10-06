@@ -25,8 +25,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
 
+from model.predict import CLASE_SIN_SEÑA
 from scripts.dataset_config_utils import cargar_config
 from scripts.extract_landmarks import _extraer_video
+from scripts.holistic_pipeline import (
+    POSE_MUÑECA_DER,
+    POSE_MUÑECA_IZQ,
+    SLICE_POSE,
+    crear_detector_holistic,
+    detectar_frame,
+    presencia_manos,
+    secuencia_a_matriz,
+)
 
 app = FastAPI(title="SeñaPlay IA de Señas", version="0.2.0")
 
@@ -107,6 +117,16 @@ class VideoSena(BaseModel):
     # así que no hay riesgo de desajuste entre captura en vivo y entrenamiento.
     video_base64: str
     mime: str = "video/webm"
+
+
+class TramoMovimiento(BaseModel):
+    # Cuadros JPEG (base64, con o sin prefijo "data:image/jpeg;base64,") del
+    # tramo en que el visor detectó la mano en movimiento, con un poco de
+    # margen antes y después. Los manda la captura automática del WebView
+    # (ver handTrackingHtml.js, sección 9b) para que el modelo dinámico
+    # clasifique en sincronía con el estático, sin botón de grabar.
+    frames: list[str]
+    fps: float = 15.0
 
 
 class SolicitudComparacion(BaseModel):
@@ -241,10 +261,109 @@ def clasificar_seña_video(req: VideoSena):
     if matriz.shape[0] == 0:
         raise HTTPException(422, "No se detectaron frames válidos en el video")
 
-    seña, confianza = modelo.predecir(matriz)
+    return _respuesta_dinamica(modelo, matriz, stats)
+
+
+# Por debajo de esta fracción de cuadros con mano, el tramo no se clasifica:
+# el TCN rellenaría la seña con ceros y respondería cualquier cosa.
+RATIO_MIN_CON_MANO = 0.3
+
+# Desplazamiento mínimo de la muñeca más activa (en anchos de hombro, marco
+# corporal de holistic_pipeline) para considerar el tramo una seña dinámica.
+# En el dataset real el mínimo es ~0.09 (J/G) y la mediana 0.3–1.0; la mano
+# quieta o un cambio entre letras estáticas quedan bajo ~0.05. Es una barrera
+# determinista que complementa a la clase "ninguna" del TCN, que con un
+# dataset tan chico todavía deja pasar parte de esos tramos.
+MOVIMIENTO_MIN_MUÑECA = 0.08
+# Si la pose (hombros) se ve en menos de esta fracción de cuadros, no hay marco
+# corporal fiable para medir el desplazamiento y decide solo el TCN.
+RATIO_MIN_CON_POSE = 0.5
+
+
+def _movimiento_muñecas(matriz: np.ndarray) -> float | None:
+    """
+    Rango máximo (x/y) recorrido por la muñeca más activa en el marco corporal,
+    o None si la pose casi no se detectó (cuadro muy cerrado sobre la cara).
+    """
+    T = len(matriz)
+    pose = matriz[:, SLICE_POSE].reshape(T, -1, 3)
+    con_pose = np.abs(pose).sum(axis=(1, 2)) > 0
+    if T == 0 or con_pose.mean() < RATIO_MIN_CON_POSE:
+        return None
+    muñecas = pose[con_pose][:, [POSE_MUÑECA_IZQ, POSE_MUÑECA_DER], :2]  # (T', 2, 2)
+    return float(np.ptp(muñecas, axis=0).max())
+
+
+@app.post("/clasificar_frames")
+def clasificar_tramo_movimiento(req: TramoMovimiento):
+    """
+    Clasifica con el modelo dinámico un tramo de movimiento capturado en vivo
+    como cuadros JPEG. Usa el mismo pipeline holístico que generó el dataset
+    de entrenamiento. `es_seña` es False cuando el modelo responde la clase de
+    rechazo (CLASE_SIN_SEÑA) o casi no hubo mano en cuadro: la app lo trata
+    como "no era una seña con movimiento" y sigue con el modelo estático.
+    """
+    import cv2
+
+    modelo = _obtener_modelo_dinamico()
+    if modelo is None:
+        raise HTTPException(503, "Modelo dinámico no disponible.")
+    if not req.frames:
+        raise HTTPException(422, "El tramo no trae cuadros")
+
+    config = cargar_config()["extraccion"]
+    detector = crear_detector_holistic(
+        modo_video=True,
+        confianza_deteccion=config["confianza_deteccion"],
+        confianza_landmarks=config["confianza_landmarks"],
+    )
+    paso_ms = max(1, round(1000 / (req.fps or 15.0)))
+    detectados = []
+    try:
+        for i, datos in enumerate(req.frames):
+            crudo = np.frombuffer(base64.b64decode(datos.split(",", 1)[-1]), dtype=np.uint8)
+            imagen = cv2.imdecode(crudo, cv2.IMREAD_COLOR)
+            if imagen is not None:
+                detectados.append(detectar_frame(detector, imagen, i * paso_ms))
+    except ValueError as e:
+        raise HTTPException(422, f"Cuadro inválido: {e}")
+    finally:
+        detector.close()
+
+    if not detectados:
+        raise HTTPException(422, "Ningún cuadro se pudo decodificar")
+
+    con_mano = sum(1 for f in detectados if any(presencia_manos(f)))
+    stats = {"frames": len(detectados), "ratio_con_mano": round(con_mano / len(detectados), 3)}
+    return _respuesta_dinamica(modelo, secuencia_a_matriz(detectados), stats)
+
+
+def _respuesta_dinamica(modelo, matriz: np.ndarray, stats: dict) -> dict:
+    """
+    Respuesta común de los endpoints dinámicos: mejor clase + alternativas, y
+    si el tramo cuenta como seña dinámica (`es_seña`, con `motivo` si no).
+    """
+    ranking = modelo.probabilidades(matriz)
+    seña, confianza = ranking[0]
+    movimiento = _movimiento_muñecas(matriz)
+
+    motivo = None
+    if stats["ratio_con_mano"] < RATIO_MIN_CON_MANO:
+        motivo = "sin_mano"
+    elif movimiento is not None and movimiento < MOVIMIENTO_MIN_MUÑECA:
+        motivo = "poco_movimiento"
+    elif seña == CLASE_SIN_SEÑA:
+        motivo = "modelo_sin_seña"
+
     return {
         "seña": seña,
         "confianza": round(float(confianza), 4),
+        "es_seña": motivo is None,
+        "motivo": motivo,
+        "alternativas": [
+            {"seña": s, "confianza": round(float(p), 4)} for s, p in ranking[1:3]
+        ],
+        "movimiento_muñeca": None if movimiento is None else round(movimiento, 3),
         "frames_procesados": stats["frames"],
         "ratio_con_mano": stats["ratio_con_mano"],
     }

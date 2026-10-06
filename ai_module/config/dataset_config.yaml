@@ -72,3 +72,9 @@ señas:
     descripcion: ''
     dificultad: 1
     activa: true
+  ninguna:
+    nombre_visible: Sin seña
+    descripcion: Negativos sintéticos (mano quieta y deletreo estático). Generada
+      por scripts/generar_negativos.py
+    dificultad: 1
+    activa: true

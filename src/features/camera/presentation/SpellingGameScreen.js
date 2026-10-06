@@ -17,12 +17,12 @@ import { cameraAlpha, cameraColors } from '../../../shared/theme/tokens/colors';
  *
  * El repertorio de letras que acepta lo determina el modelo de IA entrenado: a
  * medida que el modelo mejore (más letras, señas con movimiento), este juego
- * las reconoce sin cambios de código, porque delega en /clasificar y en el
- * detector de trayectoria del WebView.
+ * las reconoce sin cambios de código, porque delega en el modelo estático
+ * (mano quieta) y en el dinámico (tramos con movimiento: G, J, S, X, Z).
  */
 export default function SpellingGameScreen({ onBack }) {
   const insets = useSafeAreaInsets();
-  const recog = useSignRecognition();
+  const recog = useSignRecognition({ capturaDinamica: true });
   // Umbral ajustable desde el panel web (difficulty.spellingConfidenceThreshold).
   const { config } = useRemoteConfig();
   const umbral = Number(config.difficulty?.spellingConfidenceThreshold) || UMBRAL_DELETREO;

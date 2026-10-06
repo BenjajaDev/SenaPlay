@@ -18,10 +18,16 @@
 //   iniciarGrabacion()   ← graba un clip corto (MediaRecorder) de la misma
 //                           cámara, para el modelo dinámico (TCN) del backend
 //   detenerGrabacion()
+//   activarCapturaDinamica(bool) ← captura automática: cada tramo con la mano
+//                           en movimiento se manda al modelo dinámico (9b)
 //
 // Mensajes que emite hacia RN:
 //   { tipo:'landmarks',     landmarks, puntuacion?, dedos?, movimiento }
 //   { tipo:'sena-dinamica', sena }     ← gesto con movimiento ya resuelto (J/Z)
+//                                        por trayectoria (sin captura dinámica)
+//   { tipo:'tramo-movimiento', frames, fps, heuristica } ← con captura dinámica:
+//                                        cuadros JPEG del tramo + la lectura
+//                                        por trayectoria como respaldo
 //   { tipo:'error-camara',  mensaje }
 //   { tipo:'video-grabado', datosBase64, mime }  ← clip listo para subir
 //   { tipo:'error-grabacion', mensaje }
@@ -478,18 +484,27 @@ export const HAND_HTML = `<!DOCTYPE html>
     gesto.frames.push(lm);
     gesto.quietos = vel < CONFIG_MOV.velReposo ? gesto.quietos + 1 : 0;
     const dur = ahora - gesto.inicio;
+    // Las señas léxicas (Presento, Nombre…) duran más que una J/Z: con la
+    // captura dinámica activa se deja correr el tramo hasta CAPTURA.maxMs.
+    const durMax = capturaDinamica ? CAPTURA.maxMs : CONFIG_MOV.duracionMaxMs;
     const terminoPorQuieto = gesto.quietos >= CONFIG_MOV.framesQuietosFin && dur >= CONFIG_MOV.duracionMinMs;
-    const terminoPorTiempo = dur >= CONFIG_MOV.duracionMaxMs;
+    const terminoPorTiempo = dur >= durMax;
 
-    if (terminoPorQuieto || terminoPorTiempo) {
-      if (dur >= CONFIG_MOV.duracionMinMs) {
-        const path = trayectoriaDominante(gesto.frames);
-        if (path) emitirSenaDinamica(formaTrayectoria(path));
-      }
-      gesto.activo = false;
-      gesto.frames = [];
-      gesto.quietos = 0;
+    if (terminoPorQuieto || terminoPorTiempo) cerrarGesto(ahora);
+  }
+
+  /** Cierra el tramo en curso y lo resuelve (modelo dinámico o trayectoria). */
+  function cerrarGesto(ahora) {
+    const dur = ahora - gesto.inicio;
+    if (gesto.activo && dur >= CONFIG_MOV.duracionMinMs) {
+      const path = trayectoriaDominante(gesto.frames);
+      const heuristica = path ? formaTrayectoria(path) : null;
+      if (capturaDinamica) emitirTramo(gesto.inicio, ahora, heuristica);
+      else emitirSenaDinamica(heuristica);
     }
+    gesto.activo = false;
+    gesto.frames = [];
+    gesto.quietos = 0;
   }
 
   // ── 7. API de control desde React Native ─────────────────────────────────────
@@ -550,6 +565,7 @@ export const HAND_HTML = `<!DOCTYPE html>
         // Mano principal (índice 0): la que se clasifica y compara.
         const lmCrudos = manos[0].map(p => [p.x, p.y, p.z]);
         const lmWorld = mpAWorld(manos[0]);
+        ultimaManoVista = Date.now();
 
         actualizarGesto(lmCrudos);
 
@@ -598,7 +614,10 @@ export const HAND_HTML = `<!DOCTYPE html>
         }
         objetivoPrincipal = null; actualPrincipal = null;
         objetivoSecundaria = null; actualSecundaria = null;
-        gesto.activo = false; gesto.frames = []; lmPrevio = null; movimientoActivo = false;
+        // Si la mano sale de cuadro a mitad de un tramo (p. ej. "Yo" o "Mi"
+        // terminan sobre el pecho), el tramo se resuelve en vez de perderse.
+        cerrarGesto(Date.now());
+        lmPrevio = null; movimientoActivo = false;
       }
     });
   }
@@ -706,6 +725,67 @@ export const HAND_HTML = `<!DOCTYPE html>
   window.detenerGrabacion = function() {
     clearTimeout(timerAutoStop);
     if (grabador && grabador.state === 'recording') grabador.stop();
+  };
+
+  // ── 9b. Captura automática para el modelo dinámico ──────────────────────────
+  // Los dos modelos trabajan en paralelo: mientras la mano está quieta, RN
+  // clasifica cada ~500 ms con el modelo ESTÁTICO; cuando el visor detecta un
+  // tramo con movimiento (sección 6b), manda los cuadros de ese tramo al
+  // modelo DINÁMICO. Se usan cuadros JPEG de un búfer circular (y no
+  // MediaRecorder) porque así el tramo incluye el instante PREVIO al
+  // movimiento — el inicio de la seña, que la grabación ya habría perdido —
+  // igual que en los clips de entrenamiento, recortados justo a la seña.
+  const CAPTURA = {
+    fps:       15,
+    anchoMax:  480,   // px; Holistic no gana precisión por encima de esto
+    calidad:   0.7,
+    prerollMs: 400,   // margen antes de que se detectara el movimiento
+    maxMs:     3000,  // tramo más largo que se analiza
+    minCuadros: 8,
+  };
+  const CANVAS_CAPTURA = document.createElement('canvas');
+  const CTX_CAPTURA = CANVAS_CAPTURA.getContext('2d');
+  let capturaDinamica = false;
+  let timerCaptura = null;
+  let bufferCuadros = [];   // { t, datos } — solo los últimos maxMs + prerollMs
+  let ultimaManoVista = 0;
+
+  function capturarCuadro() {
+    const ahora = Date.now();
+    // Sin mano reciente no hay tramo posible: no gastar CPU codificando JPEG.
+    if (ahora - ultimaManoVista > 1500 || VID.readyState < 2 || !VID.videoWidth) return;
+    const escala = Math.min(1, CAPTURA.anchoMax / VID.videoWidth);
+    const w = Math.round(VID.videoWidth * escala);
+    const h = Math.round(VID.videoHeight * escala);
+    if (CANVAS_CAPTURA.width !== w || CANVAS_CAPTURA.height !== h) {
+      CANVAS_CAPTURA.width = w; CANVAS_CAPTURA.height = h;
+    }
+    CTX_CAPTURA.drawImage(VID, 0, 0, w, h);
+    bufferCuadros.push({ t: ahora, datos: CANVAS_CAPTURA.toDataURL('image/jpeg', CAPTURA.calidad) });
+    const limite = ahora - CAPTURA.maxMs - CAPTURA.prerollMs;
+    while (bufferCuadros.length && bufferCuadros[0].t < limite) bufferCuadros.shift();
+  }
+
+  function emitirTramo(inicio, fin, heuristica) {
+    const frames = bufferCuadros
+      .filter(c => c.t >= inicio - CAPTURA.prerollMs && c.t <= fin)
+      .map(c => c.datos);
+    if (frames.length < CAPTURA.minCuadros) {
+      emitirSenaDinamica(heuristica); // muy corto para el modelo: queda la trayectoria
+      return;
+    }
+    if (window.ReactNativeWebView) {
+      window.ReactNativeWebView.postMessage(JSON.stringify({
+        tipo: 'tramo-movimiento', frames, fps: CAPTURA.fps, heuristica,
+      }));
+    }
+  }
+
+  window.activarCapturaDinamica = function(activa) {
+    capturaDinamica = !!activa;
+    clearInterval(timerCaptura);
+    bufferCuadros = [];
+    if (capturaDinamica) timerCaptura = setInterval(capturarCuadro, 1000 / CAPTURA.fps);
   };
 
   async function iniciarCamara() {

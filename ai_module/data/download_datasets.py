@@ -168,6 +168,26 @@ DATASETS = {
    python model/train_static.py --datos data/landmarks_estaticos --salida models_saved/estatico.pkl
         """,
     },
+
+    "lsch-kaggle": {
+        "nombre": "Abecedario Lenguaje de Señas Chileno-Español (Kaggle)",
+        "descripcion": (
+            "239 fotos únicas del ALFABETO LSCh tomadas por distintas personas (21 letras:\n"
+            "trae solo las estáticas, sin G/J/Ñ/S/X/Z). Complementa a Roboflow con manos y\n"
+            "cámaras nuevas. Descarga directa, sin registro. Licencia: no declarada."
+        ),
+        "url_info": "https://www.kaggle.com/datasets/bpablo27/abecedario-lenguaje-de-seas-chilenoespaol",
+        "url_descarga": "https://www.kaggle.com/api/v1/datasets/download/bpablo27/abecedario-lenguaje-de-seas-chilenoespaol",
+        "tipo": ["estatica"],
+        "señas": 21,
+        "muestras": 239,
+        "requiere_registro": False,
+        "instrucciones": """
+1. python data/download_datasets.py --dataset lsch-kaggle --salida data/raw
+2. python data/extract_landmarks.py --entrada data/raw/lsch_kaggle --salida data/landmarks_kaggle --modo imagen
+3. python model/train_static.py
+        """,
+    },
 }
 
 
@@ -337,6 +357,42 @@ def descargar_roboflow_lsch(api_key: str, directorio_salida: str):
     print(f"  python data/extract_landmarks.py --entrada {destino} --salida data/landmarks_estaticos --modo imagen")
 
 
+def descargar_kaggle_lsch(directorio_salida: str):
+    """
+    Descarga el abecedario LSCh de Kaggle (público, sin credenciales) y lo deja
+    en directorio_salida/lsch_kaggle/<LETRA>/<split>_<archivo>.jpg.
+
+    El zip trae cada imagen dos veces (raíz y carpeta datasets/), así que se
+    toma solo la copia de la raíz.
+    """
+    import io
+
+    destino = os.path.join(directorio_salida, "lsch_kaggle")
+    print("[Kaggle] Descargando abecedario LSCh (~180 MB)...")
+    peticion = urllib.request.Request(
+        DATASETS["lsch-kaggle"]["url_descarga"], headers={"User-Agent": "Mozilla/5.0"}
+    )
+    with urllib.request.urlopen(peticion) as resp:
+        contenido = resp.read()
+
+    total = 0
+    with zipfile.ZipFile(io.BytesIO(contenido)) as z:
+        for nombre in z.namelist():
+            partes = nombre.split("/")
+            if nombre.endswith("/") or len(partes) != 3:
+                continue  # carpetas y la copia duplicada en datasets/
+            split, letra, archivo = partes
+            carpeta = os.path.join(destino, letra)
+            os.makedirs(carpeta, exist_ok=True)
+            with open(os.path.join(carpeta, f"{split}_{archivo}"), "wb") as f:
+                f.write(z.read(nombre))
+            total += 1
+
+    print(f"[Kaggle] {total} imágenes organizadas en: {destino}")
+    print("\nSiguiente paso:")
+    print(f"  python data/extract_landmarks.py --entrada {destino} --salida data/landmarks_kaggle --modo imagen")
+
+
 def mostrar_instrucciones_dataset(nombre_dataset: str):
     """Muestra las instrucciones de descarga de un dataset específico."""
     if nombre_dataset not in DATASETS:
@@ -374,5 +430,7 @@ if __name__ == "__main__":
         if not args.api_key:
             parser.error("--api-key es obligatorio para lsch-roboflow (cópiala de roboflow.com → Settings → API)")
         descargar_roboflow_lsch(args.api_key, args.salida)
+    elif args.dataset == "lsch-kaggle":
+        descargar_kaggle_lsch(args.salida)
     else:
         mostrar_instrucciones_dataset(args.dataset)

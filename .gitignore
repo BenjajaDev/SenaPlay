@@ -59,4 +59,7 @@ ai_module/data/processed_landmarks/*
 !ai_module/data/processed_landmarks/.gitkeep
 ai_module/data/models/*
 !ai_module/data/models/.gitkeep
+# Fotos de Kaggle (91 MB, licencia no declarada): se bajan con
+# `python data/download_datasets.py --dataset lsch-kaggle`; sus landmarks sí van.
+ai_module/data/raw/lsch_kaggle/
 .expo-export-check/

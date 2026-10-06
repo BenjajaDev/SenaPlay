@@ -8,13 +8,19 @@ Flujo:
   4. Guarda el pipeline en models_saved/estatico.pkl
 
 Uso:
-    python model/train_static.py --datos data/landmarks_estaticos --salida models_saved/estatico.pkl
+    python model/train_static.py                       # datasets por defecto, sin letras con movimiento
+    python model/train_static.py --datos data/landmarks_estaticos --excluir   # 26 letras, un dataset
 
-Dataset recomendado para señas estáticas:
-  - LSA64 (Argentine Sign Language): https://facundoq.github.io/datasets/lsa64/
-  - MS-ASL: https://www.microsoft.com/en-us/research/project/ms-asl/
-  - WLASL: https://dxli94.github.io/WLASL/
-  Después de descargar, usa data/extract_landmarks.py para obtener los .npy.
+Datasets LSCh usados (ver data/download_datasets.py):
+  - data/landmarks_estaticos ← Roboflow "lengua-de-senas-chilena-desde-cero"
+  - data/landmarks_kaggle    ← Kaggle "Abecedario Lenguaje de Señas Chileno-Español"
+    (fotos de varias personas; da robustez frente a manos/cámaras nuevas)
+
+Las letras con movimiento (G, J, Ñ, S, X, Z) se excluyen por defecto: una foto
+solo captura su forma de mano, que en varios casos coincide con otra letra
+estática (J≈I, S≈A...). Entrenarlas como estáticas restaba precisión al resto
+y no las reconoce de verdad — esas las cubre el modelo dinámico (TCN) y la
+trayectoria del visor.
 """
 
 import argparse
@@ -42,6 +48,11 @@ PARES_DISTANCIA_PUNTAS = [
     (4, 8), (4, 12), (4, 16), (4, 20),   # pulgar con el resto
     (8, 12), (12, 16), (16, 20),          # puntas vecinas
 ]
+
+# Letras del alfabeto LSCh que se ejecutan con movimiento (ver docstring).
+LETRAS_CON_MOVIMIENTO = ["G", "J", "Ñ", "S", "X", "Z"]
+
+DATOS_POR_DEFECTO = ["data/landmarks_estaticos", "data/landmarks_kaggle"]
 
 
 def extraer_caracteristicas(landmarks: np.ndarray) -> np.ndarray:
@@ -214,19 +225,45 @@ def _features_de_lote(X_raw: np.ndarray) -> np.ndarray:
 
 # ── Entrenamiento ─────────────────────────────────────────────────────────────
 
-def entrenar(directorio_datos: str, ruta_salida: str, modelo: str = "rf",
-             n_aug: int = 4):
+def cargar_varios(directorios: list[str], excluir: list[str]
+                  ) -> tuple[np.ndarray, np.ndarray, list[str]]:
+    """
+    Une varios directorios con la estructura de `cargar_dataset` (las clases se
+    emparejan por nombre de carpeta) y descarta las señas de `excluir`.
+    """
+    X_lista, nombres_lista = [], []
+    for directorio in directorios:
+        print(f"\n[Entrenamiento] Cargando datos de: {directorio}")
+        X_raw, y, etiquetas = cargar_dataset(directorio)
+        X_lista.append(X_raw)
+        nombres_lista.append(np.array(etiquetas)[y])
+
+    X_raw = np.concatenate(X_lista)
+    nombres = np.concatenate(nombres_lista)
+    conservar = ~np.isin(nombres, excluir)
+    X_raw, nombres = X_raw[conservar], nombres[conservar]
+
+    etiquetas = sorted({str(n) for n in nombres})
+    mapa_etiqueta = {nombre: i for i, nombre in enumerate(etiquetas)}
+    y = np.array([mapa_etiqueta[n] for n in nombres], dtype=np.int64)
+    return X_raw, y, etiquetas
+
+
+def entrenar(directorios_datos: list[str], ruta_salida: str, modelo: str = "rf",
+             n_aug: int = 8, excluir: list[str] = LETRAS_CON_MOVIMIENTO):
     """
     Entrena el clasificador y guarda el pipeline en disco.
 
     Parámetros:
-        directorio_datos: carpeta con subcarpetas por seña
+        directorios_datos: carpetas con subcarpetas por seña (se unen por nombre)
         ruta_salida: ruta donde guardar el .pkl
         modelo: 'rf' (RandomForest) o 'svm' (SVM con kernel RBF)
         n_aug: variantes aumentadas por muestra de entrenamiento (0 = sin augmentation)
+        excluir: señas a dejar fuera (por defecto, las letras con movimiento)
     """
-    print(f"\n[Entrenamiento] Cargando datos de: {directorio_datos}")
-    X_raw, y, etiquetas = cargar_dataset(directorio_datos)
+    X_raw, y, etiquetas = cargar_varios(directorios_datos, excluir)
+    if excluir:
+        print(f"\n[Entrenamiento] Excluidas: {', '.join(excluir)}")
     print(f"[Entrenamiento] Total muestras: {len(X_raw)}, Clases: {len(etiquetas)}\n")
 
     # Separar train/test sobre landmarks CRUDOS, antes de aumentar.
@@ -285,13 +322,16 @@ def entrenar(directorio_datos: str, ruta_salida: str, modelo: str = "rf",
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Entrena el clasificador estático de señas")
-    parser.add_argument("--datos", default="data/landmarks_estaticos",
-                        help="Directorio con subcarpetas por seña")
+    parser.add_argument("--datos", nargs="+", default=DATOS_POR_DEFECTO,
+                        help="Uno o más directorios con subcarpetas por seña")
     parser.add_argument("--salida", default="models_saved/estatico.pkl",
                         help="Ruta de salida del modelo .pkl")
     parser.add_argument("--modelo", choices=["rf", "svm"], default="rf",
                         help="Tipo de clasificador: rf=RandomForest, svm=SVM")
-    parser.add_argument("--aug", type=int, default=4,
+    parser.add_argument("--aug", type=int, default=8,
                         help="Variantes aumentadas por muestra de train (0 = desactivar)")
+    parser.add_argument("--excluir", nargs="*", default=LETRAS_CON_MOVIMIENTO,
+                        help="Señas a excluir (por defecto las letras con movimiento; "
+                             "`--excluir` sin valores no excluye ninguna)")
     args = parser.parse_args()
-    entrenar(args.datos, args.salida, args.modelo, n_aug=args.aug)
+    entrenar(args.datos, args.salida, args.modelo, n_aug=args.aug, excluir=args.excluir)

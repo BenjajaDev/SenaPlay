@@ -143,14 +143,40 @@ export type SiteIconKey =
 
 export type SectionItem = { icon: SiteIconKey; title: string; text: string };
 
+/**
+ * Imagen de un carrusel de la landing. `image_path` es la ruta en el bucket
+ * `media` si se subió desde el panel; null si es una seña incluida en el
+ * sitio (/signs/*.webp), que no se borra nunca.
+ */
+export type SlideImage = { image_url: string; image_path: string | null };
+
+/** Diapositiva de una tarjeta de seña del hero (la etiqueta es la letra o palabra). */
+export type SignSlide = SlideImage & { label: string };
+
+/** Captura de la app que muestra el teléfono de la landing. */
+export type PhoneScreen = SlideImage & { caption: string };
+
+export type FooterLink = { label: string; url: string };
+
 export type LandingSections = {
-  hero: { badge: string; title: string; text: string; primaryLabel: string; secondaryLabel: string };
+  hero: {
+    badge: string;
+    title: string;
+    text: string;
+    primaryLabel: string;
+    secondaryLabel: string;
+    /** Segundos entre cambios de cada tarjeta de seña. */
+    signsInterval: number;
+    /** Tres tarjetas, cada una con su propio carrusel de señas. */
+    signDecks: SignSlide[][];
+  };
   metrics: { visible: boolean; title: string };
   features: { visible: boolean; title: string; items: SectionItem[] };
   accessibility: { visible: boolean; title: string; items: SectionItem[] };
+  showcase: { visible: boolean; title: string; text: string; interval: number; screens: PhoneScreen[] };
   publications: { visible: boolean; title: string; intro: string };
   download: { visible: boolean; title: string; text: string };
-  footer: { text: string };
+  footer: { text: string; email: string; location: string; note: string; socials: SocialLink[]; links: FooterLink[] };
 };
 
 export type SectionKey = keyof LandingSections;

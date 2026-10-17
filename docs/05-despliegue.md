@@ -134,7 +134,7 @@ El servidor usa ~500 MB de RAM con los dos modelos cargados, más que los 512 MB
 1. Cuenta en <https://huggingface.co> → **Settings → Access Tokens → Create new token**, tipo *Write*.
 2. En GitHub, **Settings → Secrets and variables → Actions**:
    - *Secret* `HF_TOKEN` con ese token.
-   - *Variable* `HF_SPACE` con `usuario-de-hf/senaplay-ia`.
+   - *Variable* `HF_SPACE` (opcional): nombre del Space. Por defecto `senaplay-ia`, en la cuenta dueña del token.
 3. **Actions → Desplegar IA → Run workflow** (o cualquier push a `main` que toque `ai_module/`). El script crea el Space si no existe y sube solo código, config y modelos.
 
 **Verificar** en `https://<usuario-de-hf>-senaplay-ia.hf.space/`:

@@ -1,0 +1,19 @@
+# Dependencias del servidor de IA desplegado (Dockerfile → Hugging Face Spaces).
+# requirements.txt trae además lo de entrenamiento y descarga de datasets.
+#
+# Versiones FIJAS, iguales a las del entorno donde se entrenaron los modelos:
+# models_saved/estatico.pkl es un pickle de scikit-learn y puede no cargar (o
+# cargar mal) con otra versión. Si se reentrena con versiones nuevas, actualizar
+# este archivo en el mismo commit.
+fastapi==0.141.1
+uvicorn==0.53.0
+pydantic==2.13.5
+numpy==2.3.5
+scikit-learn==1.9.1
+joblib==1.6.0
+torch==2.14.0
+mediapipe==1.0.1
+# mediapipe depende de la variante "contrib"; no instalar opencv-python aparte
+# (ambas proveen cv2 y se pisan).
+opencv-contrib-python==5.0.0.93
+PyYAML==6.0.3

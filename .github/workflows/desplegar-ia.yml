@@ -1,0 +1,37 @@
+# Publica el servidor de IA (ai_module/) en Hugging Face Spaces cuando cambia en main.
+# Requiere en GitHub → Settings → Secrets and variables → Actions:
+#   - secret   HF_TOKEN  : token de Hugging Face con permiso de escritura
+#   - variable HF_SPACE  : usuario/nombre del Space (ej. benjajadev/senaplay-ia)
+# Ver docs/05-despliegue.md.
+name: Desplegar IA
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ai_module/**'
+      - '.github/workflows/desplegar-ia.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: desplegar-ia
+  cancel-in-progress: true
+
+jobs:
+  desplegar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - run: pip install huggingface_hub
+
+      - name: Subir ai_module al Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_SPACE: ${{ vars.HF_SPACE }}
+          MENSAJE_COMMIT: ${{ github.event.head_commit.message || 'Despliegue manual' }}
+        run: python ai_module/despliegue/huggingface/subir_space.py

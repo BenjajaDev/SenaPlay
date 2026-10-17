@@ -7,16 +7,7 @@
     <meta name="theme-color" content="#8F1EAE" />
     <link id="favicon" rel="icon" type="image/png" href="/brand/favicon-claro.png" />
     <link rel="apple-touch-icon" href="/brand/icono-claro.png" />
-    <script>
-      // Favicon según el tema antes de que cargue React (misma lógica que
-      // src/lib/useThemeMode.ts: preferencia guardada o la del sistema).
-      (function () {
-        var stored = null;
-        try { stored = localStorage.getItem('senaplay.theme'); } catch (e) {}
-        var dark = stored ? stored === 'dark' : window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        document.getElementById('favicon').href = dark ? '/brand/favicon-oscuro.png' : '/brand/favicon-claro.png';
-      })();
-    </script>
+    <script src="/favicon-tema.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />

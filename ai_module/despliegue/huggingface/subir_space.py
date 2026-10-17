@@ -10,7 +10,7 @@ Lo corre el workflow .github/workflows/desplegar-ia.yml en cada push a main.
 También se puede correr a mano:
 
     pip install huggingface_hub
-    HF_TOKEN=hf_xxx python ai_module/despliegue/huggingface/subir_space.py --space usuario/senaplay-ia
+    HF_TOKEN=hf_xxx python ai_module/despliegue/huggingface/subir_space.py   # Space "senaplay-ia" del dueño del token
 """
 
 import argparse
@@ -64,6 +64,8 @@ def main(space: str, mensaje: str) -> None:
         raise SystemExit("Falta la variable HF_TOKEN (token de Hugging Face con permiso de escritura).")
 
     api = HfApi(token=token)
+    if "/" not in space:  # solo el nombre: el usuario sale del token
+        space = f"{api.whoami()['name']}/{space}"
     api.create_repo(space, repo_type="space", space_sdk="docker", exist_ok=True)
 
     with tempfile.TemporaryDirectory() as tmp:
@@ -76,15 +78,16 @@ def main(space: str, mensaje: str) -> None:
             delete_patterns=TIPOS_SINCRONIZADOS,
         )
 
+    # El subdominio del Space: usuario-nombre en minúsculas, "_" y "." → "-".
+    subdominio = space.replace("/", "-").replace("_", "-").replace(".", "-").lower()
     print(f"[Space] {len(copiados)} archivos publicados en https://huggingface.co/spaces/{space}")
+    print(f"[Space] URL del servidor (EXPO_PUBLIC_AI_SERVER_URL): https://{subdominio}.hf.space")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Publica ai_module/ en un Hugging Face Space")
-    parser.add_argument("--space", default=os.environ.get("HF_SPACE"),
-                        help="usuario/nombre del Space (o variable HF_SPACE)")
+    parser.add_argument("--space", default=os.environ.get("HF_SPACE") or "senaplay-ia",
+                        help="nombre del Space, o usuario/nombre (o variable HF_SPACE)")
     parser.add_argument("--mensaje", default=os.environ.get("MENSAJE_COMMIT", "Despliegue desde GitHub"))
     args = parser.parse_args()
-    if not args.space:
-        parser.error("Indica --space usuario/nombre o la variable HF_SPACE")
     main(args.space, args.mensaje)

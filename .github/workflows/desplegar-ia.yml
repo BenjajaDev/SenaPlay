@@ -1,7 +1,8 @@
 # Publica el servidor de IA (ai_module/) en Hugging Face Spaces cuando cambia en main.
 # Requiere en GitHub → Settings → Secrets and variables → Actions:
 #   - secret   HF_TOKEN  : token de Hugging Face con permiso de escritura
-#   - variable HF_SPACE  : usuario/nombre del Space (ej. benjajadev/senaplay-ia)
+#   - variable HF_SPACE  : opcional; por defecto "senaplay-ia" en la cuenta del token
+# El log del paso "Subir ai_module al Space" muestra la URL final del servidor.
 # Ver docs/05-despliegue.md.
 name: Desplegar IA
 

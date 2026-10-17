@@ -1,0 +1,13 @@
+# Cabeceras de Cloudflare Pages (ver docs/05-despliegue.md).
+# CSP: el portal habla directo con Supabase (REST, Auth, Storage y Realtime por
+# wss) y usa Google Fonts. Las imágenes de equipo y publicaciones pueden venir
+# de cualquier https; los videos solo de Storage de Supabase.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { ExerciseFactory, toUserMessage } from '@/lib/domain';
+import { builtinSignSlide, isSafeImageUrl } from '@/lib/signs';
 import { cleanSocials } from '@/lib/social';
 import type {
   AboutContent,
@@ -8,12 +9,14 @@ import type {
   DictionaryEntry,
   ExerciseDraft,
   FeatureFlag,
+  FooterLink,
   Level,
   LevelWithExercises,
   MediaItem,
   MediaKind,
   LandingSections,
   MistakeStat,
+  PhoneScreen,
   Profile,
   ProfileDraft,
   Publication,
@@ -21,6 +24,7 @@ import type {
   Role,
   SectionItem,
   SectionKey,
+  SignSlide,
   SiteIconKey,
   TeamMember,
   VocabularySign,
@@ -295,6 +299,12 @@ export const DEFAULT_SECTIONS: LandingSections = {
     text: 'SeñaPlay es un espacio de práctica: niveles cortos, juegos y una cámara con inteligencia artificial para ejercitar la LSCh todos los días y fomentar su uso, a tu ritmo.',
     primaryLabel: 'Descargar para Android',
     secondaryLabel: 'Conocer más',
+    signsInterval: 4,
+    signDecks: [
+      ['A', 'D', 'G'].map(builtinSignSlide),
+      ['B', 'E', 'H'].map(builtinSignSlide),
+      ['C', 'F', 'I'].map(builtinSignSlide),
+    ],
   },
   metrics: { visible: true, title: 'SeñaPlay en números' },
   features: {
@@ -318,6 +328,13 @@ export const DEFAULT_SECTIONS: LandingSections = {
       { icon: 'hand', title: 'Hecha para la comunidad Sorda', text: 'La seña es la protagonista: grande, clara y bajo tu control, sin nada que se mueva solo.' },
     ],
   },
+  showcase: {
+    visible: true,
+    title: 'Así se ve SeñaPlay',
+    text: 'Niveles cortos, juegos y práctica con la cámara, todo desde tu teléfono.',
+    interval: 5,
+    screens: [],
+  },
   publications: {
     visible: true,
     title: 'Publicaciones',
@@ -328,8 +345,18 @@ export const DEFAULT_SECTIONS: LandingSections = {
     title: '¡Empieza hoy!',
     text: 'Disponible para Android. Crea tu cuenta y completa tu primer entrenamiento en 5 minutos.',
   },
-  footer: { text: 'Hecho con la comunidad Sorda de Chile' },
+  footer: {
+    text: 'Hecho con la comunidad Sorda de Chile',
+    email: '',
+    location: 'Chile',
+    note: 'Practica, juega y fomenta la Lengua de Señas Chilena.',
+    socials: [],
+    links: [],
+  },
 };
+
+/** Límites de los carruseles y listas de la landing (también los usa el panel). */
+export const LANDING_LIMITS = { signDecks: 3, slidesPerDeck: 8, screens: 8, footerLinks: 6, interval: { min: 2, max: 20 } };
 
 export const SECTION_KEYS = Object.keys(DEFAULT_SECTIONS) as SectionKey[];
 
@@ -343,6 +370,54 @@ function sanitizeItems(value: unknown, fallback: SectionItem[]): SectionItem[] {
     text: typeof item.text === 'string' ? item.text : '',
   }));
 }
+
+const text = (value: unknown) => (typeof value === 'string' ? value : '');
+const imagePath = (value: unknown) => (typeof value === 'string' && value ? value : null);
+
+function sanitizeSlides(value: unknown): SignSlide[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((slide): slide is Record<string, unknown> => isRecord(slide) && isSafeImageUrl(slide.image_url))
+    .slice(0, LANDING_LIMITS.slidesPerDeck)
+    .map((slide) => ({ label: text(slide.label), image_url: slide.image_url as string, image_path: imagePath(slide.image_path) }));
+}
+
+/** Siempre tres tarjetas; una tarjeta vacía o dañada vuelve a su mazo por defecto. */
+function sanitizeDecks(value: unknown, fallback: SignSlide[][]): SignSlide[][] {
+  const decks = Array.isArray(value) ? value : [];
+  return fallback.map((defaults, index) => {
+    const deck = sanitizeSlides(decks[index]);
+    return deck.length ? deck : defaults;
+  });
+}
+
+function sanitizeScreens(value: unknown): PhoneScreen[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((screen): screen is Record<string, unknown> => isRecord(screen) && isSafeImageUrl(screen.image_url))
+    .slice(0, LANDING_LIMITS.screens)
+    .map((screen) => ({ caption: text(screen.caption), image_url: screen.image_url as string, image_path: imagePath(screen.image_path) }));
+}
+
+function sanitizeLinks(value: unknown): FooterLink[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter(isRecord)
+    .map((link) => ({ label: text(link.label), url: text(link.url) }))
+    .filter((link) => link.label && link.url)
+    .slice(0, LANDING_LIMITS.footerLinks);
+}
+
+/** Campos con estructura propia: se validan uno a uno en vez de solo por tipo. */
+const FIELD_SANITIZERS: Record<string, (value: unknown, fallback: never) => unknown> = {
+  items: sanitizeItems,
+  signDecks: sanitizeDecks,
+  screens: sanitizeScreens,
+  socials: (value) => cleanSocials(value),
+  links: sanitizeLinks,
+};
+
+const clampInterval = (value: number) => Math.min(LANDING_LIMITS.interval.max, Math.max(LANDING_LIMITS.interval.min, Math.round(value)));
 
 /**
  * Combina lo guardado con los valores por defecto, campo por campo y solo si
@@ -358,13 +433,29 @@ export function mergeSections(rows: { key: string; value: unknown }[]): LandingS
     const section: Record<string, unknown> = { ...defaults };
     if (isRecord(value)) {
       Object.keys(defaults).forEach((field) => {
-        if (field === 'items') section.items = sanitizeItems(value.items, defaults.items as SectionItem[]);
+        const sanitize = FIELD_SANITIZERS[field];
+        if (sanitize) section[field] = sanitize(value[field], defaults[field] as never);
+        else if (typeof defaults[field] === 'number') section[field] = Number.isFinite(value[field]) ? clampInterval(value[field] as number) : defaults[field];
         else if (typeof value[field] === typeof defaults[field]) section[field] = value[field];
       });
     }
     merged[key] = section;
   });
   return merged as LandingSections;
+}
+
+/** Rutas del bucket usadas por una sección (para borrar las que dejan de usarse). */
+export function sectionImagePaths(section: unknown): string[] {
+  const paths: string[] = [];
+  const walk = (value: unknown) => {
+    if (Array.isArray(value)) value.forEach(walk);
+    else if (isRecord(value)) {
+      if (typeof value.image_path === 'string' && value.image_path) paths.push(value.image_path);
+      Object.values(value).forEach(walk);
+    }
+  };
+  walk(section);
+  return paths;
 }
 
 async function uploadImage(client: SupabaseClient, folder: string, file: File) {
@@ -405,6 +496,21 @@ export function createSiteRepository(client: SupabaseClient) {
 
     async saveSection<K extends SectionKey>(key: K, value: LandingSections[K]) {
       await run(client.from('site_content').upsert({ key, value }), 'No se pudo guardar la sección.');
+    },
+
+    /** Sube una imagen para un carrusel de la landing (bucket `media`, carpeta landing/). */
+    async uploadLandingImage(file: File): Promise<{ url: string; path: string }> {
+      return uploadImage(client, 'landing', file);
+    },
+
+    /** Borra imágenes que ya no usa ninguna sección. Si falla, solo quedan archivos huérfanos. */
+    async removeLandingImages(paths: string[]) {
+      if (!paths.length) return;
+      try {
+        await client.storage.from(MEDIA_BUCKET).remove(paths);
+      } catch {
+        /* no bloquea la publicación */
+      }
     },
 
     /** Para el panel: incluye integrantes ocultos (RLS los muestra solo a staff). */

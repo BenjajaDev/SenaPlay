@@ -147,3 +147,15 @@ export function SocialIcon({ network, size = 20 }: { network: SocialNetworkKey; 
   const Icon = (SOCIAL_NETWORKS[network] || SOCIAL_NETWORKS.website).icon;
   return <Icon size={size} />;
 }
+
+/**
+ * Enlace seguro para los enlaces libres del pie de página: https/http,
+ * mailto o rutas y anclas del propio sitio (/ruta, #seccion). Otro esquema → null.
+ */
+export function safeLinkHref(raw: string): string | null {
+  const value = raw.trim();
+  if (!value) return null;
+  if ((value.startsWith('/') && !value.startsWith('//')) || value.startsWith('#')) return value;
+  if (/^mailto:/i.test(value)) return socialHref({ network: 'email', url: value });
+  return socialHref({ network: 'website', url: value });
+}

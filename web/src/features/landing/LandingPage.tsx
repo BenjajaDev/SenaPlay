@@ -1,14 +1,20 @@
-import { CalendarDays, ChevronLeft, ChevronRight, ExternalLink, Eye, LayoutDashboard, MapPin, Moon, Newspaper, Smartphone, Sun, Target, Users, type LucideIcon } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, ExternalLink, Eye, LayoutDashboard, MapPin, Moon, Newspaper, Smartphone, Sun, Target, type LucideIcon } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '@/auth/AuthProvider';
 import { useRepositories } from '@/data/RepositoriesProvider';
 import type { AboutContent, LandingSections, Publication, PublicationCategory, PublicStats, SectionItem, TeamMember } from '@/data/types';
 import { brandIcon } from '@/lib/brand';
 import { env } from '@/lib/env';
+import { keyed } from '@/lib/listKeys';
 import { formatCount, formatEventDate, PUBLICATION_CATEGORIES, SITE_ICONS, STAT_ITEMS } from '@/lib/site';
 import { SOCIAL_NETWORKS, SocialIcon, socialHref } from '@/lib/social';
 import { useThemeMode } from '@/lib/useThemeMode';
 import { Badge, Button, Card, Dialog, Skeleton, SkeletonRows } from '@/ui';
+import { HeroSigns } from './HeroSigns';
+import { AuroraBackground } from './AuroraBackground';
+import { PhoneShowcase } from './PhoneShowcase';
+import { SiteFooter } from './SiteFooter';
 
 // value: undefined = cargando (skeleton), null = no disponible (guion).
 function Metric({ value, label, icon: Icon }: { value: number | null | undefined; label: string; icon: LucideIcon }) {
@@ -36,8 +42,10 @@ const initials = (name: string) =>
     .map((word) => word[0].toUpperCase())
     .join('');
 
-// Ancho de la tarjeta expandida (ver --team-card-expanded en pages.css).
-const TEAM_CARD_EXPANDED = 640;
+// Ancho mínimo de una tarjeta para decidir cuántas caben por fila.
+const TEAM_CARD_MIN = 260;
+const TEAM_ROW_GAP = 24;
+const TEAM_MAX_PER_ROW = 4;
 
 /** Redes de un integrante; cada ícono se anima a su manera (elegida en el panel). */
 function TeamSocials({ member }: { member: TeamMember }) {
@@ -45,11 +53,11 @@ function TeamSocials({ member }: { member: TeamMember }) {
   if (!links.length) return null;
   return (
     <ul className="team-card__socials" aria-label={`Redes de ${member.full_name}`}>
-      {links.map((link, index) => {
+      {keyed(links, (link) => `${link.network}:${link.href}`).map(({ item: link, key }) => {
         const network = SOCIAL_NETWORKS[link.network];
         const external = link.network !== 'email';
         return (
-          <li key={`${link.network}-${index}`}>
+          <li key={key}>
             <a
               className={`social-link social-link--${link.animation}`}
               href={link.href as string}
@@ -68,34 +76,20 @@ function TeamSocials({ member }: { member: TeamMember }) {
 }
 
 /**
- * Tarjeta de integrante. Al pasar el mouse o enfocarla (teclado o toque) se
- * expande hacia el lado con más espacio y revela descripción y redes. La
- * expansión se superpone a las vecinas en vez de empujarlas, así la grilla
- * no salta. En pantallas táctiles o angostas los detalles se muestran
- * siempre debajo (ver pages.css).
+ * Tarjeta de integrante. Al pasar el mouse o enfocarla (teclado o toque)
+ * crece dentro de su fila y revela descripción y redes; las demás tarjetas
+ * de la fila se angostan y se desplazan para hacerle espacio, sin taparse.
+ * En pantallas táctiles o angostas los detalles se muestran siempre debajo
+ * (ver pages.css).
  */
 function TeamCard({ member }: { member: TeamMember }) {
-  const ref = useRef<HTMLElement>(null);
-  const [side, setSide] = useState<'right' | 'left'>('right');
   const hasDetails = Boolean(member.bio || member.socials?.length);
-
-  const pickSide = () => {
-    const rect = ref.current?.getBoundingClientRect();
-    if (!rect) return;
-    const growth = TEAM_CARD_EXPANDED - rect.width;
-    setSide(rect.right + growth > window.innerWidth - 16 && rect.left - growth >= 16 ? 'left' : 'right');
-  };
-
   return (
     <article
-      ref={ref}
       className="card card--raised team-card"
-      data-side={side}
       data-expandable={hasDetails || undefined}
       tabIndex={hasDetails ? 0 : undefined}
       aria-labelledby={member.id ? `team-${member.id}` : undefined}
-      onPointerEnter={pickSide}
-      onFocus={pickSide}
     >
       <div className="team-card__face">
         {member.photo_url ? (
@@ -117,12 +111,50 @@ function TeamCard({ member }: { member: TeamMember }) {
       </div>
       {hasDetails ? (
         <div className="team-card__details">
-          <span className="team-card__details-title">Sobre {member.full_name.split(/\s+/)[0]}</span>
-          {member.bio ? <p className="text-secondary team-card__bio">{member.bio}</p> : null}
-          <TeamSocials member={member} />
+          <div className="team-card__details-inner">
+            <span className="team-card__details-title">Sobre {member.full_name.split(/\s+/)[0]}</span>
+            {member.bio ? <p className="text-secondary team-card__bio">{member.bio}</p> : null}
+            <TeamSocials member={member} />
+          </div>
         </div>
       ) : null}
     </article>
+  );
+}
+
+/**
+ * Reparte al equipo en filas según el ancho disponible. Cada fila es un flex
+ * sin salto de línea: así, al expandirse una tarjeta, solo cambia el reparto
+ * del espacio dentro de su fila y ninguna tarjeta se va a otra línea.
+ */
+function TeamRows({ team }: Readonly<{ team: TeamMember[] }>) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [perRow, setPerRow] = useState(3);
+
+  useEffect(() => {
+    const element = ref.current;
+    if (!element || typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(([entry]) => {
+      const fit = Math.floor((entry.contentRect.width + TEAM_ROW_GAP) / (TEAM_CARD_MIN + TEAM_ROW_GAP));
+      setPerRow(Math.max(1, Math.min(TEAM_MAX_PER_ROW, fit)));
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  const rows: TeamMember[][] = [];
+  for (let index = 0; index < team.length; index += perRow) rows.push(team.slice(index, index + perRow));
+
+  return (
+    <div ref={ref} className="team-rows">
+      {rows.map((row) => (
+        <div key={row[0].id ?? row[0].full_name} className="team-row">
+          {row.map((member) => (
+            <TeamCard key={member.id} member={member} />
+          ))}
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -155,7 +187,7 @@ function AboutSection({ about, team }: { about: AboutContent | undefined; team: 
       </div>
 
       {team === undefined ? (
-        <div className="team-grid" style={{ marginTop: 'var(--space-8)' }}>
+        <div className="team-row team-row--loading" style={{ marginTop: 'var(--space-8)' }}>
           <Skeleton height={300} />
           <Skeleton height={300} />
           <Skeleton height={300} />
@@ -163,11 +195,7 @@ function AboutSection({ about, team }: { about: AboutContent | undefined; team: 
       ) : team.length ? (
         <>
           <h3 className="about__team-title">Nuestro equipo</h3>
-          <div className="team-grid">
-            {team.map((member) => (
-              <TeamCard key={member.id} member={member} />
-            ))}
-          </div>
+          <TeamRows team={team} />
         </>
       ) : null}
     </section>
@@ -349,6 +377,9 @@ function PublicationsSection({ config, items }: { config: LandingSections['publi
 export function LandingPage() {
   const { stats, site, publications } = useRepositories();
   const { mode, toggle } = useThemeMode();
+  // El acceso al panel solo se ofrece a quien ya tiene sesión de equipo; el
+  // público no lo ve (el equipo entra por /login).
+  const { isStaff } = useAuth();
   const [data, setData] = useState<PublicStats | null | undefined>(undefined);
   const [sections, setSections] = useState<LandingSections | undefined>(undefined);
   const [posts, setPosts] = useState<Publication[] | undefined>(undefined);
@@ -386,9 +417,11 @@ export function LandingPage() {
 
   const hero = sections?.hero;
   const showPublications = Boolean(sections?.publications.visible && posts?.length);
+  const showShowcase = Boolean(sections?.showcase.visible && sections.showcase.screens.length);
   const navLinks = [
     { href: '#caracteristicas', label: 'Características', show: sections?.features.visible },
     { href: '#accesibilidad', label: 'Accesibilidad', show: sections?.accessibility.visible },
+    { href: '#app', label: 'La app', show: showShowcase },
     { href: '#publicaciones', label: 'Publicaciones', show: showPublications },
     { href: '#nosotros', label: 'Nosotros', show: true },
     { href: '#descargar', label: 'Descargar', show: sections?.download.visible },
@@ -396,6 +429,7 @@ export function LandingPage() {
 
   return (
     <>
+      <AuroraBackground />
       <a className="skip-link" href="#contenido">
         Saltar al contenido
       </a>
@@ -413,9 +447,11 @@ export function LandingPage() {
         </nav>
         <div className="row" style={{ gap: 8 }}>
           <Button variant="ghost" icon={mode === 'dark' ? Sun : Moon} onClick={toggle} aria-label={mode === 'dark' ? 'Usar tema claro' : 'Usar tema oscuro'} />
-          <Link to="/admin" className="btn btn--secondary btn--sm">
-            <LayoutDashboard size={16} aria-hidden /> Panel
-          </Link>
+          {isStaff ? (
+            <Link to="/admin" className="btn btn--secondary btn--sm">
+              <LayoutDashboard size={16} aria-hidden /> Panel
+            </Link>
+          ) : null}
         </div>
       </header>
 
@@ -451,14 +487,7 @@ export function LandingPage() {
               </div>
             )}
           </div>
-          <div className="hero__visual" aria-hidden>
-            {['A', 'B', 'C'].map((letter, index) => (
-              <figure key={letter} className="sign-card" style={{ ['--i' as string]: index }}>
-                <img src={`/signs/${letter}.png`} alt="" loading="lazy" />
-                <figcaption>{letter}</figcaption>
-              </figure>
-            ))}
-          </div>
+          {hero ? <HeroSigns decks={hero.signDecks} intervalSeconds={hero.signsInterval} /> : <div className="hero__visual" aria-hidden />}
         </section>
 
         {sections?.metrics.visible !== false ? (
@@ -508,6 +537,8 @@ export function LandingPage() {
           </section>
         ) : null}
 
+        {sections && showShowcase ? <PhoneShowcase config={sections.showcase} /> : null}
+
         {sections && posts && showPublications ? <PublicationsSection config={sections.publications} items={posts} /> : null}
 
         <AboutSection about={about} team={team} />
@@ -540,12 +571,7 @@ export function LandingPage() {
         ) : null}
       </main>
 
-      <footer className="landing-footer">
-        <div className="row" style={{ gap: 8 }}>
-          <Users size={16} aria-hidden /> {sections?.footer.text ?? ''}
-        </div>
-        <span>© {new Date().getFullYear()} SeñaPlay</span>
-      </footer>
+      <SiteFooter config={sections?.footer} navLinks={navLinks} />
     </>
   );
 }

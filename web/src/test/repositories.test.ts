@@ -5,6 +5,7 @@ import {
   DEFAULT_SECTIONS,
   kindFromMime,
   mergeSections,
+  sectionImagePaths,
   normalizeUrl,
   RepositoryError,
   safeFileName,
@@ -64,6 +65,35 @@ describe('repositorios del portal', () => {
     expect(merged.features.items).toEqual([{ icon: 'sparkles', title: 'Juegos', text: '' }]);
     expect(merged.download).toEqual(DEFAULT_SECTIONS.download);
     expect(mergeSections([])).toEqual(DEFAULT_SECTIONS);
+  });
+
+  test('secciones: carruseles, intervalos y pie de página se sanean al leer la base', () => {
+    const merged = mergeSections([
+      {
+        key: 'hero',
+        value: {
+          signsInterval: 999,
+          signDecks: [
+            [{ label: 'Hola', image_url: 'https://cdn.test/hola.webp', image_path: 'landing/hola.webp' }, { label: 'x', image_url: 'javascript:alert(1)' }],
+            [],
+            'basura',
+          ],
+        },
+      },
+      { key: 'showcase', value: { interval: 'rápido', screens: [{ caption: 'Inicio', image_url: '/capturas/1.png' }, { caption: 'Mala', image_url: 'data:image/png;base64,AA' }] } },
+      { key: 'footer', value: { email: 'hola@senaplay.cl', links: [{ label: 'Universidad', url: 'https://u.cl' }, { label: '', url: 'https://x' }], socials: [{ network: 'x', url: 'https://x.com/s' }] } },
+    ]);
+    expect(merged.hero.signsInterval).toBe(20);
+    expect(merged.hero.signDecks).toHaveLength(3);
+    expect(merged.hero.signDecks[0]).toEqual([{ label: 'Hola', image_url: 'https://cdn.test/hola.webp', image_path: 'landing/hola.webp' }]);
+    expect(merged.hero.signDecks[1]).toEqual(DEFAULT_SECTIONS.hero.signDecks[1]);
+    expect(merged.hero.signDecks[2]).toEqual(DEFAULT_SECTIONS.hero.signDecks[2]);
+    expect(merged.showcase.interval).toBe(DEFAULT_SECTIONS.showcase.interval);
+    expect(merged.showcase.screens).toEqual([{ caption: 'Inicio', image_url: '/capturas/1.png', image_path: null }]);
+    expect(merged.footer.links).toEqual([{ label: 'Universidad', url: 'https://u.cl' }]);
+    expect(merged.footer.socials).toEqual([{ network: 'x', url: 'https://x.com/s', animation: 'pop' }]);
+    expect(merged.footer.text).toBe(DEFAULT_SECTIONS.footer.text);
+    expect(sectionImagePaths(merged.hero)).toEqual(['landing/hola.webp']);
   });
 
   test('publicaciones: solo enlaces web válidos', () => {

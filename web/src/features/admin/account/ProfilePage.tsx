@@ -1,5 +1,5 @@
 import { KeyRound, Save, UserRound } from 'lucide-react';
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
 import { useAuth } from '@/auth/AuthProvider';
 import { useRepositories } from '@/data/RepositoriesProvider';
 import type { ProfileDraft, Role } from '@/data/types';
@@ -34,7 +34,14 @@ function PersonalDataCard({ userId, email }: { userId: string; email: string | n
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
 
   const saved = useMemo<ProfileDraft>(() => ({ full_name: profile.data?.full_name || '', email: email || profile.data?.email || '' }), [profile.data, email]);
-  useEffect(() => setDraft(saved), [saved]);
+  // El borrador se sincroniza durante el render (no en un efecto): con un
+  // efecto, el campo se pintaba vacío un instante y lo que la persona
+  // escribiera ahí se mezclaba con el nombre cargado.
+  const [syncedFrom, setSyncedFrom] = useState<ProfileDraft | null>(null);
+  if (syncedFrom !== saved) {
+    setSyncedFrom(saved);
+    setDraft(saved);
+  }
   const dirty = draft.full_name.trim() !== saved.full_name || draft.email.trim().toLowerCase() !== saved.email.toLowerCase();
 
   if (profile.loading) return <SkeletonRows rows={2} label="Cargando tu perfil" />;

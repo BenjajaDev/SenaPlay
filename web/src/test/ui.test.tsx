@@ -42,7 +42,7 @@ describe('portal web', () => {
     expect(await screen.findByRole('heading', { level: 1, name: /Entrena la Lengua de Señas Chilena/ })).toBeInTheDocument();
     expect(await screen.findByText('150')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Panel/ })).toHaveAttribute('href', '/admin');
-    expect(screen.getByRole('link', { name: 'Nosotros' })).toHaveAttribute('href', '#nosotros');
+    expect(within(screen.getByRole('navigation', { name: 'Principal' })).getByRole('link', { name: 'Nosotros' })).toHaveAttribute('href', '#nosotros');
   });
 
   test('la landing muestra misión, visión y solo el equipo visible', async () => {
@@ -69,7 +69,7 @@ describe('portal web', () => {
     renderAt('/');
     expect(await screen.findByRole('heading', { name: 'Congreso de Lengua de Señas' })).toBeInTheDocument();
     expect(screen.queryByText('Prueba con estudiantes')).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Publicaciones' })).toHaveAttribute('href', '#publicaciones');
+    expect(within(screen.getByRole('navigation', { name: 'Principal' })).getByRole('link', { name: 'Publicaciones' })).toHaveAttribute('href', '#publicaciones');
     await user.click(screen.getByRole('button', { name: 'Leer más sobre Congreso de Lengua de Señas' }));
     const dialog = await screen.findByRole('dialog', { name: 'Congreso de Lengua de Señas' });
     expect(within(dialog).getByText('Compartimos la app y recibimos comentarios.')).toBeInTheDocument();
@@ -275,5 +275,85 @@ describe('portal web', () => {
     const dialog = await screen.findByRole('dialog', { name: '¿Cambiar tu contraseña?' });
     await user.click(within(dialog).getByRole('button', { name: 'Cambiar contraseña' }));
     await waitFor(() => expect(repos.account.changePassword).toHaveBeenCalledWith('admin@senaplay.cl', 'vieja1234', 'nueva1234'));
+  });
+
+  test('el público no ve el acceso al panel', async () => {
+    const repos = fakeRepositories();
+    vi.mocked(repos.users.getRole).mockResolvedValue('user');
+    renderAt('/', repos);
+    expect(await screen.findByRole('heading', { level: 1 })).toBeInTheDocument();
+    await waitFor(() => expect(repos.users.getRole).toHaveBeenCalled());
+    expect(screen.queryByRole('link', { name: /Panel/ })).not.toBeInTheDocument();
+  });
+
+  test('la landing muestra el teléfono con capturas, las señas del hero y el pie editable', async () => {
+    const user = userEvent.setup();
+    const repos = fakeRepositories();
+    vi.mocked(repos.site.getSections).mockResolvedValue({
+      ...structuredClone(DEFAULT_SECTIONS),
+      showcase: {
+        ...DEFAULT_SECTIONS.showcase,
+        screens: [
+          { image_url: '/c1.png', image_path: null, caption: 'Elige un nivel' },
+          { image_url: '/c2.png', image_path: null, caption: 'Practica con la cámara' },
+        ],
+      },
+      footer: {
+        ...DEFAULT_SECTIONS.footer,
+        email: 'hola@senaplay.cl',
+        links: [{ label: 'Universidad', url: 'https://u.cl' }, { label: 'Malo', url: 'javascript:alert(1)' }],
+        socials: [{ network: 'instagram', url: 'https://instagram.com/senaplay', animation: 'wiggle' }],
+      },
+    });
+    renderAt('/', repos);
+    const carousel = await screen.findByRole('region', { name: /Capturas de SeñaPlay/ });
+    expect(within(carousel).getByRole('img', { name: 'Elige un nivel' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Ver captura 2: Practica con la cámara' }));
+    expect(screen.getByRole('button', { name: 'Ver captura 2: Practica con la cámara' })).toHaveAttribute('aria-current', 'true');
+    expect(screen.getByRole('button', { name: 'Pausar el carrusel' })).toBeInTheDocument();
+
+    expect(document.querySelectorAll('.hero__visual .sign-card')).toHaveLength(3);
+    expect(document.querySelector('.hero__visual .sign-card__slide')).toHaveAttribute('src', '/signs/A.webp');
+
+    const footer = screen.getByRole('contentinfo');
+    expect(within(footer).getByRole('link', { name: /hola@senaplay.cl/ })).toHaveAttribute('href', 'mailto:hola@senaplay.cl');
+    expect(within(footer).getByRole('link', { name: /Universidad/ })).toHaveAttribute('href', 'https://u.cl/');
+    expect(within(footer).queryByText('Malo')).not.toBeInTheDocument();
+    expect(within(footer).getByRole('link', { name: /Instagram de SeñaPlay/ })).toHaveClass('social-link--wiggle');
+  });
+
+  test('el panel edita una tarjeta de señas del hero y agrega capturas del teléfono', async () => {
+    const user = userEvent.setup();
+    const repos = renderAt('/admin/site/sections');
+    await user.selectOptions(await screen.findByLabelText('Imagen de la seña 1 de la tarjeta 1'), 'Ñ');
+    expect(screen.getAllByLabelText('Texto bajo la seña *')[0]).toHaveValue('Ñ');
+    await user.click(screen.getByRole('button', { name: 'Guardar y publicar' }));
+    await user.click(await screen.findByRole('button', { name: 'Publicar' }));
+    await waitFor(() => expect(repos.site.saveSection).toHaveBeenCalled());
+    const [key, hero] = vi.mocked(repos.site.saveSection).mock.calls[0] as [string, typeof DEFAULT_SECTIONS.hero];
+    expect(key).toBe('hero');
+    expect(hero.signDecks[0][0]).toEqual({ label: 'Ñ', image_url: '/signs/NN.webp', image_path: null });
+
+    await user.click(screen.getByRole('tab', { name: /La app/ }));
+    const file = new File(['png'], 'inicio.png', { type: 'image/png' });
+    await user.upload(screen.getByLabelText('Agregar captura'), file);
+    expect(await screen.findByRole('img', { name: 'Vista previa de la captura 1' })).toHaveAttribute('src', 'https://cdn.test/landing/inicio.png');
+    expect(repos.site.uploadLandingImage).toHaveBeenCalledWith(file);
+
+    // Descartar borra del bucket la imagen subida que no se publicó.
+    await user.click(screen.getByRole('button', { name: 'Descartar' }));
+    await waitFor(() => expect(repos.site.removeLandingImages).toHaveBeenCalledWith(['landing/inicio.png']));
+  });
+
+  test('el pie de página valida sus enlaces antes de publicar', async () => {
+    const user = userEvent.setup();
+    const repos = renderAt('/admin/site/sections');
+    await user.click(await screen.findByRole('tab', { name: /Pie de página/ }));
+    await user.click(screen.getByRole('button', { name: 'Agregar enlace' }));
+    await user.type(screen.getByLabelText('Texto *'), 'Universidad');
+    await user.type(screen.getByLabelText('Dirección *'), 'javascript:alert(1)');
+    await user.click(screen.getByRole('button', { name: 'Guardar y publicar' }));
+    expect(await screen.findByText(/Usa https/)).toBeInTheDocument();
+    expect(repos.site.saveSection).not.toHaveBeenCalled();
   });
 });

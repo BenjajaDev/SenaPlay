@@ -111,6 +111,8 @@ export function fakeRepositories(overrides: Partial<Repositories> = {}): Reposit
       saveAbout: vi.fn(async () => {}),
       getSections: vi.fn(async () => structuredClone(DEFAULT_SECTIONS)),
       saveSection: vi.fn(async () => {}),
+      uploadLandingImage: vi.fn(async (file: File) => ({ url: `https://cdn.test/landing/${file.name}`, path: `landing/${file.name}` })),
+      removeLandingImages: vi.fn(async () => {}),
       listTeam: vi.fn(async () => team),
       listPublishedTeam: vi.fn(async () => team.filter((member) => member.published)),
       saveTeamMember: vi.fn(async () => {}),

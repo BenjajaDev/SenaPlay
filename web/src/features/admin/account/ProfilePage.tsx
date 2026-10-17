@@ -1,5 +1,5 @@
 import { KeyRound, Save, UserRound } from 'lucide-react';
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useMemo, useState, type SubmitEvent } from 'react';
 import { useAuth } from '@/auth/AuthProvider';
 import { useRepositories } from '@/data/RepositoriesProvider';
 import type { ProfileDraft, Role } from '@/data/types';
@@ -34,7 +34,14 @@ function PersonalDataCard({ userId, email }: { userId: string; email: string | n
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
 
   const saved = useMemo<ProfileDraft>(() => ({ full_name: profile.data?.full_name || '', email: email || profile.data?.email || '' }), [profile.data, email]);
-  useEffect(() => setDraft(saved), [saved]);
+  // El borrador se sincroniza durante el render (no en un efecto): con un
+  // efecto, el campo se pintaba vacío un instante y lo que la persona
+  // escribiera ahí se mezclaba con el nombre cargado.
+  const [syncedFrom, setSyncedFrom] = useState<ProfileDraft | null>(null);
+  if (syncedFrom !== saved) {
+    setSyncedFrom(saved);
+    setDraft(saved);
+  }
   const dirty = draft.full_name.trim() !== saved.full_name || draft.email.trim().toLowerCase() !== saved.email.toLowerCase();
 
   if (profile.loading) return <SkeletonRows rows={2} label="Cargando tu perfil" />;
@@ -42,7 +49,7 @@ function PersonalDataCard({ userId, email }: { userId: string; email: string | n
     return <EmptyState icon={UserRound} title="No se pudo cargar tu perfil" message={profile.error} action={<Button onClick={profile.reload}>Reintentar</Button>} />;
   }
 
-  const submit = async (event: FormEvent) => {
+  const submit = async (event: SubmitEvent) => {
     event.preventDefault();
     const next: typeof errors = {};
     if (!draft.full_name.trim()) next.full_name = 'Escribe tu nombre.';
@@ -134,7 +141,7 @@ function PasswordCard({ email }: { email: string | null }) {
 
   const set = (key: keyof PasswordDraft, value: string) => setDraft((prev) => ({ ...prev, [key]: value }));
 
-  const submit = async (event: FormEvent) => {
+  const submit = async (event: SubmitEvent) => {
     event.preventDefault();
     const next = validatePassword(draft);
     setErrors(next);

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { ExerciseFactory, toUserMessage } from '@/lib/domain';
+import { cleanSocials } from '@/lib/social';
 import type {
   AboutContent,
   AuditEntry,
@@ -14,6 +15,7 @@ import type {
   LandingSections,
   MistakeStat,
   Profile,
+  ProfileDraft,
   Publication,
   PublicStats,
   Role,
@@ -407,14 +409,15 @@ export function createSiteRepository(client: SupabaseClient) {
 
     /** Para el panel: incluye integrantes ocultos (RLS los muestra solo a staff). */
     async listTeam(): Promise<TeamMember[]> {
-      return run(client.from('team_members').select('*').order('sort_order').order('full_name'), 'No se pudo cargar el equipo.');
+      const rows = await run<TeamMember[]>(client.from('team_members').select('*').order('sort_order').order('full_name'), 'No se pudo cargar el equipo.');
+      return (rows || []).map((member) => ({ ...member, socials: cleanSocials(member.socials) }));
     },
 
     /** Para la landing: solo publicados; ante un error, lista vacía. */
     async listPublishedTeam(): Promise<TeamMember[]> {
       try {
         const { data, error } = await client.from('team_members').select('*').eq('published', true).order('sort_order').order('full_name');
-        return error || !data ? [] : (data as TeamMember[]);
+        return error || !data ? [] : (data as TeamMember[]).map((member) => ({ ...member, socials: cleanSocials(member.socials) }));
       } catch {
         return [];
       }
@@ -435,6 +438,7 @@ export function createSiteRepository(client: SupabaseClient) {
         published: member.published,
         photo_url: uploaded ? uploaded.url : member.photo_url,
         photo_path: uploaded ? uploaded.path : member.photo_path,
+        socials: cleanSocials(member.socials),
       };
       try {
         const query = member.id ? client.from('team_members').update(row).eq('id', member.id) : client.from('team_members').insert(row);
@@ -558,6 +562,45 @@ export function createUsersRepository(client: SupabaseClient) {
   };
 }
 
+// ── Cuenta propia (Panel → Mi perfil) ────────────────────────────────
+export function createAccountRepository(client: SupabaseClient) {
+  return {
+    async getProfile(id: string): Promise<Profile | null> {
+      const { data, error } = await client.from('profiles').select('id, email, full_name, role, created_at').eq('id', id).maybeSingle();
+      if (error) throw new RepositoryError(toUserMessage(error, 'No se pudo cargar tu perfil.'));
+      return (data as Profile) || null;
+    },
+
+    /**
+     * Nombre en `profiles` (lo que ve el panel) y en user_metadata (lo que
+     * usa la app móvil). El correo nuevo no se aplica hasta que la persona
+     * confirma el enlace que Supabase envía; la migración de perfil
+     * sincroniza profiles.email cuando eso ocurre.
+     */
+    async updateProfile(id: string, draft: ProfileDraft, currentEmail: string | null): Promise<{ emailPending: boolean }> {
+      const fullName = draft.full_name.trim();
+      await run(client.from('profiles').update({ full_name: fullName || null }).eq('id', id), 'No se pudo guardar tu perfil.');
+      const email = draft.email.trim().toLowerCase();
+      const emailChanged = Boolean(email) && email !== (currentEmail || '').toLowerCase();
+      const { error } = await client.auth.updateUser({ data: { full_name: fullName }, ...(emailChanged ? { email } : {}) });
+      if (error) throw new RepositoryError(toUserMessage(error, 'No se pudo actualizar tu cuenta.'));
+      return { emailPending: emailChanged };
+    },
+
+    /**
+     * Se valida la contraseña actual volviendo a iniciar sesión: evita que
+     * alguien con el panel abierto en un equipo ajeno la cambie, y deja la
+     * sesión «reciente» que Supabase exige para cambiar la contraseña.
+     */
+    async changePassword(email: string, current: string, next: string) {
+      const check = await client.auth.signInWithPassword({ email, password: current });
+      if (check.error) throw new RepositoryError('La contraseña actual no es correcta.');
+      const { error } = await client.auth.updateUser({ password: next });
+      if (error) throw new RepositoryError(toUserMessage(error, 'No se pudo cambiar la contraseña.'));
+    },
+  };
+}
+
 export function createStatsRepository(client: SupabaseClient) {
   return {
     async publicStats(): Promise<PublicStats | null> {
@@ -581,6 +624,7 @@ export type Repositories = {
   media: ReturnType<typeof createMediaRepository>;
   config: ReturnType<typeof createConfigRepository>;
   users: ReturnType<typeof createUsersRepository>;
+  account: ReturnType<typeof createAccountRepository>;
   stats: ReturnType<typeof createStatsRepository>;
   site: ReturnType<typeof createSiteRepository>;
   publications: ReturnType<typeof createPublicationsRepository>;
@@ -592,6 +636,7 @@ export function createRepositories(client: SupabaseClient): Repositories {
     media: createMediaRepository(client),
     config: createConfigRepository(client),
     users: createUsersRepository(client),
+    account: createAccountRepository(client),
     stats: createStatsRepository(client),
     site: createSiteRepository(client),
     publications: createPublicationsRepository(client),

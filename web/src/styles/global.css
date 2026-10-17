@@ -142,6 +142,9 @@ img {
 .btn--secondary { --btn-bg: var(--color-surface-raised); --btn-fg: var(--color-primary); --btn-border: var(--color-primary); }
 .btn--ghost { --btn-bg: transparent; --btn-fg: var(--color-primary); }
 .btn--ghost:hover:not(:disabled) { --btn-bg: var(--color-primary-soft); box-shadow: none; }
+/* Fantasma destructivo (papelera): rojo legible también en hover y en modo oscuro. */
+.btn--ghost-danger { --btn-fg: var(--color-danger-text); }
+.btn--ghost-danger:hover:not(:disabled) { --btn-bg: var(--color-danger-soft); }
 .btn--danger { --btn-bg: var(--color-danger); --btn-fg: var(--color-on-danger); }
 .btn--success { --btn-bg: var(--color-success); --btn-fg: var(--color-on-success); }
 .btn--sm { min-height: 34px; padding: 6px 12px; font-size: 13px; }

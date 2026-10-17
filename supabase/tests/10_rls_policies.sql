@@ -22,6 +22,10 @@ select 'user lee flags: ' || count(*) from public.feature_flags;
 do $$ begin update public.site_content set value='{"title":"x"}' where key='about'; if found then raise notice 'FALLA: user editó site_content'; else raise notice 'OK user no edita site_content'; end if; end $$;
 do $$ begin insert into public.team_members (full_name) values ('Intrusa'); raise notice 'FALLA'; exception when insufficient_privilege then raise notice 'OK user no agrega integrantes'; end $$;
 do $$ begin insert into public.publications (title) values ('Spam'); raise notice 'FALLA'; exception when insufficient_privilege then raise notice 'OK user no publica'; end $$;
+update public.profiles set full_name = 'Usuaria Editada' where id = auth.uid();
+select 'user edita su nombre: ' || (select full_name from public.profiles where id = auth.uid());
+do $$ begin update public.profiles set full_name = 'Hack' where email = 'admin@x.cl'; if found then raise notice 'FALLA: user editó perfil ajeno'; else raise notice 'OK user no edita perfiles ajenos'; end if; end $$;
+do $$ begin update public.team_members set socials = '[{"network":"github","url":"https://x"}]'; if found then raise notice 'FALLA: user editó redes'; else raise notice 'OK user no edita redes del equipo'; end if; end $$;
 insert into public.exercise_mistakes (level_id, exercise_key, exercise_type, sign, given_answer, game_over) values (1, 'multiple-choice:b', 'multiple-choice', 'b', 'D', true), (1, 'multiple-choice:b', 'multiple-choice', 'b', 'D', false);
 select 'user registra y ve sus errores: ' || count(*) from public.exercise_mistakes;
 do $$ begin insert into public.exercise_mistakes (user_id, level_id, exercise_key, exercise_type) values ('00000000-0000-0000-0000-000000000002', 1, 'x', 'typing'); raise notice 'FALLA: user registró errores ajenos'; exception when insufficient_privilege then raise notice 'OK user no registra errores ajenos'; end $$;
@@ -41,6 +45,9 @@ select 'editor edita misión: ' || (select value ->> 'mission' from public.site_
 insert into public.team_members (full_name, role, published) values ('Ana', 'Diseño', true), ('Oculto', 'Dev', false);
 insert into storage.objects (bucket_id, name) values ('media', 'team/ana.jpg');
 select 'editor ve integrantes (incluye ocultos): ' || count(*) from public.team_members;
+update public.team_members set socials = '[{"network":"linkedin","url":"https://linkedin.com/in/ana","animation":"bounce"}]' where full_name = 'Ana';
+select 'editor guarda redes: ' || (select socials -> 0 ->> 'network' from public.team_members where full_name = 'Ana');
+do $$ begin update public.team_members set socials = '{"network":"x"}' where full_name = 'Ana'; raise notice 'FALLA redes no-lista'; exception when check_violation then raise notice 'OK redes deben ser una lista'; end $$;
 select 'editor mistake_stats: ' || string_agg(exercise_key || ' errores=' || mistakes || ' personas=' || people || ' sin_vidas=' || game_overs || ' resp=' || top_answer, '; ') from public.mistake_stats();
 insert into public.publications (title, summary, category, event_date, published) values
   ('Congreso LSCh', 'Presentamos SeñaPlay', 'congreso', '2026-09-01', true),
@@ -70,8 +77,12 @@ select 'anon ve media publicada: ' || count(*) from public.media;
 select 'anon lee config: ' || count(*) from public.app_config;
 select 'anon lee misión: ' || (select value ->> 'mission' from public.site_content where key = 'about');
 select 'anon ve integrantes publicados: ' || count(*) from public.team_members;
+select 'anon ve redes publicadas: ' || coalesce(sum(jsonb_array_length(socials)), 0) from public.team_members;
 select 'anon ve publicaciones publicadas: ' || count(*) from public.publications;
 select 'anon ve errores: ' || count(*) from public.exercise_mistakes;
 do $$ begin update public.publications set published = true; if found then raise notice 'FALLA: anon editó publicaciones'; else raise notice 'OK anon no edita publicaciones'; end if; end $$;
 select 'anon lee auditoria: ' || count(*) from public.config_audit;
 select 'anon stats: ' || public.public_stats()::text;
+reset role;
+update auth.users set email = 'nueva@x.cl' where id = '00000000-0000-0000-0000-000000000001';
+select 'correo confirmado se copia a profiles: ' || (select email from public.profiles where id = '00000000-0000-0000-0000-000000000001');

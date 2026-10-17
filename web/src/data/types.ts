@@ -89,6 +89,9 @@ export type Role = 'user' | 'editor' | 'admin';
 
 export type Profile = { id: string; email: string | null; full_name: string | null; role: Role; created_at: string };
 
+/** Datos personales que cada persona del panel edita en «Mi perfil». */
+export type ProfileDraft = { full_name: string; email: string };
+
 /** Textos de la sección «Nosotros» (site_content, clave `about`). */
 export type AboutContent = {
   title: string;
@@ -96,6 +99,14 @@ export type AboutContent = {
   mission: string;
   vision: string;
 };
+
+/** Íconos de redes que el panel ofrece para cada integrante (ver lib/social.tsx). */
+export type SocialNetworkKey = 'github' | 'linkedin' | 'instagram' | 'facebook' | 'x' | 'youtube' | 'tiktok' | 'website' | 'email';
+
+/** Animación del ícono al pasar el mouse o enfocarlo en la landing. */
+export type SocialAnimationKey = 'pop' | 'bounce' | 'wiggle' | 'spin' | 'pulse' | 'float';
+
+export type SocialLink = { network: SocialNetworkKey; url: string; animation: SocialAnimationKey };
 
 export type TeamMember = {
   id?: string;
@@ -106,6 +117,8 @@ export type TeamMember = {
   photo_path: string | null;
   sort_order: number;
   published: boolean;
+  /** Redes sociales (columna jsonb `socials`); vacío si no tiene. */
+  socials?: SocialLink[];
 };
 
 // ── Secciones de la landing (site_content, una clave por sección) ──────

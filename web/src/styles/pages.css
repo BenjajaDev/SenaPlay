@@ -52,6 +52,7 @@
 .hero p { font-size: 18px; opacity: 0.94; }
 .hero__cta { --btn-bg: #ffffff; --btn-fg: #6e1789; }
 .hero__ghost { --btn-fg: var(--color-on-header); border-color: color-mix(in srgb, white 45%, transparent); }
+.hero__ghost:hover:not(:disabled) { --btn-bg: color-mix(in srgb, white 16%, transparent); border-color: var(--color-on-header); }
 .hero__visual { position: relative; height: 340px; }
 .sign-card {
   position: absolute;
@@ -180,20 +181,123 @@
 .pillar { display: grid; gap: var(--space-2); align-content: start; }
 .pillar h3 { font-size: 18px; }
 .about__team-title { font-size: 22px; text-align: center; margin: var(--space-12) 0 var(--space-6); }
-.team-grid { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
-.team-card { display: grid; gap: var(--space-3); justify-items: center; text-align: center; align-content: start; }
-.team-card h3 { font-size: 17px; }
-.team-card__role { color: var(--color-primary); font-weight: 600; font-size: 14px; }
+/* Columnas de ancho fijo y centradas: la tarjeta expandida se superpone a
+   sus vecinas (z-index) sin cambiar el tamaño de la pista, así nada salta. */
+.team-grid {
+  --team-card-width: 300px;
+  --team-card-expanded: 640px; /* = TEAM_CARD_EXPANDED en LandingPage.tsx */
+  display: grid;
+  gap: var(--space-6);
+  grid-template-columns: repeat(auto-fit, var(--team-card-width));
+  justify-content: center;
+}
+.team-card {
+  position: relative;
+  z-index: 0;
+  display: flex;
+  width: var(--team-card-width);
+  padding: 0;
+  overflow: hidden;
+  animation: rise-in 420ms var(--ease-enter) backwards;
+  transition: width 420ms var(--ease-enter), margin-left 420ms var(--ease-enter), box-shadow var(--duration-base), border-color var(--duration-base);
+}
+.team-card[data-side='left'] { flex-direction: row-reverse; }
+.team-card:focus-visible { outline-offset: 4px; }
+.team-card__face {
+  flex: 0 0 calc(var(--team-card-width) - 2px); /* menos el borde */
+  display: grid;
+  gap: var(--space-3);
+  justify-items: center;
+  align-content: start;
+  text-align: center;
+  padding: var(--space-8) var(--space-5) var(--space-6);
+}
+.team-card h3 { font-size: 19px; }
+.team-card__role { color: var(--color-primary); font-weight: 600; font-size: 15px; }
 .team-card__photo {
-  width: 112px;
-  height: 112px;
+  width: 144px;
+  height: 144px;
   border-radius: var(--radius-xxl);
   object-fit: cover;
   box-shadow: var(--shadow-md);
   transition: transform var(--duration-base) var(--ease-pop), border-radius var(--duration-base);
 }
 .team-card:hover .team-card__photo { transform: scale(1.06); border-radius: 50%; }
-.team-card__initials { display: grid; place-items: center; background: var(--gradient-brand); color: var(--color-primary-contrast); font-size: 34px; font-weight: 800; }
+.team-card__initials { display: grid; place-items: center; background: var(--gradient-brand); color: var(--color-primary-contrast); font-size: 40px; font-weight: 800; }
+.team-card__hint {
+  padding: 2px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-weight: 600;
+  transition: opacity var(--duration-base);
+}
+.team-card__details {
+  flex: 0 0 calc(var(--team-card-expanded) - var(--team-card-width));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-6);
+  border-left: 1px solid var(--color-border);
+  background: var(--color-background-soft);
+  opacity: 0;
+  transition: opacity var(--duration-base);
+}
+.team-card[data-side='left'] .team-card__details { border-left: 0; border-right: 1px solid var(--color-border); }
+.team-card__details-title { font-weight: 800; font-size: 16px; }
+.team-card__bio { font-size: 15px; display: -webkit-box; -webkit-line-clamp: 7; -webkit-box-orient: vertical; overflow: hidden; }
+.team-card__socials { list-style: none; display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; padding: 0; }
+/* Expansión: mouse, foco por teclado en la tarjeta o en una de sus redes. */
+.team-card[data-expandable]:is(:hover, :focus-visible, :has(:focus-visible)) {
+  z-index: 3;
+  width: var(--team-card-expanded);
+  box-shadow: var(--shadow-lg);
+  border-color: color-mix(in srgb, var(--color-primary) 35%, var(--color-border));
+}
+.team-card[data-expandable][data-side='left']:is(:hover, :focus-visible, :has(:focus-visible)) { margin-left: calc(var(--team-card-width) - var(--team-card-expanded)); }
+.team-card[data-expandable]:is(:hover, :focus-visible, :has(:focus-visible)) .team-card__details { opacity: 1; transition-delay: 120ms; }
+.team-card[data-expandable]:is(:hover, :focus-visible, :has(:focus-visible)) .team-card__hint { opacity: 0; }
+/* Táctil o pantalla angosta: sin hover real, los detalles van siempre debajo. */
+@media (hover: none), (max-width: 720px) {
+  .team-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
+  .team-card,
+  .team-card[data-side='left'] { flex-direction: column; width: auto; }
+  .team-card[data-expandable]:is(:hover, :focus-visible, :has(:focus-visible)) { width: auto; margin-left: 0; }
+  .team-card__face,
+  .team-card__details { flex-basis: auto; }
+  .team-card__details,
+  .team-card[data-side='left'] .team-card__details { opacity: 1; border: 0; border-top: 1px solid var(--color-border); }
+  .team-card__hint { display: none; }
+}
+
+/* ── Redes sociales (landing y vista previa del panel) ───────────── */
+.social-link {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  text-decoration: none;
+  flex-shrink: 0;
+  transition: background var(--duration-fast), color var(--duration-fast), box-shadow var(--duration-fast);
+}
+.social-link:is(:hover, :focus-visible) { background: var(--gradient-brand); color: var(--color-primary-contrast); box-shadow: var(--shadow-sm); }
+.social-link--pop:is(:hover, :focus-visible, .social-link--play) svg { animation: social-pop 420ms var(--ease-pop); }
+.social-link--bounce:is(:hover, :focus-visible, .social-link--play) svg { animation: social-bounce 700ms var(--ease-enter); }
+.social-link--wiggle:is(:hover, :focus-visible, .social-link--play) svg { animation: social-wiggle 600ms ease-in-out; }
+.social-link--spin:is(:hover, :focus-visible, .social-link--play) svg { animation: social-spin 600ms var(--ease-enter); }
+.social-link--pulse:is(:hover, :focus-visible, .social-link--play) svg { animation: social-pulse 800ms ease-in-out; }
+.social-link--float:is(:hover, :focus-visible, .social-link--play) svg { animation: social-float 1.4s ease-in-out infinite; }
+.social-link--float.social-link--play:not(:hover) svg { animation-iteration-count: 1; }
+@keyframes social-pop { 50% { transform: scale(1.3); } }
+@keyframes social-bounce { 30% { transform: translateY(-7px); } 55% { transform: translateY(0); } 75% { transform: translateY(-3px); } }
+@keyframes social-wiggle { 20% { transform: rotate(-14deg); } 45% { transform: rotate(12deg); } 70% { transform: rotate(-8deg); } 90% { transform: rotate(3deg); } }
+@keyframes social-spin { to { transform: rotate(360deg); } }
+@keyframes social-pulse { 25% { transform: scale(1.18); } 50% { transform: scale(1); } 75% { transform: scale(1.12); } }
+@keyframes social-float { 50% { transform: translateY(-5px); } }
 @media (max-width: 860px) {
   .about { grid-template-columns: 1fr; }
 }
@@ -306,7 +410,52 @@
 .dropzone[data-active='true'] > svg { transform: translateY(-4px) scale(1.1); }
 
 /* ── Equipo (panel: Sitio web → Nosotros) ────────────────────────── */
-.team-admin-photo { width: 56px; height: 56px; border-radius: var(--radius-lg); object-fit: cover; background: var(--color-surface-sunken); flex-shrink: 0; }
+.team-admin-photo { width: 64px; height: 64px; border-radius: var(--radius-lg); object-fit: cover; background: var(--color-surface-sunken); flex-shrink: 0; }
+/* Sin foto: el fondo neutro de .team-admin-photo dejaba la inicial blanca ilegible. */
+.team-admin-photo.team-card__initials { background: var(--gradient-brand); color: var(--color-primary-contrast); }
+/* Cabecera (foto + nombre + estado), cuerpo y pie con acciones separados:
+   los botones nunca compiten por espacio con el nombre ni el estado. */
+.team-admin-card { display: flex; flex-direction: column; gap: var(--space-3); }
+.team-admin-card__header { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
+.team-admin-card__header > .badge { flex-shrink: 0; align-self: flex-start; }
+.team-admin-card__info { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.team-admin-card__info > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.team-admin-card__bio { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.team-admin-card__socials { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; }
+.team-admin-card__socials li { width: 30px; height: 30px; display: grid; place-items: center; border-radius: var(--radius-sm); background: var(--color-primary-soft); color: var(--color-primary); }
+.team-admin-card__footer {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+.team-admin-card__actions { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+/* Formulario: una tarjeta por red con ícono, enlace y animación. */
+.social-row { display: grid; gap: var(--space-3); padding: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); }
+.social-row__head { display: flex; align-items: center; gap: var(--space-3); }
+.social-row__title { flex: 1; min-width: 0; }
+.icon-picker { display: flex; flex-wrap: wrap; gap: 6px; border: 0; margin: 0; padding: 0; min-width: 0; }
+.icon-picker legend { padding: 0; margin-bottom: 6px; }
+.icon-picker__option { position: relative; cursor: pointer; }
+.icon-picker__option input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.icon-picker__swatch {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface-raised);
+  color: var(--color-text-secondary);
+  transition: border-color var(--duration-fast), background var(--duration-fast), color var(--duration-fast);
+}
+.icon-picker__option:hover .icon-picker__swatch { border-color: var(--color-primary); color: var(--color-primary); }
+.icon-picker__option input:checked + .icon-picker__swatch { background: var(--gradient-brand); border-color: transparent; color: var(--color-primary-contrast); }
+.icon-picker__option input:focus-visible + .icon-picker__swatch { outline: 3px solid var(--color-focus-ring); outline-offset: 2px; }
 .photo-picker { display: flex; align-items: center; gap: var(--space-4); }
 .photo-picker__preview { width: 96px; height: 96px; border-radius: var(--radius-xl); object-fit: cover; background: var(--color-surface-sunken); display: grid; place-items: center; color: var(--color-text-muted); flex-shrink: 0; }
 .chip-input { display: flex; flex-wrap: wrap; gap: 6px; }

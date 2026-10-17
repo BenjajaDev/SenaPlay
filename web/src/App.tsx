@@ -23,6 +23,7 @@ const AuditPage = lazy(() => import('@/features/admin/config/AuditPage').then((m
 const AboutPage = lazy(() => import('@/features/admin/site/AboutPage').then((m) => ({ default: m.AboutPage })));
 const SectionsPage = lazy(() => import('@/features/admin/site/SectionsPage').then((m) => ({ default: m.SectionsPage })));
 const PublicationsPage = lazy(() => import('@/features/admin/site/PublicationsPage').then((m) => ({ default: m.PublicationsPage })));
+const ProfilePage = lazy(() => import('@/features/admin/account/ProfilePage').then((m) => ({ default: m.ProfilePage })));
 const UsersPage = lazy(() => import('@/features/admin/users/UsersPage').then((m) => ({ default: m.UsersPage })));
 
 const fallback = (
@@ -46,6 +47,7 @@ export function AppRoutes() {
           }
         >
           <Route index element={<DashboardPage />} />
+          <Route path="profile" element={<ProfilePage />} />
           <Route path="levels" element={<LevelsPage />} />
           <Route path="levels/new" element={<LevelEditorPage />} />
           <Route path="levels/:id" element={<LevelEditorPage />} />

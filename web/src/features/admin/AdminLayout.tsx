@@ -15,6 +15,7 @@ import {
   Settings2,
   Sun,
   Type,
+  UserRound,
   Users,
   X,
   type LucideIcon,
@@ -29,7 +30,13 @@ import { Badge, Button, useFeedback } from '@/ui';
 type NavItem = { to: string; label: string; icon: LucideIcon; adminOnly?: boolean; end?: boolean };
 
 const SECTIONS: { label: string; items: NavItem[] }[] = [
-  { label: 'General', items: [{ to: '/admin', label: 'Resumen', icon: LayoutDashboard, end: true }] },
+  {
+    label: 'General',
+    items: [
+      { to: '/admin', label: 'Resumen', icon: LayoutDashboard, end: true },
+      { to: '/admin/profile', label: 'Mi perfil', icon: UserRound },
+    ],
+  },
   {
     label: 'Contenido',
     items: [

@@ -6,6 +6,7 @@ import { useRepositories } from '@/data/RepositoriesProvider';
 import type { AboutContent, LandingSections, Publication, PublicationCategory, PublicStats, SectionItem, TeamMember } from '@/data/types';
 import { brandIcon } from '@/lib/brand';
 import { env } from '@/lib/env';
+import { keyed } from '@/lib/listKeys';
 import { formatCount, formatEventDate, PUBLICATION_CATEGORIES, SITE_ICONS, STAT_ITEMS } from '@/lib/site';
 import { SOCIAL_NETWORKS, SocialIcon, socialHref } from '@/lib/social';
 import { useThemeMode } from '@/lib/useThemeMode';
@@ -52,11 +53,11 @@ function TeamSocials({ member }: { member: TeamMember }) {
   if (!links.length) return null;
   return (
     <ul className="team-card__socials" aria-label={`Redes de ${member.full_name}`}>
-      {links.map((link, index) => {
+      {keyed(links, (link) => `${link.network}:${link.href}`).map(({ item: link, key }) => {
         const network = SOCIAL_NETWORKS[link.network];
         const external = link.network !== 'email';
         return (
-          <li key={`${link.network}-${index}`}>
+          <li key={key}>
             <a
               className={`social-link social-link--${link.animation}`}
               href={link.href as string}
@@ -126,7 +127,7 @@ function TeamCard({ member }: { member: TeamMember }) {
  * sin salto de línea: así, al expandirse una tarjeta, solo cambia el reparto
  * del espacio dentro de su fila y ninguna tarjeta se va a otra línea.
  */
-function TeamRows({ team }: { team: TeamMember[] }) {
+function TeamRows({ team }: Readonly<{ team: TeamMember[] }>) {
   const ref = useRef<HTMLDivElement>(null);
   const [perRow, setPerRow] = useState(3);
 
@@ -146,8 +147,8 @@ function TeamRows({ team }: { team: TeamMember[] }) {
 
   return (
     <div ref={ref} className="team-rows">
-      {rows.map((row, index) => (
-        <div key={index} className="team-row">
+      {rows.map((row) => (
+        <div key={row[0].id ?? row[0].full_name} className="team-row">
           {row.map((member) => (
             <TeamCard key={member.id} member={member} />
           ))}

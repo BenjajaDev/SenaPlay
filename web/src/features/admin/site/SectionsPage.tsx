@@ -330,13 +330,9 @@ function SectionForm({
                 <h3 style={{ fontSize: 16 }}>{label}</h3>
                 {hint ? <span className="text-small text-secondary">{hint}</span> : null}
               </div>
-              {kind === 'signDecks' ? (
-                <SignDecksEditor decks={draft[field] as SignSlide[][]} errors={errors} onChange={(value) => set(field, value)} />
-              ) : kind === 'screens' ? (
-                <ScreensEditor screens={draft[field] as PhoneScreen[]} onChange={(value) => set(field, value)} />
-              ) : (
-                <LinksEditor links={draft[field] as FooterLink[]} errors={errors} onChange={(value) => set(field, value)} />
-              )}
+              {kind === 'signDecks' ? <SignDecksEditor decks={draft[field] as SignSlide[][]} errors={errors} onChange={(value) => set(field, value)} /> : null}
+              {kind === 'screens' ? <ScreensEditor screens={draft[field] as PhoneScreen[]} onChange={(value) => set(field, value)} /> : null}
+              {kind === 'links' ? <LinksEditor links={draft[field] as FooterLink[]} errors={errors} onChange={(value) => set(field, value)} /> : null}
             </div>
           );
         }

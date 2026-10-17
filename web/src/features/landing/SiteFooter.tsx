@@ -2,6 +2,7 @@ import { ExternalLink, Mail, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { LandingSections } from '@/data/types';
 import { brandIcon } from '@/lib/brand';
+import { keyed } from '@/lib/listKeys';
 import { SOCIAL_NETWORKS, SocialIcon, safeLinkHref, socialHref } from '@/lib/social';
 
 type NavLink = { href: string; label: string };
@@ -11,7 +12,7 @@ type NavLink = { href: string; label: string };
  * y frase, redes, navegación por secciones, enlaces propios y contacto. Las
  * columnas sin contenido no se muestran.
  */
-export function SiteFooter({ config, navLinks }: { config: LandingSections['footer'] | undefined; navLinks: NavLink[] }) {
+export function SiteFooter({ config, navLinks }: Readonly<{ config: LandingSections['footer'] | undefined; navLinks: NavLink[] }>) {
   const year = new Date().getFullYear();
   const socials = (config?.socials || []).map((link) => ({ ...link, href: socialHref(link) })).filter((link) => link.href);
   const links = (config?.links || []).map((link) => ({ ...link, href: safeLinkHref(link.url) })).filter((link) => link.href);
@@ -29,10 +30,10 @@ export function SiteFooter({ config, navLinks }: { config: LandingSections['foot
           {config?.text ? <p className="site-footer__tagline">{config.text}</p> : null}
           {socials.length ? (
             <ul className="site-footer__socials" aria-label="Redes de SeñaPlay">
-              {socials.map((link, index) => {
+              {keyed(socials, (link) => `${link.network}:${link.href}`).map(({ item: link, key }) => {
                 const external = link.network !== 'email';
                 return (
-                  <li key={`${link.network}-${index}`}>
+                  <li key={key}>
                     <a
                       className={`social-link social-link--${link.animation}`}
                       href={link.href as string}
@@ -67,10 +68,10 @@ export function SiteFooter({ config, navLinks }: { config: LandingSections['foot
           <nav className="site-footer__column" aria-label="Enlaces">
             <h2 className="site-footer__heading">Enlaces</h2>
             <ul>
-              {links.map((link, index) => {
+              {keyed(links, (link) => `${link.label}:${link.url}`).map(({ item: link, key }) => {
                 const external = /^https?:/i.test(link.href as string);
                 return (
-                  <li key={`${link.url}-${index}`}>
+                  <li key={key}>
                     <a href={link.href as string} target={external ? '_blank' : undefined} rel={external ? 'noopener noreferrer' : undefined}>
                       {link.label}
                       {external ? <ExternalLink size={13} aria-label="(se abre en otra pestaña)" /> : null}

@@ -3,6 +3,7 @@ import { useRef } from 'react';
 import { useRepositories } from '@/data/RepositoriesProvider';
 import { LANDING_LIMITS, MAX_PHOTO_BYTES } from '@/data/repositories';
 import type { FooterLink, PhoneScreen, SignSlide } from '@/data/types';
+import { useListKeys } from '@/lib/listKeys';
 import { builtinLetter, builtinSignSlide, SIGN_LETTERS, signImageUrl } from '@/lib/signs';
 import { Button, Card, SelectField, TextField, useFeedback } from '@/ui';
 
@@ -20,12 +21,12 @@ function ImageUploadButton({
   disabled,
   onUploaded,
   ariaLabel,
-}: {
+}: Readonly<{
   label: string;
   disabled?: boolean;
   onUploaded: (image: { url: string; path: string }) => void;
   ariaLabel?: string;
-}) {
+}>) {
   const { site } = useRepositories();
   const { runBlocking, notify } = useFeedback();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -68,7 +69,14 @@ function ImageUploadButton({
 }
 
 /** Botones de orden y borrado de un elemento de lista. */
-function RowActions({ name, index, total, onMove, onRemove, canRemove = true }: { name: string; index: number; total: number; onMove: (delta: number) => void; onRemove: () => void; canRemove?: boolean }) {
+function RowActions({
+  name,
+  index,
+  total,
+  onMove,
+  onRemove,
+  canRemove = true,
+}: Readonly<{ name: string; index: number; total: number; onMove: (delta: number) => void; onRemove: () => void; canRemove?: boolean }>) {
   return (
     <div className="row" style={{ gap: 2 }}>
       <Button variant="ghost" size="sm" icon={ArrowUp} aria-label={`Subir ${name}`} disabled={index === 0} onClick={() => onMove(-1)} />
@@ -80,96 +88,128 @@ function RowActions({ name, index, total, onMove, onRemove, canRemove = true }: 
 
 const LETTER_OPTIONS = SIGN_LETTERS.map((letter) => ({ value: letter, label: `Letra ${letter} (abecedario)` }));
 
+/** Una tarjeta de señas del hero: su lista de señas con orden, imagen y texto. */
+function DeckEditor({
+  slides,
+  deckNumber,
+  errors,
+  onChange,
+}: Readonly<{ slides: SignSlide[]; deckNumber: number; errors: Errors; onChange: (slides: SignSlide[]) => void }>) {
+  const rows = useListKeys(slides.length);
+  const update = (slideIndex: number, patch: Partial<SignSlide>) => onChange(slides.map((slide, i) => (i === slideIndex ? { ...slide, ...patch } : slide)));
+  // Propone la primera letra que la tarjeta aún no usa.
+  const nextLetter = SIGN_LETTERS.find((letter) => !slides.some((slide) => slide.image_url === signImageUrl(letter))) || 'A';
+  const full = slides.length >= LANDING_LIMITS.slidesPerDeck;
+
+  return (
+    <Card className="item-editor stack-sm">
+      <strong>Tarjeta {deckNumber}</strong>
+      <span className="text-small text-secondary">{slides.length === 1 ? '1 seña (no rota)' : `${slides.length} señas en rotación`}</span>
+      {slides.map((slide, slideIndex) => {
+        const letter = builtinLetter(slide.image_url);
+        const name = `seña ${slideIndex + 1} de la tarjeta ${deckNumber}`;
+        const sourceOptions = letter ? LETTER_OPTIONS : [{ value: 'custom', label: 'Imagen subida' }, ...LETTER_OPTIONS];
+        return (
+          <div key={rows.keys[slideIndex]} className="slide-editor">
+            <div className="row-between">
+              <span className="text-small" style={{ fontWeight: 700 }}>
+                Seña {slideIndex + 1}
+              </span>
+              <RowActions
+                name={name}
+                index={slideIndex}
+                total={slides.length}
+                canRemove={slides.length > 1}
+                onMove={(delta) => {
+                  rows.move(slideIndex, delta);
+                  onChange(moveItem(slides, slideIndex, delta));
+                }}
+                onRemove={() => {
+                  rows.remove(slideIndex);
+                  onChange(slides.filter((_, i) => i !== slideIndex));
+                }}
+              />
+            </div>
+            <div className="slide-editor__body">
+              <img className="slide-editor__thumb" src={slide.image_url} alt="" />
+              <div className="stack-sm" style={{ flex: 1, minWidth: 0 }}>
+                <SelectField
+                  label="Imagen"
+                  aria-label={`Imagen de la ${name}`}
+                  options={sourceOptions}
+                  value={letter || 'custom'}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    if (value === 'custom') return;
+                    // Si la etiqueta era la letra anterior (o estaba vacía), se actualiza junto con la imagen.
+                    const label = !slide.label.trim() || slide.label === letter ? value : slide.label;
+                    update(slideIndex, { ...builtinSignSlide(value), label });
+                  }}
+                />
+                <TextField
+                  label="Texto bajo la seña *"
+                  value={slide.label}
+                  error={errors[`signDecks.${deckNumber - 1}.${slideIndex}`]}
+                  onChange={(event) => update(slideIndex, { label: event.target.value })}
+                />
+                <div>
+                  <ImageUploadButton
+                    label="Subir imagen propia"
+                    ariaLabel={`Subir imagen propia para la ${name}`}
+                    onUploaded={({ url, path }) => update(slideIndex, { image_url: url, image_path: path })}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+      <div>
+        <Button
+          variant="secondary"
+          size="sm"
+          icon={Plus}
+          disabled={full}
+          onClick={() => {
+            rows.add();
+            onChange([...slides, builtinSignSlide(nextLetter)]);
+          }}
+        >
+          {full ? `Máximo ${LANDING_LIMITS.slidesPerDeck} señas` : 'Agregar seña'}
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
+// Las tres tarjetas del hero son fijas: cada una tiene su clave propia.
+const DECK_IDS = ['tarjeta-1', 'tarjeta-2', 'tarjeta-3'];
+
 /**
  * Las tres tarjetas de señas del hero. Cada tarjeta es un carrusel: sus
  * señas pueden ser letras del abecedario incluido o imágenes propias.
  */
-export function SignDecksEditor({ decks, errors, onChange }: { decks: SignSlide[][]; errors: Errors; onChange: (decks: SignSlide[][]) => void }) {
-  const updateDeck = (deckIndex: number, slides: SignSlide[]) => onChange(decks.map((deck, i) => (i === deckIndex ? slides : deck)));
-
+export function SignDecksEditor({ decks, errors, onChange }: Readonly<{ decks: SignSlide[][]; errors: Errors; onChange: (decks: SignSlide[][]) => void }>) {
   return (
     <div className="deck-grid">
-      {decks.map((slides, deckIndex) => {
-        const update = (slideIndex: number, patch: Partial<SignSlide>) => updateDeck(deckIndex, slides.map((slide, i) => (i === slideIndex ? { ...slide, ...patch } : slide)));
-        // Propone la primera letra que la tarjeta aún no usa.
-        const nextLetter = SIGN_LETTERS.find((letter) => !slides.some((slide) => slide.image_url === signImageUrl(letter))) || 'A';
-        return (
-          <Card key={deckIndex} className="item-editor stack-sm">
-            <strong>Tarjeta {deckIndex + 1}</strong>
-            <span className="text-small text-secondary">{slides.length === 1 ? '1 seña (no rota)' : `${slides.length} señas en rotación`}</span>
-            {slides.map((slide, slideIndex) => {
-              const letter = builtinLetter(slide.image_url);
-              const name = `seña ${slideIndex + 1} de la tarjeta ${deckIndex + 1}`;
-              const sourceOptions = letter ? LETTER_OPTIONS : [{ value: 'custom', label: 'Imagen subida' }, ...LETTER_OPTIONS];
-              return (
-                <div key={slideIndex} className="slide-editor">
-                  <div className="row-between">
-                    <span className="text-small" style={{ fontWeight: 700 }}>
-                      Seña {slideIndex + 1}
-                    </span>
-                    <RowActions
-                      name={name}
-                      index={slideIndex}
-                      total={slides.length}
-                      canRemove={slides.length > 1}
-                      onMove={(delta) => updateDeck(deckIndex, moveItem(slides, slideIndex, delta))}
-                      onRemove={() => updateDeck(deckIndex, slides.filter((_, i) => i !== slideIndex))}
-                    />
-                  </div>
-                  <div className="slide-editor__body">
-                    <img className="slide-editor__thumb" src={slide.image_url} alt="" />
-                    <div className="stack-sm" style={{ flex: 1, minWidth: 0 }}>
-                      <SelectField
-                        label="Imagen"
-                        aria-label={`Imagen de la ${name}`}
-                        options={sourceOptions}
-                        value={letter || 'custom'}
-                        onChange={(event) => {
-                          const value = event.target.value;
-                          if (value === 'custom') return;
-                          // Si la etiqueta era la letra anterior (o estaba vacía), se actualiza junto con la imagen.
-                          const label = !slide.label.trim() || slide.label === letter ? value : slide.label;
-                          update(slideIndex, { ...builtinSignSlide(value), label });
-                        }}
-                      />
-                      <TextField
-                        label="Texto bajo la seña *"
-                        value={slide.label}
-                        error={errors[`signDecks.${deckIndex}.${slideIndex}`]}
-                        onChange={(event) => update(slideIndex, { label: event.target.value })}
-                      />
-                      <div>
-                        <ImageUploadButton
-                          label="Subir imagen propia"
-                          ariaLabel={`Subir imagen propia para la ${name}`}
-                          onUploaded={({ url, path }) => update(slideIndex, { image_url: url, image_path: path })}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-            <div>
-              <Button
-                variant="secondary"
-                size="sm"
-                icon={Plus}
-                disabled={slides.length >= LANDING_LIMITS.slidesPerDeck}
-                onClick={() => updateDeck(deckIndex, [...slides, builtinSignSlide(nextLetter)])}
-              >
-                {slides.length >= LANDING_LIMITS.slidesPerDeck ? `Máximo ${LANDING_LIMITS.slidesPerDeck} señas` : 'Agregar seña'}
-              </Button>
-            </div>
-          </Card>
-        );
-      })}
+      {DECK_IDS.map((id, position) =>
+        decks[position] ? (
+          <DeckEditor
+            key={id}
+            slides={decks[position]}
+            deckNumber={position + 1}
+            errors={errors}
+            onChange={(slides) => onChange(decks.map((deck, i) => (i === position ? slides : deck)))}
+          />
+        ) : null,
+      )}
     </div>
   );
 }
 
 /** Capturas de la app para el teléfono de la landing. */
-export function ScreensEditor({ screens, onChange }: { screens: PhoneScreen[]; onChange: (screens: PhoneScreen[]) => void }) {
+export function ScreensEditor({ screens, onChange }: Readonly<{ screens: PhoneScreen[]; onChange: (screens: PhoneScreen[]) => void }>) {
+  const rows = useListKeys(screens.length);
   const update = (index: number, patch: Partial<PhoneScreen>) => onChange(screens.map((screen, i) => (i === index ? { ...screen, ...patch } : screen)));
   const full = screens.length >= LANDING_LIMITS.screens;
 
@@ -180,7 +220,7 @@ export function ScreensEditor({ screens, onChange }: { screens: PhoneScreen[]; o
           {screens.map((screen, index) => {
             const name = `captura ${index + 1}`;
             return (
-              <Card key={`${screen.image_url}-${index}`} className="item-editor stack-sm">
+              <Card key={rows.keys[index]} className="item-editor stack-sm">
                 <img className="screen-editor__thumb" src={screen.image_url} alt={`Vista previa de la ${name}`} />
                 <TextField
                   label="Descripción"
@@ -198,8 +238,14 @@ export function ScreensEditor({ screens, onChange }: { screens: PhoneScreen[]; o
                     name={name}
                     index={index}
                     total={screens.length}
-                    onMove={(delta) => onChange(moveItem(screens, index, delta))}
-                    onRemove={() => onChange(screens.filter((_, i) => i !== index))}
+                    onMove={(delta) => {
+                      rows.move(index, delta);
+                      onChange(moveItem(screens, index, delta));
+                    }}
+                    onRemove={() => {
+                      rows.remove(index);
+                      onChange(screens.filter((_, i) => i !== index));
+                    }}
                   />
                 </div>
               </Card>
@@ -213,7 +259,10 @@ export function ScreensEditor({ screens, onChange }: { screens: PhoneScreen[]; o
         <ImageUploadButton
           label={full ? `Máximo ${LANDING_LIMITS.screens} capturas` : 'Agregar captura'}
           disabled={full}
-          onUploaded={({ url, path }) => onChange([...screens, { image_url: url, image_path: path, caption: '' }])}
+          onUploaded={({ url, path }) => {
+            rows.add();
+            onChange([...screens, { image_url: url, image_path: path, caption: '' }]);
+          }}
         />
       </div>
       <span className="text-small text-secondary">Usa capturas verticales del teléfono (proporción 9:19,5, por ejemplo 1080 × 2340).</span>
@@ -222,17 +271,30 @@ export function ScreensEditor({ screens, onChange }: { screens: PhoneScreen[]; o
 }
 
 /** Enlaces propios del pie de página (texto + dirección). */
-export function LinksEditor({ links, errors, onChange }: { links: FooterLink[]; errors: Errors; onChange: (links: FooterLink[]) => void }) {
+export function LinksEditor({ links, errors, onChange }: Readonly<{ links: FooterLink[]; errors: Errors; onChange: (links: FooterLink[]) => void }>) {
+  const rows = useListKeys(links.length);
   const update = (index: number, patch: Partial<FooterLink>) => onChange(links.map((link, i) => (i === index ? { ...link, ...patch } : link)));
   return (
     <div className="stack-sm">
       {links.map((link, index) => {
         const name = link.label.trim() || `enlace ${index + 1}`;
         return (
-          <Card key={index} className="item-editor stack-sm">
+          <Card key={rows.keys[index]} className="item-editor stack-sm">
             <div className="row-between">
               <strong>{name}</strong>
-              <RowActions name={name} index={index} total={links.length} onMove={(delta) => onChange(moveItem(links, index, delta))} onRemove={() => onChange(links.filter((_, i) => i !== index))} />
+              <RowActions
+                name={name}
+                index={index}
+                total={links.length}
+                onMove={(delta) => {
+                  rows.move(index, delta);
+                  onChange(moveItem(links, index, delta));
+                }}
+                onRemove={() => {
+                  rows.remove(index);
+                  onChange(links.filter((_, i) => i !== index));
+                }}
+              />
             </div>
             <div className="grid-2">
               <TextField label="Texto *" value={link.label} error={errors[`links.${index}.label`]} onChange={(event) => update(index, { label: event.target.value })} />
@@ -248,7 +310,10 @@ export function LinksEditor({ links, errors, onChange }: { links: FooterLink[]; 
         );
       })}
       <div>
-        <Button variant="secondary" size="sm" icon={Plus} disabled={links.length >= LANDING_LIMITS.footerLinks} onClick={() => onChange([...links, { label: '', url: '' }])}>
+        <Button variant="secondary" size="sm" icon={Plus} disabled={links.length >= LANDING_LIMITS.footerLinks} onClick={() => {
+            rows.add();
+            onChange([...links, { label: '', url: '' }]);
+          }}>
           {links.length >= LANDING_LIMITS.footerLinks ? `Máximo ${LANDING_LIMITS.footerLinks} enlaces` : 'Agregar enlace'}
         </Button>
       </div>

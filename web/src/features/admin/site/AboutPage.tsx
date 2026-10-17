@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRepositories } from '@/data/RepositoriesProvider';
 import { MAX_PHOTO_BYTES } from '@/data/repositories';
 import type { AboutContent, TeamMember } from '@/data/types';
+import { keyed } from '@/lib/listKeys';
 import { SOCIAL_ANIMATIONS, SOCIAL_NETWORKS, SocialIcon, socialError } from '@/lib/social';
 import { useResource } from '@/lib/useResource';
 import { Badge, Button, Card, Dialog, EmptyState, PageHeader, SkeletonRows, Switch, TextArea, TextField, useFeedback } from '@/ui';
@@ -299,8 +300,8 @@ function TeamManager() {
               {member.bio ? <p className="text-small text-secondary team-admin-card__bio">{member.bio}</p> : null}
               {member.socials?.length ? (
                 <ul className="team-admin-card__socials" aria-label={`Redes de ${member.full_name}`}>
-                  {member.socials.map((link, index) => (
-                    <li key={`${link.network}-${index}`} title={`${SOCIAL_NETWORKS[link.network].label} · ${SOCIAL_ANIMATIONS[link.animation]}`}>
+                  {keyed(member.socials, (link) => `${link.network}:${link.url}`).map(({ item: link, key }) => (
+                    <li key={key} title={`${SOCIAL_NETWORKS[link.network].label} · ${SOCIAL_ANIMATIONS[link.animation]}`}>
                       <SocialIcon network={link.network} size={16} />
                       <span className="visually-hidden">{SOCIAL_NETWORKS[link.network].label}</span>
                     </li>

@@ -32,13 +32,17 @@ type Blob = {
   phase: number;
 };
 
+const PURPLE = '143, 30, 174'; // #8f1eae
+const FUCHSIA = '211, 51, 255'; // #d333ff
+const GOLD = '255, 188, 16'; // #ffbc10
+
 const BLOBS: Blob[] = [
-  { rgb: '143, 30, 174', alpha: 0.35, cx: 0.2, cy: 0.25, ax: 0.18, ay: 0.12, radius: 0.55, speed: 1, phase: 0 }, // #8f1eae
-  { rgb: '211, 51, 255', alpha: 0.3, cx: 0.78, cy: 0.3, ax: 0.15, ay: 0.18, radius: 0.5, speed: 0.8, phase: 2.1 }, // #d333ff
-  { rgb: '255, 188, 16', alpha: 0.25, cx: 0.55, cy: 0.82, ax: 0.22, ay: 0.1, radius: 0.45, speed: 0.65, phase: 4.2 }, // #ffbc10
-  { rgb: '211, 51, 255', alpha: 0.22, cx: 0.15, cy: 0.85, ax: 0.12, ay: 0.14, radius: 0.4, speed: 1.2, phase: 1.3 }, // #d333ff
+  { rgb: PURPLE, alpha: 0.35, cx: 0.2, cy: 0.25, ax: 0.18, ay: 0.12, radius: 0.55, speed: 1, phase: 0 },
+  { rgb: FUCHSIA, alpha: 0.3, cx: 0.78, cy: 0.3, ax: 0.15, ay: 0.18, radius: 0.5, speed: 0.8, phase: 2.1 },
+  { rgb: GOLD, alpha: 0.25, cx: 0.55, cy: 0.82, ax: 0.22, ay: 0.1, radius: 0.45, speed: 0.65, phase: 4.2 },
+  { rgb: FUCHSIA, alpha: 0.22, cx: 0.15, cy: 0.85, ax: 0.12, ay: 0.14, radius: 0.4, speed: 1.2, phase: 1.3 },
 ];
-const FOLLOWER = { rgb: '211, 51, 255', alpha: 0.18, radius: 0.22 };
+const FOLLOWER = { rgb: FUCHSIA, alpha: 0.18, radius: 0.22 };
 
 const canvasStyle: CSSProperties = {
   position: 'fixed',
@@ -168,5 +172,6 @@ export function AuroraBackground() {
     };
   }, []);
 
-  return <canvas ref={canvasRef} style={canvasStyle} aria-hidden="true" />;
+  // tabIndex -1: deja explícito que el canvas nunca recibe foco (requisito para ocultarlo con aria-hidden).
+  return <canvas ref={canvasRef} style={canvasStyle} aria-hidden="true" tabIndex={-1} />;
 }

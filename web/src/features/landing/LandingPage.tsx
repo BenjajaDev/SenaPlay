@@ -6,6 +6,7 @@ import type { AboutContent, LandingSections, Publication, PublicationCategory, P
 import { brandIcon } from '@/lib/brand';
 import { env } from '@/lib/env';
 import { formatCount, formatEventDate, PUBLICATION_CATEGORIES, SITE_ICONS, STAT_ITEMS } from '@/lib/site';
+import { SOCIAL_NETWORKS, SocialIcon, socialHref } from '@/lib/social';
 import { useThemeMode } from '@/lib/useThemeMode';
 import { Badge, Button, Card, Dialog, Skeleton, SkeletonRows } from '@/ui';
 
@@ -35,22 +36,93 @@ const initials = (name: string) =>
     .map((word) => word[0].toUpperCase())
     .join('');
 
-function TeamCard({ member }: { member: TeamMember }) {
+// Ancho de la tarjeta expandida (ver --team-card-expanded en pages.css).
+const TEAM_CARD_EXPANDED = 640;
+
+/** Redes de un integrante; cada ícono se anima a su manera (elegida en el panel). */
+function TeamSocials({ member }: { member: TeamMember }) {
+  const links = (member.socials || []).map((link) => ({ ...link, href: socialHref(link) })).filter((link) => link.href);
+  if (!links.length) return null;
   return (
-    <Card variant="raised" className="team-card">
-      {member.photo_url ? (
-        <img className="team-card__photo" src={member.photo_url} alt={`Foto de ${member.full_name}`} loading="lazy" />
-      ) : (
-        <span className="team-card__photo team-card__initials" aria-hidden>
-          {initials(member.full_name)}
-        </span>
-      )}
-      <div className="stack-sm" style={{ gap: 2 }}>
-        <h3>{member.full_name}</h3>
-        {member.role ? <p className="team-card__role">{member.role}</p> : null}
+    <ul className="team-card__socials" aria-label={`Redes de ${member.full_name}`}>
+      {links.map((link, index) => {
+        const network = SOCIAL_NETWORKS[link.network];
+        const external = link.network !== 'email';
+        return (
+          <li key={`${link.network}-${index}`}>
+            <a
+              className={`social-link social-link--${link.animation}`}
+              href={link.href as string}
+              target={external ? '_blank' : undefined}
+              rel={external ? 'noopener noreferrer' : undefined}
+              aria-label={`${network.label} de ${member.full_name}${external ? ' (se abre en otra pestaña)' : ''}`}
+              title={network.label}
+            >
+              <SocialIcon network={link.network} />
+            </a>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/**
+ * Tarjeta de integrante. Al pasar el mouse o enfocarla (teclado o toque) se
+ * expande hacia el lado con más espacio y revela descripción y redes. La
+ * expansión se superpone a las vecinas en vez de empujarlas, así la grilla
+ * no salta. En pantallas táctiles o angostas los detalles se muestran
+ * siempre debajo (ver pages.css).
+ */
+function TeamCard({ member }: { member: TeamMember }) {
+  const ref = useRef<HTMLElement>(null);
+  const [side, setSide] = useState<'right' | 'left'>('right');
+  const hasDetails = Boolean(member.bio || member.socials?.length);
+
+  const pickSide = () => {
+    const rect = ref.current?.getBoundingClientRect();
+    if (!rect) return;
+    const growth = TEAM_CARD_EXPANDED - rect.width;
+    setSide(rect.right + growth > window.innerWidth - 16 && rect.left - growth >= 16 ? 'left' : 'right');
+  };
+
+  return (
+    <article
+      ref={ref}
+      className="card card--raised team-card"
+      data-side={side}
+      data-expandable={hasDetails || undefined}
+      tabIndex={hasDetails ? 0 : undefined}
+      aria-labelledby={member.id ? `team-${member.id}` : undefined}
+      onPointerEnter={pickSide}
+      onFocus={pickSide}
+    >
+      <div className="team-card__face">
+        {member.photo_url ? (
+          <img className="team-card__photo" src={member.photo_url} alt={`Foto de ${member.full_name}`} loading="lazy" />
+        ) : (
+          <span className="team-card__photo team-card__initials" aria-hidden>
+            {initials(member.full_name)}
+          </span>
+        )}
+        <div className="stack-sm" style={{ gap: 2 }}>
+          <h3 id={member.id ? `team-${member.id}` : undefined}>{member.full_name}</h3>
+          {member.role ? <p className="team-card__role">{member.role}</p> : null}
+        </div>
+        {hasDetails ? (
+          <span className="team-card__hint text-small" aria-hidden>
+            Conóceme
+          </span>
+        ) : null}
       </div>
-      {member.bio ? <p className="text-secondary text-small">{member.bio}</p> : null}
-    </Card>
+      {hasDetails ? (
+        <div className="team-card__details">
+          <span className="team-card__details-title">Sobre {member.full_name.split(/\s+/)[0]}</span>
+          {member.bio ? <p className="text-secondary team-card__bio">{member.bio}</p> : null}
+          <TeamSocials member={member} />
+        </div>
+      ) : null}
+    </article>
   );
 }
 
@@ -84,14 +156,14 @@ function AboutSection({ about, team }: { about: AboutContent | undefined; team: 
 
       {team === undefined ? (
         <div className="team-grid" style={{ marginTop: 'var(--space-8)' }}>
-          <Skeleton height={220} />
-          <Skeleton height={220} />
-          <Skeleton height={220} />
+          <Skeleton height={300} />
+          <Skeleton height={300} />
+          <Skeleton height={300} />
         </div>
       ) : team.length ? (
         <>
           <h3 className="about__team-title">Nuestro equipo</h3>
-          <div className="team-grid stagger">
+          <div className="team-grid">
             {team.map((member) => (
               <TeamCard key={member.id} member={member} />
             ))}

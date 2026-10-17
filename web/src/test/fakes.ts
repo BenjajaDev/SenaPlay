@@ -18,7 +18,17 @@ export function fakeRepositories(overrides: Partial<Repositories> = {}): Reposit
     vision: 'Una sociedad donde comunicarse en señas sea cotidiano.',
   };
   const team: TeamMember[] = [
-    { id: 't1', full_name: 'Ana Pérez', role: 'Diseño', bio: null, photo_url: null, photo_path: null, sort_order: 0, published: true },
+    {
+      id: 't1',
+      full_name: 'Ana Pérez',
+      role: 'Diseño',
+      bio: 'Diseña la experiencia de SeñaPlay.',
+      photo_url: null,
+      photo_path: null,
+      sort_order: 0,
+      published: true,
+      socials: [{ network: 'linkedin', url: 'https://www.linkedin.com/in/ana', animation: 'bounce' }],
+    },
     { id: 't2', full_name: 'Luis Soto', role: 'Desarrollo', bio: null, photo_url: null, photo_path: null, sort_order: 1, published: false },
   ];
   const publications: Publication[] = [
@@ -75,6 +85,11 @@ export function fakeRepositories(overrides: Partial<Repositories> = {}): Reposit
       listAudit: vi.fn(async () => []),
     },
     users: { list: vi.fn(async () => []), setRole: vi.fn(async () => {}), getRole: vi.fn(async () => 'admin' as const) },
+    account: {
+      getProfile: vi.fn(async (id: string) => ({ id, email: 'admin@senaplay.cl', full_name: 'Admin SeñaPlay', role: 'admin' as const, created_at: '2026-01-01' })),
+      updateProfile: vi.fn(async () => ({ emailPending: false })),
+      changePassword: vi.fn(async () => {}),
+    },
     stats: {
       publicStats: vi.fn(async () => ({ levels: 12, exercises: 90, dictionary: 47, vocabulary: 7, videos: 3, learners: 150 })),
       mistakeStats: vi.fn(async () => [

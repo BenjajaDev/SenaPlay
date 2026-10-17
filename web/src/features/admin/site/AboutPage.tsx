@@ -1,12 +1,21 @@
-import { Eye, EyeOff, HeartHandshake, ImagePlus, Pencil, Save, Trash2, UserPlus } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Eye, EyeOff, HeartHandshake, ImagePlus, Pencil, Plus, Save, Trash2, UserPlus } from 'lucide-react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useRepositories } from '@/data/RepositoriesProvider';
 import { MAX_PHOTO_BYTES } from '@/data/repositories';
-import type { AboutContent, TeamMember } from '@/data/types';
+import type { AboutContent, SocialLink, SocialNetworkKey, TeamMember } from '@/data/types';
+import {
+  MAX_SOCIALS,
+  SOCIAL_ANIMATION_KEYS,
+  SOCIAL_ANIMATIONS,
+  SOCIAL_NETWORK_KEYS,
+  SOCIAL_NETWORKS,
+  SocialIcon,
+  socialError,
+} from '@/lib/social';
 import { useResource } from '@/lib/useResource';
-import { Badge, Button, Card, Dialog, EmptyState, PageHeader, SkeletonRows, Switch, TextArea, TextField, useFeedback } from '@/ui';
+import { Badge, Button, Card, Dialog, EmptyState, PageHeader, SelectField, SkeletonRows, Switch, TextArea, TextField, useFeedback } from '@/ui';
 
-const EMPTY_MEMBER: TeamMember = { full_name: '', role: '', bio: '', photo_url: null, photo_path: null, sort_order: 0, published: true };
+const EMPTY_MEMBER: TeamMember = { full_name: '', role: '', bio: '', photo_url: null, photo_path: null, sort_order: 0, published: true, socials: [] };
 
 const ABOUT_FIELDS: { key: keyof AboutContent; label: string; rows: number; hint?: string }[] = [
   { key: 'intro', label: 'Presentación', rows: 4, hint: 'Quiénes son y por qué crearon SeñaPlay.' },
@@ -82,6 +91,112 @@ function AboutForm() {
   );
 }
 
+/** Una red del integrante: ícono, enlace y animación, con vista previa en vivo. */
+function SocialRow({
+  link,
+  index,
+  error,
+  onChange,
+  onRemove,
+}: {
+  link: SocialLink;
+  index: number;
+  error?: string;
+  onChange: (next: SocialLink) => void;
+  onRemove: () => void;
+}) {
+  const groupName = useId();
+  const network = SOCIAL_NETWORKS[link.network];
+  return (
+    <div className="social-row">
+      <div className="social-row__head">
+        {/* La vista previa se vuelve a montar al cambiar ícono o animación,
+            así la animación elegida se reproduce de inmediato. */}
+        <span
+          key={`${link.network}-${link.animation}`}
+          className={`social-link social-link--${link.animation} social-link--play`}
+          title="Vista previa: pasa el mouse para repetir la animación"
+          aria-hidden
+        >
+          <SocialIcon network={link.network} />
+        </span>
+        <strong className="social-row__title">
+          Red {index + 1}: {network.label}
+        </strong>
+        <Button variant="ghost" size="sm" icon={Trash2} className="btn--ghost-danger" aria-label={`Quitar ${network.label}`} onClick={onRemove} />
+      </div>
+      <fieldset className="icon-picker">
+        <legend className="field__label">Ícono</legend>
+        {SOCIAL_NETWORK_KEYS.map((key) => (
+          <label key={key} className="icon-picker__option" title={SOCIAL_NETWORKS[key].label}>
+            <input type="radio" name={groupName} value={key} checked={link.network === key} onChange={() => onChange({ ...link, network: key })} />
+            <span className="icon-picker__swatch">
+              <SocialIcon network={key} size={18} />
+            </span>
+            <span className="visually-hidden">{SOCIAL_NETWORKS[key].label}</span>
+          </label>
+        ))}
+      </fieldset>
+      <div className="grid-2">
+        <TextField
+          label={link.network === 'email' ? 'Correo *' : 'Enlace *'}
+          type={link.network === 'email' ? 'email' : 'url'}
+          inputMode={link.network === 'email' ? 'email' : 'url'}
+          placeholder={network.placeholder}
+          value={link.url}
+          error={error}
+          onChange={(e) => onChange({ ...link, url: e.target.value })}
+        />
+        <SelectField
+          label="Animación al pasar el mouse"
+          value={link.animation}
+          options={SOCIAL_ANIMATION_KEYS.map((key) => ({ value: key, label: SOCIAL_ANIMATIONS[key] }))}
+          onChange={(e) => onChange({ ...link, animation: e.target.value as SocialLink['animation'] })}
+        />
+      </div>
+    </div>
+  );
+}
+
+/** Lista editable de redes sociales del integrante (máximo MAX_SOCIALS). */
+function SocialsEditor({ value, errors, onChange }: { value: SocialLink[]; errors: Record<string, string>; onChange: (next: SocialLink[]) => void }) {
+  const add = () => {
+    // Propone la primera red que aún no usa, para no duplicar por descuido.
+    const used = new Set(value.map((link) => link.network));
+    const network: SocialNetworkKey = SOCIAL_NETWORK_KEYS.find((key) => !used.has(key)) || 'website';
+    onChange([...value, { network, url: '', animation: 'pop' }]);
+  };
+  return (
+    <section className="stack-sm" aria-labelledby="redes-title">
+      <div className="row-between">
+        <div className="stack-sm" style={{ gap: 0 }}>
+          <h3 id="redes-title" style={{ fontSize: 16 }}>
+            Redes sociales
+          </h3>
+          <span className="text-small text-secondary">Se muestran al expandir su tarjeta en la landing.</span>
+        </div>
+        <Button variant="secondary" size="sm" icon={Plus} disabled={value.length >= MAX_SOCIALS} onClick={add}>
+          Agregar red
+        </Button>
+      </div>
+      {value.length ? (
+        value.map((link, index) => (
+          <SocialRow
+            key={index}
+            link={link}
+            index={index}
+            error={errors[`social-${index}`]}
+            onChange={(next) => onChange(value.map((item, i) => (i === index ? next : item)))}
+            onRemove={() => onChange(value.filter((_, i) => i !== index))}
+          />
+        ))
+      ) : (
+        <p className="text-small text-muted">Sin redes. Son opcionales.</p>
+      )}
+    </section>
+  );
+}
+
 /** Formulario de un integrante, con foto opcional (se sube al guardar). */
 function MemberDialog({ member, onClose, onSaved }: { member: TeamMember | null; onClose: () => void; onSaved: () => void }) {
   const { site } = useRepositories();
@@ -122,6 +237,10 @@ function MemberDialog({ member, onClose, onSaved }: { member: TeamMember | null;
     const next: Record<string, string> = {};
     if (!draft.full_name.trim()) next.full_name = 'Campo obligatorio.';
     if (!draft.role.trim()) next.role = 'Campo obligatorio.';
+    (draft.socials || []).forEach((link, index) => {
+      const problem = socialError(link);
+      if (problem) next[`social-${index}`] = problem;
+    });
     setErrors(next);
     if (Object.keys(next).length) return;
     try {
@@ -192,6 +311,15 @@ function MemberDialog({ member, onClose, onSaved }: { member: TeamMember | null;
           <TextField label="Orden" hint="Los números menores aparecen primero." type="number" value={String(draft.sort_order)} onChange={(e) => setDraft({ ...draft, sort_order: Number(e.target.value) || 0 })} />
           <Switch label="Visible en la landing" checked={draft.published} onChange={(published) => setDraft({ ...draft, published })} />
         </div>
+        <SocialsEditor
+          value={draft.socials || []}
+          errors={errors}
+          onChange={(socials) => {
+            setDraft({ ...draft, socials });
+            // Los errores de redes van por posición: al editar la lista se limpian.
+            setErrors((prev) => Object.fromEntries(Object.entries(prev).filter(([key]) => !key.startsWith('social-'))));
+          }}
+        />
       </div>
     </Dialog>
   );
@@ -258,29 +386,49 @@ function TeamManager() {
       ) : (
         <div className="grid-2 stagger">
           {team.data.map((member) => (
-            <Card key={member.id} className="row" style={{ gap: 14, alignItems: 'flex-start' }}>
-              {member.photo_url ? (
-                <img className="team-admin-photo" src={member.photo_url} alt="" />
-              ) : (
-                <span className="team-admin-photo team-card__initials" style={{ fontSize: 20 }} aria-hidden>
-                  {member.full_name.slice(0, 1).toUpperCase()}
-                </span>
-              )}
-              <div className="stack-sm" style={{ flex: 1, minWidth: 0, gap: 4 }}>
-                <strong>{member.full_name}</strong>
-                <span className="text-small text-secondary">{member.role}</span>
-                <div>{member.published ? <Badge tone="success" icon={Eye}>Visible</Badge> : <Badge tone="neutral" icon={EyeOff}>Oculto</Badge>}</div>
+            <Card key={member.id} className="team-admin-card">
+              <div className="team-admin-card__header">
+                {member.photo_url ? (
+                  <img className="team-admin-photo" src={member.photo_url} alt="" />
+                ) : (
+                  <span className="team-admin-photo team-card__initials" style={{ fontSize: 22 }} aria-hidden>
+                    {member.full_name.slice(0, 1).toUpperCase()}
+                  </span>
+                )}
+                <div className="team-admin-card__info">
+                  <strong>{member.full_name}</strong>
+                  <span className="text-small text-secondary">{member.role}</span>
+                </div>
+                {member.published ? <Badge tone="success" icon={Eye}>Visible</Badge> : <Badge tone="neutral" icon={EyeOff}>Oculto</Badge>}
               </div>
-              <div className="row" style={{ gap: 2 }}>
-                <Button variant="ghost" size="sm" icon={Pencil} aria-label={`Editar a ${member.full_name}`} onClick={() => setEditing({ ...member })} />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  icon={member.published ? EyeOff : Eye}
-                  aria-label={member.published ? `Ocultar a ${member.full_name}` : `Mostrar a ${member.full_name}`}
-                  onClick={() => toggleVisible(member)}
-                />
-                <Button variant="ghost" size="sm" icon={Trash2} aria-label={`Eliminar a ${member.full_name}`} onClick={() => remove(member)} />
+              {member.bio ? <p className="text-small text-secondary team-admin-card__bio">{member.bio}</p> : null}
+              {member.socials?.length ? (
+                <ul className="team-admin-card__socials" aria-label={`Redes de ${member.full_name}`}>
+                  {member.socials.map((link, index) => (
+                    <li key={`${link.network}-${index}`} title={`${SOCIAL_NETWORKS[link.network].label} · ${SOCIAL_ANIMATIONS[link.animation]}`}>
+                      <SocialIcon network={link.network} size={16} />
+                      <span className="visually-hidden">{SOCIAL_NETWORKS[link.network].label}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              <div className="team-admin-card__footer">
+                <span className="text-small text-muted">Orden {member.sort_order}</span>
+                <div className="team-admin-card__actions">
+                  <Button variant="secondary" size="sm" icon={Pencil} aria-label={`Editar a ${member.full_name}`} onClick={() => setEditing({ ...member })}>
+                    Editar
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    icon={member.published ? EyeOff : Eye}
+                    aria-label={member.published ? `Ocultar a ${member.full_name}` : `Mostrar a ${member.full_name}`}
+                    onClick={() => toggleVisible(member)}
+                  >
+                    {member.published ? 'Ocultar' : 'Mostrar'}
+                  </Button>
+                  <Button variant="ghost" size="sm" icon={Trash2} className="btn--ghost-danger" aria-label={`Eliminar a ${member.full_name}`} onClick={() => remove(member)} />
+                </div>
               </div>
             </Card>
           ))}

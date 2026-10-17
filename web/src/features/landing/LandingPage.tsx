@@ -11,7 +11,7 @@ import { SOCIAL_NETWORKS, SocialIcon, socialHref } from '@/lib/social';
 import { useThemeMode } from '@/lib/useThemeMode';
 import { Badge, Button, Card, Dialog, Skeleton, SkeletonRows } from '@/ui';
 import { HeroSigns } from './HeroSigns';
-import { ParticleBackground } from './ParticleBackground';
+import { AuroraBackground } from './AuroraBackground';
 import { PhoneShowcase } from './PhoneShowcase';
 import { SiteFooter } from './SiteFooter';
 
@@ -428,7 +428,7 @@ export function LandingPage() {
 
   return (
     <>
-      <ParticleBackground />
+      <AuroraBackground />
       <a className="skip-link" href="#contenido">
         Saltar al contenido
       </a>

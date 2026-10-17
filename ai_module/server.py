@@ -10,6 +10,9 @@ Ofrece:
 Cómo iniciar:
     uvicorn server:app --host 0.0.0.0 --port 8000 --reload
 
+En producción corre en Hugging Face Spaces con el Dockerfile de esta carpeta
+(ver docs/05-despliegue.md).
+
 Usar 0.0.0.0 en lugar de localhost permite que el celular
 conecte al servidor a través de la red local (WiFi compartida).
 """
@@ -18,11 +21,12 @@ import base64
 import json
 import os
 import tempfile
+from contextlib import asynccontextmanager
 
 import numpy as np
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 
 from model.predict import CLASE_SIN_SEÑA
@@ -38,7 +42,18 @@ from scripts.holistic_pipeline import (
     secuencia_a_matriz,
 )
 
-app = FastAPI(title="SeñaPlay IA de Señas", version="0.2.0")
+@asynccontextmanager
+async def _ciclo_de_vida(_app):
+    # En el despliegue (PRECARGAR_MODELOS=1, ver Dockerfile) los modelos se
+    # cargan al arrancar: si no, la primera seña de cada arranque espera varios
+    # segundos y la app la da por perdida (timeout de 2,5 s del estático).
+    if os.environ.get("PRECARGAR_MODELOS") == "1":
+        _obtener_modelo_estatico()
+        _obtener_modelo_dinamico()
+    yield
+
+
+app = FastAPI(title="SeñaPlay IA de Señas", version="0.3.0", lifespan=_ciclo_de_vida)
 
 # Permitir peticiones desde cualquier origen (WebView de React Native incluida)
 app.add_middleware(
@@ -125,8 +140,10 @@ class TramoMovimiento(BaseModel):
     # margen antes y después. Los manda la captura automática del WebView
     # (ver handTrackingHtml.js, sección 9b) para que el modelo dinámico
     # clasifique en sincronía con el estático, sin botón de grabar.
-    frames: list[str]
-    fps: float = 15.0
+    # Tope generoso (el visor manda ~50 como máximo: 3 s + 0,4 s a 15 fps); el
+    # servidor es público y cada cuadro cuesta ~50 ms de CPU.
+    frames: list[str] = Field(max_length=120)
+    fps: float = Field(default=15.0, gt=0, le=60)
 
 
 class SolicitudComparacion(BaseModel):

@@ -1,0 +1,14 @@
+# Solo entra lo que el servidor usa en producción: código, config y modelos.
+venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+data/raw/
+data/raw_videos/
+data/processed_landmarks/
+data/landmarks_estaticos/
+data/landmarks_kaggle/
+data/models/*.v1.pt
+despliegue/
+Dockerfile
+.dockerignore

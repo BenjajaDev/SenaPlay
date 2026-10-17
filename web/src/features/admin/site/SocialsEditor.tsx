@@ -1,6 +1,7 @@
 import { Plus, Trash2 } from 'lucide-react';
 import { useId } from 'react';
 import type { SocialLink, SocialNetworkKey } from '@/data/types';
+import { useListKeys } from '@/lib/listKeys';
 import { MAX_SOCIALS, SOCIAL_ANIMATION_KEYS, SOCIAL_ANIMATIONS, SOCIAL_NETWORK_KEYS, SOCIAL_NETWORKS, SocialIcon } from '@/lib/social';
 import { Button, SelectField, TextField } from '@/ui';
 
@@ -11,13 +12,13 @@ function SocialRow({
   error,
   onChange,
   onRemove,
-}: {
+}: Readonly<{
   link: SocialLink;
   index: number;
   error?: string;
   onChange: (next: SocialLink) => void;
   onRemove: () => void;
-}) {
+}>) {
   const groupName = useId();
   const network = SOCIAL_NETWORKS[link.network];
   return (
@@ -42,11 +43,17 @@ function SocialRow({
         <legend className="field__label">Ícono</legend>
         {SOCIAL_NETWORK_KEYS.map((key) => (
           <label key={key} className="icon-picker__option" title={SOCIAL_NETWORKS[key].label}>
-            <input type="radio" name={groupName} value={key} checked={link.network === key} onChange={() => onChange({ ...link, network: key })} />
-            <span className="icon-picker__swatch">
+            <input
+              type="radio"
+              name={groupName}
+              value={key}
+              aria-label={SOCIAL_NETWORKS[key].label}
+              checked={link.network === key}
+              onChange={() => onChange({ ...link, network: key })}
+            />
+            <span className="icon-picker__swatch" aria-hidden>
               <SocialIcon network={key} size={18} />
             </span>
-            <span className="visually-hidden">{SOCIAL_NETWORKS[key].label}</span>
           </label>
         ))}
       </fieldset>
@@ -77,17 +84,19 @@ export function SocialsEditor({
   errors,
   onChange,
   description,
-}: {
+}: Readonly<{
   value: SocialLink[];
   errors: Record<string, string>;
   onChange: (next: SocialLink[]) => void;
   description: string;
-}) {
+}>) {
   const titleId = useId();
+  const rows = useListKeys(value.length);
   const add = () => {
     // Propone la primera red que aún no usa, para no duplicar por descuido.
     const used = new Set(value.map((link) => link.network));
     const network: SocialNetworkKey = SOCIAL_NETWORK_KEYS.find((key) => !used.has(key)) || 'website';
+    rows.add();
     onChange([...value, { network, url: '', animation: 'pop' }]);
   };
   return (
@@ -106,12 +115,15 @@ export function SocialsEditor({
       {value.length ? (
         value.map((link, index) => (
           <SocialRow
-            key={index}
+            key={rows.keys[index]}
             link={link}
             index={index}
             error={errors[`social-${index}`]}
             onChange={(next) => onChange(value.map((item, i) => (i === index ? next : item)))}
-            onRemove={() => onChange(value.filter((_, i) => i !== index))}
+            onRemove={() => {
+              rows.remove(index);
+              onChange(value.filter((_, i) => i !== index));
+            }}
           />
         ))
       ) : (

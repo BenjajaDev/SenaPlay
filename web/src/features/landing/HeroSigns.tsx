@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import type { SignSlide } from '@/data/types';
+import { keyed } from '@/lib/listKeys';
 import { useAutoAdvance, usePageVisible, usePrefersReducedMotion } from '@/lib/useCarousel';
 
 /** Una tarjeta del hero: su propio carrusel de señas, que se pausa con el mouse encima. */
-function SignDeck({ slides, index: position, intervalMs }: { slides: SignSlide[]; index: number; intervalMs: number }) {
+function SignDeck({ slides, position, intervalMs }: Readonly<{ slides: SignSlide[]; position: number; intervalMs: number }>) {
   const reduced = usePrefersReducedMotion();
   const visible = usePageVisible();
   const [hovered, setHovered] = useState(false);
@@ -13,13 +14,14 @@ function SignDeck({ slides, index: position, intervalMs }: { slides: SignSlide[]
     firstDelayMs: intervalMs * (1 + position / 3),
   });
   const slide = slides[current];
+  const items = keyed(slides, (item) => item.image_url);
 
   return (
     <figure className="sign-card" style={{ ['--i' as string]: position }} onPointerEnter={() => setHovered(true)} onPointerLeave={() => setHovered(false)}>
       <div className="sign-card__viewport">
-        {slides.map((item, index) => (
+        {items.map(({ item, key }, index) => (
           <img
-            key={`${item.image_url}-${index}`}
+            key={key}
             src={item.image_url}
             alt=""
             loading={index === 0 ? 'eager' : 'lazy'}
@@ -33,8 +35,8 @@ function SignDeck({ slides, index: position, intervalMs }: { slides: SignSlide[]
       </figcaption>
       {slides.length > 1 ? (
         <span className="sign-card__dots">
-          {slides.map((item, index) => (
-            <span key={`${item.image_url}-${index}`} data-active={index === current || undefined} />
+          {items.map(({ key }, index) => (
+            <span key={key} data-active={index === current || undefined} />
           ))}
         </span>
       ) : null}
@@ -47,11 +49,11 @@ function SignDeck({ slides, index: position, intervalMs }: { slides: SignSlide[]
  * decorativas: el contenido lo dan el título y el texto, por eso van ocultas
  * al lector de pantalla. Con «reducir movimiento» no avanzan solas.
  */
-export function HeroSigns({ decks, intervalSeconds }: { decks: SignSlide[][]; intervalSeconds: number }) {
+export function HeroSigns({ decks, intervalSeconds }: Readonly<{ decks: SignSlide[][]; intervalSeconds: number }>) {
   return (
     <div className="hero__visual" aria-hidden>
-      {decks.map((slides, index) => (
-        <SignDeck key={index} slides={slides} index={index} intervalMs={intervalSeconds * 1000} />
+      {keyed(decks, (deck) => deck.map((slide) => slide.image_url).join('|')).map(({ item: slides, key }, position) => (
+        <SignDeck key={key} slides={slides} position={position} intervalMs={intervalSeconds * 1000} />
       ))}
     </div>
   );

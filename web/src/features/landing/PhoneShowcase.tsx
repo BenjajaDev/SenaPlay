@@ -1,6 +1,7 @@
 import { Pause, Play } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { LandingSections } from '@/data/types';
+import { keyed } from '@/lib/listKeys';
 import { useAutoAdvance, usePageVisible, usePrefersReducedMotion } from '@/lib/useCarousel';
 import { Button } from '@/ui';
 
@@ -10,7 +11,7 @@ import { Button } from '@/ui';
  * puntos y pasos para elegir, se detiene con el mouse o el foco encima y no
  * avanza solo con «reducir movimiento».
  */
-export function PhoneShowcase({ config }: { config: LandingSections['showcase'] }) {
+export function PhoneShowcase({ config }: Readonly<{ config: LandingSections['showcase'] }>) {
   const reduced = usePrefersReducedMotion();
   const visible = usePageVisible();
   const [stopped, setStopped] = useState(false);
@@ -20,6 +21,33 @@ export function PhoneShowcase({ config }: { config: LandingSections['showcase'] 
   const autoplay = !reduced && !stopped;
   const [current, setCurrent] = useAutoAdvance(screens.length, config.interval * 1000, { paused: !autoplay || !visible || hovered || focused });
   const hasCaptions = screens.some((screen) => screen.caption.trim());
+  const items = keyed(screens, (screen) => screen.image_url);
+  const currentScreen = screens[current];
+  const announcement = currentScreen ? [`Captura ${current + 1} de ${screens.length}`, currentScreen.caption.trim()].filter(Boolean).join(': ') : '';
+  const deviceRef = useRef<HTMLDivElement>(null);
+
+  // Pausa mientras el mouse o el foco están sobre el teléfono. Se escucha con
+  // eventos nativos: el contenedor no es un control, solo agrupa al carrusel.
+  useEffect(() => {
+    const device = deviceRef.current;
+    if (!device) return undefined;
+    const onEnter = () => setHovered(true);
+    const onLeave = () => setHovered(false);
+    const onFocusIn = () => setFocused(true);
+    const onFocusOut = (event: FocusEvent) => {
+      if (!device.contains(event.relatedTarget as Node | null)) setFocused(false);
+    };
+    device.addEventListener('pointerenter', onEnter);
+    device.addEventListener('pointerleave', onLeave);
+    device.addEventListener('focusin', onFocusIn);
+    device.addEventListener('focusout', onFocusOut);
+    return () => {
+      device.removeEventListener('pointerenter', onEnter);
+      device.removeEventListener('pointerleave', onLeave);
+      device.removeEventListener('focusin', onFocusIn);
+      device.removeEventListener('focusout', onFocusOut);
+    };
+  }, []);
 
   return (
     <section id="app" className="section showcase" aria-labelledby="app-title">
@@ -31,9 +59,9 @@ export function PhoneShowcase({ config }: { config: LandingSections['showcase'] 
         {config.text ? <p className="text-secondary showcase__lead">{config.text}</p> : null}
         {hasCaptions ? (
           <ol className="showcase__steps">
-            {screens.map((screen, index) =>
+            {items.map(({ item: screen, key }, index) =>
               screen.caption.trim() ? (
-                <li key={`${screen.image_url}-${index}`}>
+                <li key={key}>
                   <button
                     type="button"
                     className="showcase__step"
@@ -53,38 +81,23 @@ export function PhoneShowcase({ config }: { config: LandingSections['showcase'] 
         ) : null}
       </div>
 
-      <div
-        className="showcase__device"
-        onPointerEnter={() => setHovered(true)}
-        onPointerLeave={() => setHovered(false)}
-        onFocus={() => setFocused(true)}
-        onBlur={(event) => !event.currentTarget.contains(event.relatedTarget as Node | null) && setFocused(false)}
-      >
-        <div
-          id="app-carrusel"
-          className="phone"
-          role="region"
-          aria-roledescription="carrusel"
-          aria-label={`Capturas de SeñaPlay: ${screens.length} imágenes`}
-        >
+      <div ref={deviceRef} className="showcase__device">
+        <section id="app-carrusel" className="phone" aria-roledescription="carrusel" aria-label={`Capturas de SeñaPlay: ${screens.length} imágenes`}>
           <span className="phone__island" aria-hidden />
-          <div className="phone__screen" aria-live={autoplay ? 'off' : 'polite'}>
+          <div className="phone__screen">
             <div className="phone__track" style={{ transform: `translateX(-${current * 100}%)` }}>
-              {screens.map((screen, index) => (
-                <div
-                  key={`${screen.image_url}-${index}`}
-                  className="phone__slide"
-                  role="group"
-                  aria-roledescription="diapositiva"
-                  aria-label={`${index + 1} de ${screens.length}`}
-                  aria-hidden={index !== current || undefined}
-                >
+              {items.map(({ item: screen, key }, index) => (
+                <div key={key} className="phone__slide" aria-hidden={index !== current || undefined}>
                   <img src={screen.image_url} alt={screen.caption || `Captura ${index + 1} de la app SeñaPlay`} loading={index === 0 ? 'eager' : 'lazy'} />
                 </div>
               ))}
             </div>
           </div>
-        </div>
+          {/* Anuncia la captura actual solo cuando el carrusel está detenido, para no interrumpir al lector. */}
+          <p className="visually-hidden" aria-live={autoplay ? 'off' : 'polite'}>
+            {announcement}
+          </p>
+        </section>
         {screens.length > 1 ? (
           <div className="showcase__controls">
             {reduced ? null : (
@@ -96,13 +109,13 @@ export function PhoneShowcase({ config }: { config: LandingSections['showcase'] 
                 onClick={() => setStopped((value) => !value)}
               />
             )}
-            <div className="showcase__dots" role="group" aria-label="Elegir captura">
-              {screens.map((screen, index) => (
+            <div className="showcase__dots">
+              {items.map(({ item: screen, key }, index) => (
                 <button
-                  key={`${screen.image_url}-${index}`}
+                  key={key}
                   type="button"
                   className="showcase__dot"
-                  aria-label={`Ver captura ${index + 1}${screen.caption ? `: ${screen.caption}` : ''}`}
+                  aria-label={screen.caption ? `Ver captura ${index + 1}: ${screen.caption}` : `Ver captura ${index + 1}`}
                   aria-current={index === current || undefined}
                   aria-controls="app-carrusel"
                   onClick={() => setCurrent(index)}

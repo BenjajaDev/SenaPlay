@@ -224,4 +224,56 @@ describe('portal web', () => {
     await user.click(screen.getAllByRole('button', { name: 'Publicar' }).pop()!);
     await waitFor(() => expect(repos.config.setConfig).toHaveBeenCalledWith('maintenance', expect.objectContaining({ enabled: true })));
   });
+
+  test('la tarjeta del equipo en la landing incluye descripción y redes seguras', async () => {
+    renderAt('/');
+    const card = (await screen.findByRole('heading', { name: 'Ana Pérez' })).closest('article') as HTMLElement;
+    expect(card).toHaveAttribute('tabindex', '0');
+    expect(within(card).getByText('Diseña la experiencia de SeñaPlay.')).toBeInTheDocument();
+    const link = within(card).getByRole('link', { name: /LinkedIn de Ana Pérez/ });
+    expect(link).toHaveAttribute('href', 'https://www.linkedin.com/in/ana');
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+    expect(link).toHaveClass('social-link--bounce');
+  });
+
+  test('el panel agrega una red al integrante y valida el enlace antes de guardar', async () => {
+    const user = userEvent.setup();
+    const repos = renderAt('/admin/site/about');
+    await user.click(await screen.findByRole('button', { name: 'Editar a Ana Pérez' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Editar a Ana Pérez' });
+    await user.click(within(dialog).getByRole('button', { name: 'Agregar red' }));
+    await user.click(within(dialog).getAllByRole('radio', { name: 'GitHub' })[1]);
+    await user.selectOptions(within(dialog).getAllByLabelText('Animación al pasar el mouse')[1], 'spin');
+    await user.click(within(dialog).getByRole('button', { name: 'Guardar' }));
+    expect(await within(dialog).findByText(/Escribe el enlace/)).toBeInTheDocument();
+    expect(repos.site.saveTeamMember).not.toHaveBeenCalled();
+
+    await user.type(within(dialog).getAllByLabelText('Enlace *')[1], 'https://github.com/ana');
+    await user.click(within(dialog).getByRole('button', { name: 'Guardar' }));
+    await waitFor(() => expect(repos.site.saveTeamMember).toHaveBeenCalled());
+    expect(vi.mocked(repos.site.saveTeamMember).mock.calls[0][0].socials).toEqual([
+      { network: 'linkedin', url: 'https://www.linkedin.com/in/ana', animation: 'bounce' },
+      { network: 'github', url: 'https://github.com/ana', animation: 'spin' },
+    ]);
+  });
+
+  test('mi perfil guarda el nombre tras confirmar y cambia la contraseña', async () => {
+    const user = userEvent.setup();
+    const repos = renderAt('/admin/profile');
+    const name = await screen.findByLabelText('Nombre completo *');
+    await user.clear(name);
+    await user.type(name, 'Benja Admin');
+    await user.click(screen.getByRole('button', { name: 'Guardar datos' }));
+    await user.click(await screen.findByRole('button', { name: 'Guardar' }));
+    await waitFor(() => expect(repos.account.updateProfile).toHaveBeenCalledWith('admin-1', { full_name: 'Benja Admin', email: 'admin@senaplay.cl' }, 'admin@senaplay.cl'));
+
+    await user.type(screen.getByLabelText('Contraseña actual *'), 'vieja1234');
+    await user.type(screen.getByLabelText('Nueva contraseña *'), 'nueva1234');
+    await user.type(screen.getByLabelText('Repite la nueva contraseña *'), 'nueva1234');
+    await user.click(screen.getByRole('button', { name: 'Cambiar contraseña' }));
+    expect(repos.account.changePassword).not.toHaveBeenCalled();
+    const dialog = await screen.findByRole('dialog', { name: '¿Cambiar tu contraseña?' });
+    await user.click(within(dialog).getByRole('button', { name: 'Cambiar contraseña' }));
+    await waitFor(() => expect(repos.account.changePassword).toHaveBeenCalledWith('admin@senaplay.cl', 'vieja1234', 'nueva1234'));
+  });
 });

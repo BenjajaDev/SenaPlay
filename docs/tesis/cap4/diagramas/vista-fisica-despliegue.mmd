@@ -1,0 +1,25 @@
+flowchart LR
+  subgraph DISP["Android"]
+    APP["App SeñaPlay<br/>Expo SDK 57 · Hermes<br/>WebView + MediaPipe Hands"]
+    CACHE[("AsyncStorage")]
+    APP --- CACHE
+  end
+  subgraph NUBE["Servicios en la nube"]
+    direction TB
+    subgraph SUPA["Supabase"]
+      direction LR
+      AUTH["Auth"] ~~~ PG[("PostgreSQL + RLS")] ~~~ STO[["Storage"]] ~~~ RT["Realtime"]
+    end
+    subgraph HF["Hugging Face Spaces"]
+      direction LR
+      API["FastAPI<br/>server.py"] --> MOD["Holistic · RF · TCN"]
+    end
+    subgraph CF["Cloudflare Pages"]
+      PANEL["Panel admin"]
+    end
+  end
+  APP -- "HTTPS + JWT" --> SUPA
+  APP -- "HTTPS<br/>landmarks / cuadros" --> HF
+  PANEL -- "HTTPS + JWT staff" --> SUPA
+  EAS["Expo EAS Build"] -- "APK / AAB" --> APP
+  GH["GitHub Actions"] -- "despliegue continuo" --> HF

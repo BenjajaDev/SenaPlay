@@ -1,0 +1,47 @@
+
+> senaplay-web@1.0.0 prebuild /home/user/SenaPlay/web
+> node scripts/syncTokens.mjs
+
+Tokens sincronizados → src/styles/tokens.generated.css
+
+> senaplay-web@1.0.0 build /home/user/SenaPlay/web
+> tsc -b && vite build
+
+vite v8.3.1 building client environment for production...
+transforming...
+✓ 1990 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                             1.11 kB │ gzip:   0.55 kB
+dist/assets/index-Bh-iiiHJ.css             46.66 kB │ gzip:   8.93 kB
+dist/assets/plus-DxoIoDL2.js                0.22 kB │ gzip:   0.20 kB │ map:     1.02 kB
+dist/assets/search-CHW5GeEb.js              0.24 kB │ gzip:   0.22 kB │ map:     1.08 kB
+dist/assets/user-round-BjUsity8.js          0.27 kB │ gzip:   0.24 kB │ map:     1.16 kB
+dist/assets/copy-CbO6Z9u9.js                0.30 kB │ gzip:   0.26 kB │ map:     1.17 kB
+dist/assets/flag-C0GeZTHq.js                0.32 kB │ gzip:   0.26 kB │ map:     1.10 kB
+dist/assets/pencil-D1_63EKS.js              0.35 kB │ gzip:   0.28 kB │ map:     1.20 kB
+dist/assets/rotate-ccw-clock-B_guL26Y.js    0.35 kB │ gzip:   0.27 kB │ map:     1.29 kB
+dist/assets/arrow-up-Cf5Ce1uM.js            0.37 kB │ gzip:   0.26 kB │ map:     1.99 kB
+dist/assets/wrench-Bp-zrZxc.js              0.37 kB │ gzip:   0.29 kB │ map:     1.16 kB
+dist/assets/save-BrnpP7Bm.js                0.39 kB │ gzip:   0.28 kB │ map:     1.31 kB
+dist/assets/image-plus-D7D1fsgQ.js          0.44 kB │ gzip:   0.31 kB │ map:     1.49 kB
+dist/assets/eye-off-DjMHFAlX.js             0.50 kB │ gzip:   0.33 kB │ map:     1.53 kB
+dist/assets/useResource-DKzJnZPi.js         0.53 kB │ gzip:   0.36 kB │ map:     2.12 kB
+dist/assets/AuditPage-CtuEHOpO.js           2.05 kB │ gzip:   0.95 kB │ map:     5.55 kB
+dist/assets/UsersPage-BfraCXCZ.js           2.34 kB │ gzip:   1.19 kB │ map:     6.99 kB
+dist/assets/SocialsEditor-CTgj_7Am.js       2.74 kB │ gzip:   1.18 kB │ map:     8.55 kB
+dist/assets/LevelsPage-rukhI-eK.js          2.90 kB │ gzip:   1.28 kB │ map:     7.56 kB
+dist/assets/AdminLayout-2t5vHYwc.js         4.85 kB │ gzip:   2.03 kB │ map:    15.52 kB
+dist/assets/FeatureFlagsPage-BKgPAnwN.js    5.16 kB │ gzip:   2.19 kB │ map:    14.74 kB
+dist/assets/DashboardPage-IcRADRX_.js       5.42 kB │ gzip:   2.24 kB │ map:    16.09 kB
+dist/assets/ProfilePage-faIrJFhY.js         6.11 kB │ gzip:   2.54 kB │ map:    18.52 kB
+dist/assets/DictionaryPages-BFPfdB-5.js     6.58 kB │ gzip:   2.67 kB │ map:    20.15 kB
+dist/assets/PublicationsPage-BVgPVUgO.js    8.09 kB │ gzip:   3.14 kB │ map:    23.82 kB
+dist/assets/LevelEditorPage-BC5NRaVI.js     8.63 kB │ gzip:   3.60 kB │ map:    28.04 kB
+dist/assets/AboutPage-hxEqZd6z.js           9.85 kB │ gzip:   3.73 kB │ map:    28.60 kB
+dist/assets/MediaPage-CaXQtr9l.js          10.01 kB │ gzip:   3.82 kB │ map:    28.98 kB
+dist/assets/RemoteConfigPage-DgNQ7ZQ-.js   10.11 kB │ gzip:   3.57 kB │ map:    27.08 kB
+dist/assets/SectionsPage-B6p2sjKh.js       18.52 kB │ gzip:   6.27 kB │ map:    57.87 kB
+dist/assets/index-DN7XqjJn.js             563.70 kB │ gzip: 165.49 kB │ map: 3,009.39 kB
+
+✓ built in 1.93s

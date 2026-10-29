@@ -1,0 +1,15 @@
+flowchart TB
+  subgraph MOD["Módulos"]
+    direction LR
+    M1["auth"] ~~~ M2["levels"] ~~~ M3["progress"] ~~~ M4["signs · dictionary"] ~~~ M5["games"] ~~~ M6["camera"] ~~~ M7["profile · videos"] ~~~ M8["remoteConfig"]
+  end
+  P["<b>Presentación</b><br/>pantallas · hooks · componentes<br/>features/*/presentation · shared/ui"]
+  D["<b>Dominio</b> (JavaScript puro)<br/>entidades y reglas de negocio<br/>features/*/domain"]
+  R["<b>Datos</b><br/>repositorios con respaldo local<br/>features/*/data"]
+  C["<b>Core</b><br/>ServicesProvider (DI) · EventBus · jsonStorage<br/>cliente Supabase · haptics · a11y"]
+  MOD --> P
+  P -- "usa reglas" --> D
+  R -- "construye entidades" --> D
+  P -- "useServices()" --> C
+  C -- "inyecta" --> R
+  R -- "Supabase · AsyncStorage" --> C

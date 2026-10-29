@@ -1,0 +1,19 @@
+flowchart TB
+  subgraph F1["Fase 1 · Preparación"]
+    direction LR
+    V["Videos por seña<br/>seña_señante_n.mp4"] --> X["MediaPipe Holistic<br/>manos · pose · cara"] --> N["Normalización<br/>muñeca y hombros"] --> VEC["527 valores<br/>por cuadro"]
+  end
+  subgraph F2["Fase 2 · División"]
+    direction LR
+    R["Remuestreo<br/>a 60 cuadros"] --> SP["Split 70/15/15<br/>agrupado por señante"] --> AUG["Aumento solo en train<br/>rotación · escala · espejo<br/>ruido · time-warp"]
+    NEG["Negativos sintéticos<br/>clase «ninguna»"] --> SP
+  end
+  subgraph F3["Fase 3 · Entrenamiento"]
+    direction LR
+    TCN["TCN de 4 bloques<br/>dilatación 1·2·4·8<br/>Adam + ReduceLROnPlateau"] --> BEST["Mejor checkpoint<br/>por F1 macro en validación"]
+  end
+  subgraph F46["Fases 4 a 6"]
+    direction LR
+    EV["Evaluación en test<br/>accuracy · F1 · matriz"] --> PT["dinamico_tcn.pt"] --> SRV["FastAPI<br/>/clasificar_frames"]
+  end
+  F1 --> F2 --> F3 --> F46

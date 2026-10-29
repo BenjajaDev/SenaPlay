@@ -1,0 +1,21 @@
+
+ RUN  v5.0.1 /home/user/SenaPlay/web
+
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+
+ Test Files  5 passed (5)
+      Tests  42 passed (42)
+   Start at  01:57:56
+   Duration  11.36s (tests 56%, environment 24%, transform 9%, import 6%, setup 4%)
+
+    Isolate  5 workers spawned · ~972ms startup each (spawn + environment, per file)
+             at least ~648ms faster with isolate: false — reuses workers across files instead of one per file
+

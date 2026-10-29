@@ -1,0 +1,166 @@
+PASS src/shared/ui/__tests__/designSystem.test.js
+  sistema de diseño
+    ✓ renderiza los componentes base sin errores (465 ms)
+    ✓ Button no dispara onPress cuando está cargando (13 ms)
+    ✓ confirm() resuelve true al confirmar y false al cancelar (45 ms)
+    ✓ confirm() con onConfirm ejecuta la acción antes de resolver (16 ms)
+    ✓ runBlocking devuelve el resultado de la tarea (17 ms)
+
+PASS src/features/videos/presentation/__tests__/videoPlayer.test.js
+  HTML del reproductor
+    ✓ solo acepta enlaces http(s) y escapa los atributos (5 ms)
+    ✓ reproduce inline, con subtítulos (SRT se convierte a WebVTT) y avisa eventos a la app (2 ms)
+  Videos dentro de la app
+    ✓ tocar un video lo reproduce aquí mismo, sin abrir el navegador (421 ms)
+    ✓ muestra un error con reintento si el video falla (51 ms)
+    ✓ «Más videos» cambia de video y la flecha vuelve a la lista (57 ms)
+
+PASS src/features/levels/domain/__tests__/exerciseRotation.test.js
+  rotación de ejercicios
+    ✓ la Ñ se normaliza: n~, N~ y ñ son la misma letra y se muestran «Ñ» (6 ms)
+    ✓ la clave de un ejercicio no depende de su posición ni del título (1 ms)
+    ✓ en alfabeto solo se usan las letras propias del nivel (no las de sus palabras) (4 ms)
+    ✓ en vocabulario y números las variantes son de palabras, nunca letras sueltas (20 ms)
+    ✓ los significados reutilizan los textos del nivel (con tildes) (1 ms)
+    ✓ todas las variantes de todos los niveles son válidas y tienen solución (18 ms)
+    ✓ cada sesión: mismo largo, sin repetidos, ≥60 % escritos a mano y cambia entre intentos (21 ms)
+    ✓ los ejercicios que el usuario falla entran primero al sorteo (1 ms)
+
+PASS src/app/__tests__/screens.smoke.test.js
+  pantallas principales (smoke)
+    ✓ login valida por campo y llama al repositorio (482 ms)
+    ✓ registro muestra errores y no envía datos inválidos (39 ms)
+    ✓ tabs renderizan con datos locales (126 ms)
+    ✓ diccionario filtra por búsqueda (119 ms)
+
+PASS src/features/levels/domain/__tests__/levels.domain.test.js
+  ExerciseFactory
+    ✓ todos los ejercicios del catálogo local son válidos (1 ms)
+    ✓ rechaza tipos desconocidos y campos faltantes con mensaje legible (14 ms)
+    ✓ descarta campos ajenos al tipo y congela el resultado
+    ✓ toRow / fromRow son inversos
+  LevelBuilder
+    ✓ construye un nivel válido paso a paso (1 ms)
+    ✓ modo estricto falla con ejercicios inválidos; tolerante los omite (6 ms)
+    ✓ un nivel sin ejercicios válidos queda no disponible (1 ms)
+    ✓ exige id y título (1 ms)
+  evaluateAnswer
+    ✓ sin respuesta es "incompleta" (no cuesta vida)
+    ✓ evalúa cada tipo
+    ✓ matching evalúa parejas (1 ms)
+  sessionMachine
+    ✓ flujo feliz hasta completar (3 ms)
+    ✓ respuesta incompleta avisa sin quitar vida
+    ✓ error resta vida, permite reintentar y termina en gameOver (1 ms)
+    ✓ la pista se cobra una vez por ejercicio
+  scoring y progreso
+    ✓ replica la fórmula original (1 ms)
+    ✓ estrellas según umbrales
+    ✓ completar nivel desbloquea el siguiente y conserva el mejor puntaje (1 ms)
+
+PASS src/shared/theme/__tests__/contrast.test.js
+  contraste AA — tema claro
+    ✓ textPrimary sobre background ≥ 4.5 (1 ms)
+    ✓ textPrimary sobre surface ≥ 4.5
+    ✓ textSecondary sobre surface ≥ 4.5
+    ✓ textSecondary sobre background ≥ 4.5 (1 ms)
+    ✓ textMuted sobre surface ≥ 4.5
+    ✓ textMuted sobre surfaceRaised ≥ 4.5
+    ✓ primary sobre surface ≥ 4.5
+    ✓ primaryContrast sobre primary ≥ 4.5
+    ✓ successText sobre surface ≥ 4.5
+    ✓ dangerText sobre surface ≥ 4.5
+    ✓ warningText sobre surface ≥ 4.5
+    ✓ infoText sobre surface ≥ 4.5
+    ✓ goldText sobre surface ≥ 4.5
+    ✓ onSuccess sobre success ≥ 4.5
+    ✓ onDanger sobre danger ≥ 4.5
+    ✓ onWarning sobre warning ≥ 4.5
+    ✓ onInfo sobre info ≥ 4.5
+    ✓ navInactive sobre surface ≥ 4.5
+    ✓ texto sobre todos los colores del degradé de marca ≥ 4.5 (1 ms)
+    ✓ texto sobre el degradé de cabecera (hero, celebración) ≥ 4.5
+    ✓ ambos temas definen exactamente los mismos tokens (1 ms)
+  contraste AA — tema oscuro
+    ✓ textPrimary sobre background ≥ 4.5
+    ✓ textPrimary sobre surface ≥ 4.5
+    ✓ textSecondary sobre surface ≥ 4.5
+    ✓ textSecondary sobre background ≥ 4.5
+    ✓ textMuted sobre surface ≥ 4.5 (1 ms)
+    ✓ textMuted sobre surfaceRaised ≥ 4.5
+    ✓ primary sobre surface ≥ 4.5 (2 ms)
+    ✓ primaryContrast sobre primary ≥ 4.5
+    ✓ successText sobre surface ≥ 4.5
+    ✓ dangerText sobre surface ≥ 4.5 (1 ms)
+    ✓ warningText sobre surface ≥ 4.5
+    ✓ infoText sobre surface ≥ 4.5
+    ✓ goldText sobre surface ≥ 4.5
+    ✓ onSuccess sobre success ≥ 4.5
+    ✓ onDanger sobre danger ≥ 4.5
+    ✓ onWarning sobre warning ≥ 4.5
+    ✓ onInfo sobre info ≥ 4.5 (1 ms)
+    ✓ navInactive sobre surface ≥ 4.5
+    ✓ texto sobre todos los colores del degradé de marca ≥ 4.5 (7 ms)
+    ✓ texto sobre el degradé de cabecera (hero, celebración) ≥ 4.5
+    ✓ ambos temas definen exactamente los mismos tokens (1 ms)
+
+PASS src/features/remoteConfig/domain/__tests__/remoteConfig.test.js
+  remote config
+    ✓ compara versiones semver (1 ms)
+    ✓ sin filas remotas devuelve los defaults (comportamiento actual)
+    ✓ fusiona objetos parciales e ignora claves desconocidas (2 ms)
+    ✓ mantenimiento y versión mínima bloquean; admins saltan mantenimiento (1 ms)
+    ✓ avisos solo dentro de su ventana de fechas
+    ✓ flags: defaults, ventana temporal y rollout estable (1 ms)
+    ✓ agenda el próximo inicio o fin de avisos y flags (para mostrarlos a la hora exacta) (2 ms)
+
+PASS src/core/__tests__/migrateLegacyStorage.test.js
+  migración de claves oratiolingo.* → senaplay.*
+    ✓ mueve el progreso existente sin pisar datos nuevos (2 ms)
+    ✓ es idempotente y nunca lanza (1 ms)
+
+PASS src/features/auth/domain/__tests__/validation.test.js
+  validaciones de autenticación
+    ✓ correo (1 ms)
+    ✓ fecha de nacimiento (1 ms)
+    ✓ login y registro devuelven errores por campo (1 ms)
+
+PASS src/core/__tests__/core.test.js
+  EventBus (Observer)
+    ✓ notifica, desuscribe y aísla errores de listeners (2 ms)
+    ✓ once se ejecuta una sola vez (1 ms)
+  CatalogRepository (Repository)
+    ✓ usa remoto, omite ejercicios inválidos y guarda caché (1 ms)
+    ✓ sin red ni caché usa el catálogo local (1 ms)
+  mensajes de error
+    ✓ traduce errores comunes de Supabase (1 ms)
+
+PASS src/features/progress/domain/__tests__/progress.domain.test.js
+  racha
+    ✓ previousDay cruza meses y años (2 ms)
+    ✓ días consecutivos suman, un salto reinicia (1 ms)
+    ✓ racha vigente es 0 si pasó más de un día (1 ms)
+  política de vidas
+    ✓ valida y acota la configuración
+    ✓ modo sesión siempre empieza lleno (1 ms)
+    ✓ modo pool consume y recarga con el tiempo
+    ✓ recarga parcial conserva el reloj
+
+PASS src/features/levels/presentation/__tests__/LevelSessionScreen.test.js
+  LevelSessionScreen
+    ✓ juega un nivel completo: incompleto, error, pista, acierto y celebración (333 ms)
+    ✓ salir a mitad de nivel pide confirmación (63 ms)
+    ✓ sin vidas muestra un mensaje no punitivo y permite reintentar (65 ms)
+
+PASS src/features/progress/domain/__tests__/mistakes.test.js
+  errores frecuentes
+    ✓ describe las respuestas de forma legible (1 ms)
+    ✓ cuenta errores, sin vidas y la respuesta más repetida (1 ms)
+    ✓ el repositorio guarda en local y deja en cola lo que no pudo enviar (2 ms)
+
+A worker process has failed to exit gracefully and has been force exited. This is likely caused by tests leaking due to improper teardown. Try running with --detectOpenHandles to find leaks. Active timers can also cause this, ensure that .unref() was called on them.
+Test Suites: 13 passed, 13 total
+Tests:       112 passed, 112 total
+Snapshots:   0 total
+Time:        3.385 s
+Ran all test suites.

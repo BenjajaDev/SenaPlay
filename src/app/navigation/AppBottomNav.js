@@ -23,7 +23,8 @@ function TabItem({ tab, isActive, onPress, theme, styles, reducedMotion }) {
       scale.setValue(isActive ? 1 : 0.9);
       return;
     }
-    Animated.spring(scale, { toValue: isActive ? 1 : 0.9, useNativeDriver: true, ...theme.motion.spring.pop }).start();
+    // Navegación principal (decenas de veces al día): resorte firme, sin oscilar.
+    Animated.spring(scale, { toValue: isActive ? 1 : 0.9, useNativeDriver: true, ...theme.motion.spring.press }).start();
   }, [isActive, reducedMotion, scale, theme]);
 
   return (

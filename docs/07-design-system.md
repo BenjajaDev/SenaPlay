@@ -57,7 +57,7 @@ flowchart LR
 | Espacio | `xxs 2 · xs 4 · sm 8 · md 12 · lg 16 · xl 20 · xxl 24 · xxxl 32` |
 | Radio | `sm 8 · md 12` (botones e inputs) `· lg 14` (tarjetas) `· xl 20` (diálogos) `· xxl 24` (hojas) `· pill 999` |
 | Tipografía (Poppins) | `display` 28/900 · `title` 22/800 · `heading` 17/700 · `body` 15/400 · `bodyStrong` 15/600 · `subtitle` 14/500 · `caption` 13/500 · `label` 13/600 · `button` 15/700 · `stat` 22/900 |
-| Movimiento | `instant 110 · fast 160 · base 220 · slow 320 · emphasis 480 · celebration 900` ms · curvas `enter`, `exit`, `standard`, `pop` |
+| Movimiento | `instant 110 · fast 160 · base 220 · slow 320 · emphasis 480 · celebration 900` ms · curvas `enter`, `exit`, `standard`, `pop`, `drawer` (hojas inferiores) |
 | Táctil | `MIN_TOUCH = 44` px (se completa con `hitSlop`) |
 
 ## 7.4 Componentes (`src/shared/ui`)
@@ -73,7 +73,7 @@ flowchart LR
 ## 7.5 Accesibilidad
 
 - **Feedback multimodal:** cada resultado combina color, icono, texto, vibración (`haptics`) y anuncio al lector de pantalla (`announce`). La app no depende del audio.
-- **Reducir movimiento:** `useReducedMotion()` salta al estado final o usa un fade corto. En web, `prefers-reduced-motion`.
+- **Reducir movimiento:** `useReducedMotion()` salta al estado final o usa un fade corto. Es un valor global que `AppRoot` lee antes de montar la interfaz, así que el primer render ya trae el ajuste real. En web, `prefers-reduced-motion`.
 - **Roles y labels:** `accessibilityRole` y `accessibilityLabel` en español en los controles; `accessibilityState` para selección y deshabilitado; regiones vivas para avisos.
 - **No solo color:** estados con icono (✓, ✕, candado, estrellas) y texto.
 - **Web:** `:focus-visible` con `focusRing`, *skip link*, diálogos con `aria-modal`, foco inicial y cierre con Escape.

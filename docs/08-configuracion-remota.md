@@ -14,7 +14,7 @@ sequenceDiagram
 
   ADM->>DB: upsert app_config / feature_flags (RLS: is_admin)
   DB->>DB: trigger → config_audit
-  Note over APP: al abrir, al volver a primer plano (≥ 5 s), al reconectar Realtime<br/>y al instante por Realtime (migración 008); cada 30 s solo sin Realtime
+  Note over APP: al abrir, al volver a primer plano (≥ 5 s), al reconectar Realtime<br/>y al instante por Realtime (migración 008) · cada 30 s solo sin Realtime
   APP->>C: getCached() → aplica al instante
   APP->>DB: select app_config, feature_flags
   DB-->>APP: filas

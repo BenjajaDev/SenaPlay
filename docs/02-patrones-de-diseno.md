@@ -153,11 +153,17 @@ stateDiagram-v2
 
 ## 2.4 Repository con respaldo en tres niveles
 
+Catálogo, diccionario, vocabulario y videos comparten `core/data/cachedResource`. La pantalla no espera a la red: `useStaleWhileRevalidate` pinta primero lo empaquetado o lo guardado (`getCached*()`) y lo reemplaza por la lectura fresca solo si cambió.
+
 ```mermaid
 flowchart LR
-  A["getLevels()"] --> B{"¿Supabase responde<br/>con datos válidos?"}
+  A["getLevels()"] --> M{"¿lectura remota<br/>de hace < 5 min?"}
+  M -- sí --> R0["memoria<br/>source: remote"]
+  M -- no --> B{"¿Supabase responde a tiempo (8 s)<br/>con datos válidos?"}
   B -- sí --> C["LevelBuilder.lenient()<br/>omite ejercicios inválidos"] --> D["guarda caché"] --> R1["source: remote"]
   B -- no --> E{"¿hay caché?"}
   E -- sí --> R2["source: cache"]
   E -- no --> R3["catálogo empaquetado<br/>source: local"]
 ```
+
+Las lecturas simultáneas comparten una sola consulta, y un fallo de red no se memoriza: la próxima lectura reintenta. El rol del usuario sigue la misma idea en `ProfileRepository` (`getCachedRole` + `getRole`).

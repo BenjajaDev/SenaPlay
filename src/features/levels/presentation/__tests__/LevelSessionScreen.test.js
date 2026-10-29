@@ -91,4 +91,27 @@ describe('LevelSessionScreen', () => {
     await fireEvent.press(screen.getByText('Intentar de nuevo'));
     await waitFor(() => expect(screen.getByLabelText('Vidas: 1 de 1')).toBeTruthy());
   });
+
+  test('si llega otro catálogo con la sesión abierta, el ejercicio actual no cambia', async () => {
+    const handlers = { onComplete: jest.fn(), onLifeLost: jest.fn(), onMistake: jest.fn(), onBack: jest.fn() };
+    const tree = (current) => (
+      <SafeAreaProvider initialMetrics={metrics}>
+        <AppThemeProvider>
+          <FeedbackProvider>
+            <LevelSessionScreen level={current} startingLives={3} {...handlers} />
+          </FeedbackProvider>
+        </AppThemeProvider>
+      </SafeAreaProvider>
+    );
+    const remoteVersion = new LevelBuilder(1)
+      .title('Letras de prueba (remoto)')
+      .addExercise({ type: 'true-false', title: 'Otra pregunta', statement: 'La C es curva', answer: true })
+      .build();
+
+    const { rerender } = await render(tree(level));
+    expect(screen.getByText('¿Qué letra es?')).toBeTruthy();
+    await rerender(tree(remoteVersion));
+    expect(screen.getByText('¿Qué letra es?')).toBeTruthy();
+    expect(screen.queryByText('Otra pregunta')).toBeNull();
+  });
 });

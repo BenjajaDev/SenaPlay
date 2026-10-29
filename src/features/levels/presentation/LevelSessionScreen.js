@@ -32,7 +32,7 @@ import useLevelSession from './session/useLevelSession';
  *   onBack         salir de la sesión
  */
 export default function LevelSessionScreen({
-  level: baseLevel,
+  level: openedLevel,
   startingLives = 3,
   rotateExercises = false,
   focusKeys,
@@ -46,6 +46,9 @@ export default function LevelSessionScreen({
   const styles = useMemo(() => createStyles(theme), [theme]);
   const { config, isEnabled } = useRemoteConfig();
   const { confirm } = useFeedback();
+  // El nivel se fija al abrir la sesión: si el catálogo remoto llega a mitad
+  // de partida, no se vuelven a sortear los ejercicios bajo la persona.
+  const [baseLevel] = useState(openedLevel);
   const hintsEnabled = config.difficulty?.hintsEnabled !== false;
 
   // Cada intento (incluido «Intentar de nuevo») sortea otros ejercicios del

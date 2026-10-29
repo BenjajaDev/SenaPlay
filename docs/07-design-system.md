@@ -16,7 +16,7 @@ Cada token existe en modo **claro** (violeta‑magenta) y **oscuro** (dorado‑�
 | Sobre relleno | `onSuccess`, `onDanger`, `onWarning`, `onInfo` | texto encima del color de estado |
 | Recompensa | `gold`, `goldDeep` | estrellas, racha |
 | Sistema | `navInactive`, `focusRing`, `overlay`, `scrim`, `shadow`, `skeletonBase`, `skeletonHighlight` | navegación, foco, capas |
-| Cámara | `cameraColors`, `cameraAlpha()` | escenario oscuro fijo sobre el video en vivo |
+| Cámara | `cameraColors`, `cameraAlpha()` | escenario oscuro fijo sobre el video en vivo, con la identidad de la app: fondo del tema oscuro, violeta de marca en rellenos, lila (`accent`) en texto y bordes, dorado (`highlight`) para la seña a hacer. Verificado AA en `contrast.test.js`. Pantallas con `CameraLayout` (cabecera, visor y controles sin superponerse) y `CameraButton` |
 
 **Ajustes de accesibilidad respecto de la paleta original (modo claro):**
 

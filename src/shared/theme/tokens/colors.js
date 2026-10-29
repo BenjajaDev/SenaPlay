@@ -128,27 +128,42 @@ export const darkColors = {
 
 // Paleta del "escenario de cámara": las pantallas de práctica con IA se
 // dibujan SOBRE el video en vivo, cuyo fondo no depende del tema, así que
-// usan siempre esta paleta oscura de alto contraste (igual en claro y oscuro).
+// usan siempre esta paleta oscura (igual en claro y oscuro). Sale de la
+// identidad de la app: el fondo del tema oscuro, el violeta de marca para
+// rellenos, un lila claro para texto y bordes, el dorado para lo que hay que
+// mirar y los colores de estado del tema oscuro. contrast.test.js verifica
+// AA sobre `stage` y `surface`.
 const CAMERA_RGB = {
-  stage: '15,23,42',
+  stage: '18,15,29',
   white: '255,255,255',
-  text: '226,232,240',
-  accent: '28,176,246',
-  success: '34,197,94',
-  danger: '239,68,68',
-  warning: '245,158,11',
+  text: '210,201,228',
+  accent: '224,139,255',
+  primary: '143,30,174',
+  success: '126,219,67',
+  danger: '255,122,141',
+  warning: '252,211,77',
 };
 
 export const cameraColors = {
-  stage: '#0F172A',
+  stage: '#120F1D',
+  surface: '#1E1930',
+  border: '#4B3B73',
   text: '#FFFFFF',
-  textStrong: '#F1F5F9',
-  textSoft: '#E2E8F0',
-  accent: '#1CB0F6',
-  success: '#22C55E',
-  danger: '#EF4444',
-  dangerLight: '#FCA5A5',
-  warning: '#F59E0B',
+  textStrong: '#F4F0FF',
+  textSoft: '#D2C9E4',
+  textMuted: '#A79BBC',
+  // Lila de marca legible sobre el escenario: texto, bordes e indicadores.
+  accent: '#E08BFF',
+  // Violeta de marca para rellenos de botones (texto blanco encima).
+  primary: '#8F1EAE',
+  // Dorado: la letra o seña que hay que hacer.
+  highlight: '#FFBC10',
+  success: '#7EDB43',
+  danger: '#FF7A8D',
+  dangerLight: '#FFB3BF',
+  // Relleno de acciones de grabación (texto blanco encima).
+  dangerFill: '#B8304A',
+  warning: '#FCD34D',
 };
 
 /** Color del escenario de cámara con transparencia: cameraAlpha('white', 0.1). */

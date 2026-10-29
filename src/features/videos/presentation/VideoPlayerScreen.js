@@ -6,6 +6,7 @@ import { useAppTheme } from '../../../shared/theme/ThemeProvider';
 import SignImage from '../../signs/presentation/SignImage';
 import { formatDuration } from '../data/MediaRepository';
 import VideoPlayer from './VideoPlayer';
+import VideoThumbnail from './VideoThumbnail';
 
 const MAX_UP_NEXT = 4;
 
@@ -100,9 +101,7 @@ export default function VideoPlayerScreen({ video, videos = [], onSelect, onBack
                 accessibilityHint="Reproduce este video"
               >
                 <View style={styles.row}>
-                  <View style={styles.thumb}>
-                    <Ionicons name="play" size={22} color={theme.colors.primary} />
-                  </View>
+                  <VideoThumbnail uri={item.thumbnailUrl} iconSize={14} style={styles.thumb} />
                   <View style={styles.flex}>
                     <AppText variant="bodyStrong" numberOfLines={2}>
                       {item.title}
@@ -122,7 +121,7 @@ export default function VideoPlayerScreen({ video, videos = [], onSelect, onBack
 }
 
 function createStyles(theme) {
-  const { spacing, radius, colors } = theme;
+  const { spacing, radius } = theme;
   return StyleSheet.create({
     container: { gap: spacing.md },
     flex: { flex: 1 },
@@ -132,13 +131,7 @@ function createStyles(theme) {
     signCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
     upNext: { gap: spacing.sm },
     row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-    thumb: {
-      width: 56,
-      height: 42,
-      borderRadius: radius.md,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: colors.primarySoft,
-    },
+    // 16:9, como el reproductor.
+    thumb: { width: 80, height: 45, borderRadius: radius.md },
   });
 }

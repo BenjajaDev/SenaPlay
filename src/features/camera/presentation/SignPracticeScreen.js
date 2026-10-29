@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import ScreenHeader from '../../../shared/ui/ScreenHeader';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SIGNS } from '../data/practiceSigns';
-import { CameraStage, IaBanner, estilos, useSignRecognition } from './signCamera';
+import CameraLayout, { CameraIconButton } from './CameraLayout';
+import { IaBanner, useSignRecognition } from './signCamera';
 import { cameraAlpha, cameraColors } from '../../../shared/theme/tokens/colors';
 import { poppins } from '../../../shared/theme/fonts';
 
@@ -30,14 +29,13 @@ const NOMBRE_DEDO = {
  * en una sola pantalla hacía la barra de controles ilegible.
  */
 export default function SignPracticeScreen({ onBack }) {
-  const insets = useSafeAreaInsets();
   const recog = useSignRecognition();
 
   const [modoActivo, setModoActivo] = useState('libre'); // 'libre' | 'practica'
   const [signIndex, setSignIndex] = useState(0);
 
   const currentSign = SIGNS[signIndex];
-  const { puntuacion, errorCamara, activarModoLibre, activarModoPractica } = recog;
+  const { puntuacion, activarModoLibre, activarModoPractica } = recog;
 
   useEffect(() => {
     if (recog.permisoCamara && !recog.permisoCamara.granted && recog.permisoCamara.canAskAgain) {
@@ -79,131 +77,100 @@ export default function SignPracticeScreen({ onBack }) {
   }, [recog.puntuacionDedos]);
 
   return (
-    <View style={estilos.pantalla}>
-      <View style={{ paddingTop: insets.top, paddingHorizontal: 12 }}>
-        <ScreenHeader title="Práctica de señas" onBack={onBack} />
-      </View>
+    <CameraLayout title="Práctica de señas" onBack={onBack} recog={recog}>
+      <IaBanner
+        recog={recog}
+        objetivo={modoActivo === 'practica' ? currentSign?.id : null}
+        textoInactivo="Muestra una seña para que la IA la reconozca…"
+      />
 
-      <CameraStage recog={recog} />
-
-      <View style={[estilos.barraControl, { paddingBottom: insets.bottom + 8 }]}>
-        {errorCamara ? (
-          <View style={estilos.errorCamaraBox}>
-            <Text style={estilos.errorCamaraTexto}>⚠ {errorCamara}</Text>
-          </View>
-        ) : null}
-
-        <IaBanner
-          recog={recog}
-          objetivo={modoActivo === 'practica' ? currentSign?.id : null}
-          textoInactivo="Muestra una seña para que la IA la reconozca…"
-        />
-
-        {/* Toggle Libre / Práctica */}
-        <View style={estilos2.toggleContenedor}>
-          {[
-            { key: 'libre', label: 'Libre' },
-            { key: 'practica', label: 'Práctica guiada' },
-          ].map((m) => (
-            <TouchableOpacity
+      {/* Libre / Práctica guiada */}
+      <View style={estilos2.toggleContenedor} accessibilityRole="tablist">
+        {MODOS.map((m) => {
+          const activo = modoActivo === m.key;
+          return (
+            <Pressable
               key={m.key}
-              style={[estilos2.toggleBtn, modoActivo === m.key && estilos2.toggleActivo]}
+              style={({ pressed }) => [estilos2.toggleBtn, activo && estilos2.toggleActivo, pressed && estilos2.presionado]}
               onPress={() => cambiarModo(m.key)}
-              accessibilityRole="button"
+              accessibilityRole="tab"
               accessibilityLabel={`Modo ${m.label}`}
-              accessibilityState={{ selected: modoActivo === m.key }}
+              accessibilityState={{ selected: activo }}
             >
-              <Text
-                style={[
-                  estilos2.toggleTexto,
-                  modoActivo === m.key && estilos2.toggleTextoActivo,
-                ]}
-              >
+              <Text style={[estilos2.toggleTexto, activo && estilos2.toggleTextoActivo]} numberOfLines={1}>
                 {m.label}
               </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {modoActivo === 'practica' && (
-          <>
-            {/* Consejo del instructor */}
-            {consejo ? (
-              <View
-                style={[
-                  estilos2.consejoBox,
-                  consejo.tono === 'ok' && estilos2.consejoOk,
-                  consejo.tono === 'mal' && estilos2.consejoMal,
-                ]}
-              >
-                <Text style={estilos2.consejoTexto}>{consejo.texto}</Text>
-                {dedosFlojos.length ? (
-                  <Text style={estilos2.consejoDedos}>
-                    Corrige: {dedosFlojos.join(' y ')}
-                  </Text>
-                ) : null}
-              </View>
-            ) : (
-              <Text style={estilos2.instruccion}>{currentSign?.instruccion}</Text>
-            )}
-
-            {/* Navegación de señas */}
-            <View style={estilos2.signNav}>
-              <TouchableOpacity
-                style={estilos2.btnNav}
-                onPress={() => navSign(-1)}
-                accessibilityRole="button"
-                accessibilityLabel="Seña anterior"
-              >
-                <Text style={estilos2.btnNavTexto}>‹</Text>
-              </TouchableOpacity>
-
-              <View style={estilos2.signInfo}>
-                <Text style={estilos2.signName}>{currentSign.nombre}</Text>
-                {puntuacion !== null && (
-                  <Text
-                    style={[
-                      estilos2.puntuacion,
-                      {
-                        color:
-                          puntuacion > 88 ? cameraColors.success : puntuacion > 72 ? cameraColors.warning : cameraColors.danger,
-                      },
-                    ]}
-                  >
-                    {puntuacion}%
-                  </Text>
-                )}
-              </View>
-
-              <TouchableOpacity
-                style={estilos2.btnNav}
-                onPress={() => navSign(1)}
-                accessibilityRole="button"
-                accessibilityLabel="Seña siguiente"
-              >
-                <Text style={estilos2.btnNavTexto}>›</Text>
-              </TouchableOpacity>
-            </View>
-          </>
-        )}
+            </Pressable>
+          );
+        })}
       </View>
-    </View>
+
+      {modoActivo === 'practica' ? (
+        <>
+          {/* Consejo del instructor */}
+          {consejo ? (
+            <View
+              style={[
+                estilos2.consejoBox,
+                consejo.tono === 'ok' && estilos2.consejoOk,
+                consejo.tono === 'mal' && estilos2.consejoMal,
+              ]}
+              accessibilityLiveRegion="polite"
+            >
+              <Text style={estilos2.consejoTexto}>{consejo.texto}</Text>
+              {dedosFlojos.length ? <Text style={estilos2.consejoDedos}>Corrige: {dedosFlojos.join(' y ')}</Text> : null}
+            </View>
+          ) : (
+            <Text style={estilos2.instruccion}>{currentSign?.instruccion}</Text>
+          )}
+
+          {/* Navegación de señas */}
+          <View style={estilos2.signNav}>
+            <CameraIconButton icon="chevron-back" label="Seña anterior" onPress={() => navSign(-1)} />
+            <View style={estilos2.signInfo}>
+              <Text style={estilos2.signName} numberOfLines={1}>
+                {currentSign.nombre}
+              </Text>
+              {puntuacion !== null ? (
+                <Text style={[estilos2.puntuacion, { color: colorPuntuacion(puntuacion) }]}>{puntuacion}% de similitud</Text>
+              ) : null}
+            </View>
+            <CameraIconButton icon="chevron-forward" label="Seña siguiente" onPress={() => navSign(1)} />
+          </View>
+        </>
+      ) : null}
+    </CameraLayout>
   );
+}
+
+const MODOS = [
+  { key: 'libre', label: 'Libre' },
+  { key: 'practica', label: 'Práctica guiada' },
+];
+
+// El número va siempre escrito: el color solo refuerza.
+function colorPuntuacion(valor) {
+  if (valor > 88) return cameraColors.success;
+  if (valor > 72) return cameraColors.warning;
+  return cameraColors.danger;
 }
 
 const estilos2 = StyleSheet.create({
   toggleContenedor: {
     flexDirection: 'row',
-    backgroundColor: cameraAlpha('white', 0.07),
+    backgroundColor: cameraColors.surface,
+    borderWidth: 1,
+    borderColor: cameraColors.border,
     borderRadius: 12,
     padding: 3,
   },
-  toggleBtn: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 10 },
-  toggleActivo: { backgroundColor: cameraColors.accent },
-  toggleTexto: { color: cameraAlpha('white', 0.5), fontFamily: poppins(700), fontSize: 13 },
+  toggleBtn: { flex: 1, minHeight: 42, justifyContent: 'center', alignItems: 'center', borderRadius: 10, paddingHorizontal: 6 },
+  toggleActivo: { backgroundColor: cameraColors.primary, borderWidth: 1.5, borderColor: cameraColors.accent },
+  presionado: { opacity: 0.85 },
+  toggleTexto: { color: cameraColors.textMuted, fontFamily: poppins(700), fontSize: 13 },
   toggleTextoActivo: { color: cameraColors.text },
   instruccion: {
-    color: cameraAlpha('text', 0.75),
+    color: cameraColors.textSoft,
     fontSize: 13,
     textAlign: 'center',
     lineHeight: 18,
@@ -212,33 +179,24 @@ const estilos2 = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    backgroundColor: cameraAlpha('warning', 0.15),
+    backgroundColor: cameraAlpha('warning', 0.14),
     borderWidth: 1,
-    borderColor: cameraAlpha('warning', 0.4),
+    borderColor: cameraAlpha('warning', 0.55),
     alignItems: 'center',
     gap: 2,
   },
   consejoOk: {
-    backgroundColor: cameraAlpha('success', 0.15),
-    borderColor: cameraAlpha('success', 0.45),
+    backgroundColor: cameraAlpha('success', 0.14),
+    borderColor: cameraAlpha('success', 0.6),
   },
   consejoMal: {
-    backgroundColor: cameraAlpha('danger', 0.15),
-    borderColor: cameraAlpha('danger', 0.4),
+    backgroundColor: cameraAlpha('danger', 0.14),
+    borderColor: cameraAlpha('danger', 0.6),
   },
   consejoTexto: { color: cameraColors.textStrong, fontSize: 13, fontFamily: poppins(700), textAlign: 'center' },
-  consejoDedos: { color: cameraAlpha('text', 0.75), fontSize: 12 },
-  signNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  btnNav: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: cameraAlpha('white', 0.08),
-    borderRadius: 10,
-  },
-  btnNavTexto: { color: cameraColors.text, fontSize: 22, fontFamily: poppins(300), lineHeight: 26 },
+  consejoDedos: { color: cameraColors.textSoft, fontSize: 12 },
+  signNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   signInfo: { flex: 1, alignItems: 'center' },
   signName: { color: cameraColors.textStrong, fontFamily: poppins(800), fontSize: 15 },
-  puntuacion: { fontFamily: poppins(800), fontSize: 20, marginTop: 2 },
+  puntuacion: { fontFamily: poppins(800), fontSize: 14, marginTop: 2 },
 });

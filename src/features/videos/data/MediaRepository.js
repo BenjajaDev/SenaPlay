@@ -4,18 +4,13 @@ import { storageKey } from '../../../core/storage/jsonStorage';
 
 const CACHE_KEY = storageKey('media', 'v1');
 
-// Respaldo cuando aún no hay videos cargados desde el panel de administración.
-export const LOCAL_VIDEOS = [
-  { id: 'local-1', title: 'Pronunciación diaria', category: 'Básico', durationSeconds: 372, url: null },
-  { id: 'local-2', title: 'Vocabulario para saludos', category: 'Básico', durationSeconds: 525, url: null },
-  { id: 'local-3', title: 'Frases en contexto', category: 'Intermedio', durationSeconds: 603, url: null },
-  { id: 'local-4', title: 'Conversaciones reales', category: 'Avanzado', durationSeconds: 740, url: null },
-];
-
 /**
  * Recursos multimedia administrados desde el Gestor de Medios del panel web
  * (tabla `media` + bucket `media` de Storage). La app solo ve los publicados.
- * Misma estrategia remoto → caché → local que el catálogo.
+ * Misma estrategia remoto → caché que el catálogo, con una diferencia: una
+ * lista vacía es válida. Si el panel despublica o borra todos los videos,
+ * la app deja de mostrarlos (y la pantalla avisa que aquí se añadirán). Sin
+ * red ni caché no se inventan videos: la lista queda vacía con `source: 'local'`.
  *
  *   listVideos()        → { videos, source }
  *   getCachedVideos()   → { videos, source: 'cache' } | null
@@ -36,7 +31,8 @@ export function createMediaRepository({ supabase, storage }) {
   const videos = createCachedResource({
     storage,
     cacheKey: CACHE_KEY,
-    local: LOCAL_VIDEOS,
+    local: [],
+    isValid: Array.isArray,
     fetchRemote: async () => {
       const { data, error } = await withTimeout(
         supabase

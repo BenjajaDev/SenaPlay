@@ -1,0 +1,32 @@
+erDiagram
+  AUTH_USERS ||--|| PROFILES : "tiene"
+  AUTH_USERS ||--o{ EXERCISE_MISTAKES : "comete"
+  LEVELS ||--o{ EXERCISES : "contiene"
+  LEVELS ||--o{ EXERCISE_MISTAKES : "registra"
+  PROFILES {
+    uuid id PK
+    text email
+    text role "user, editor, admin"
+  }
+  EXERCISE_MISTAKES {
+    bigint id PK
+    uuid user_id FK
+    int level_id
+    text exercise_key
+    text given_answer
+    bool game_over
+  }
+  LEVELS {
+    int id PK
+    text title
+    text category
+    bool available
+    int sort_order
+  }
+  EXERCISES {
+    bigint id PK
+    int level_id FK
+    int position
+    text type "9 tipos"
+    jsonb payload
+  }

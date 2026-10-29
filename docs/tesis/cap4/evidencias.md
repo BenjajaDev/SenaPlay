@@ -125,6 +125,8 @@ Son 63 commits: 2 en abril, 2 en junio, 1 en julio, 1 en agosto, 42 en septiembr
 
 ## 7. Índice del Capítulo IV con figuras, tablas y código
 
+> **Nota de numeración final.** La sección 3.8 ya usa la Tabla 11, así que en el documento el Capítulo IV empieza en la **Tabla 12**: cada tabla de este índice queda un número más arriba (T11→12 … T31→32). Las figuras (5 a 20) y los códigos (1 a 6) no cambian.
+
 Numeración continua desde la **Tabla 11** y la **Figura 5**.
 
 | Sección | Contenido | Figuras | Tablas | Código |

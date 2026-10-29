@@ -1,4 +1,4 @@
-import { darkColors, lightColors } from '../tokens/colors';
+import { cameraColors, darkColors, lightColors } from '../tokens/colors';
 import { darkGradients, lightGradients } from '../tokens/gradients';
 
 // Verifica WCAG 2.1 AA (4.5:1 texto normal) para las combinaciones que la UI
@@ -61,5 +61,23 @@ describe.each([
   test('ambos temas definen exactamente los mismos tokens', () => {
     expect(Object.keys(colors).sort()).toEqual(Object.keys(lightColors).sort());
     expect(Object.keys(gradients).sort()).toEqual(Object.keys(lightGradients).sort());
+  });
+});
+
+// Escenario de cámara (igual en ambos temas): el texto va sobre el fondo o
+// sobre los paneles, y los botones llevan texto blanco sobre su relleno.
+const CAMERA_TEXT = ['text', 'textStrong', 'textSoft', 'textMuted', 'accent', 'highlight', 'success', 'danger', 'dangerLight', 'warning'];
+
+describe('contraste AA — escenario de cámara', () => {
+  test.each(CAMERA_TEXT.flatMap((fg) => [[fg, 'stage'], [fg, 'surface']]))('%s sobre %s ≥ 4.5', (fg, bg) => {
+    expect(contrastRatio(cameraColors[fg], cameraColors[bg])).toBeGreaterThanOrEqual(4.5);
+  });
+
+  test.each([
+    ['text', 'primary'],
+    ['text', 'dangerFill'],
+    ['stage', 'highlight'],
+  ])('%s sobre %s ≥ 4.5', (fg, bg) => {
+    expect(contrastRatio(cameraColors[fg], cameraColors[bg])).toBeGreaterThanOrEqual(4.5);
   });
 });

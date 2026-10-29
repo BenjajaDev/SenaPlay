@@ -1,14 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
-import useReducedMotion from '../../../core/a11y/useReducedMotion';
+import { useEffect, useMemo, useState } from 'react';
+import { Animated, StyleSheet, Text, View } from 'react-native';
 import { getSignAssets } from '../data/local/signAssets';
 import { useAppTheme } from '../../../shared/theme/ThemeProvider';
 import { poppins } from '../../../shared/theme/fonts';
+import useVariationSwipe from './useVariationSwipe';
 
-// La imagen no llega a desaparecer del todo al cambiar de variación: un cuadro
-// vacío entre dos fotos se siente como un parpadeo.
-const CROSSFADE_FLOOR = 0.15;
+// Acciones del lector de pantalla (deslizar arriba/abajo sobre la seña).
+const VARIATION_ACTIONS = [
+  { name: 'increment', label: 'Siguiente variación' },
+  { name: 'decrement', label: 'Variación anterior' },
+];
 
 /**
  * Muestra la imagen/GIF de una seña.
@@ -18,9 +20,10 @@ const CROSSFADE_FLOOR = 0.15;
  * y depende de que la fuente cargue bien en todos los dispositivos.
  *
  * Cuando una seña tiene más de una foto válida (ej: variaciones de
- * configuración manual en T, X, Y), se muestran con flechas para que el
- * usuario navegue entre ellas a su propio ritmo (nada se mueve solo — más
- * accesible que un carrusel automático) con un crossfade suave al cambiar.
+ * configuración manual en T, X, Y), se cambia de variación ARRASTRANDO la
+ * seña hacia los lados (useVariationSwipe); los puntos de abajo indican
+ * cuántas hay. Nada se mueve solo: lo decide la persona. Con lector de
+ * pantalla es un control ajustable (deslizar arriba/abajo).
  *
  * Mientras no existan los recursos gráficos, dibuja un placeholder que deja
  * claro qué seña va ahí (la letra) sin parecer un error de la app.
@@ -40,7 +43,6 @@ export default function SignImage({
   showPlaceholderIcon = true,
 }) {
   const theme = useAppTheme();
-  const reducedMotion = useReducedMotion();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
   const assets = getSignAssets(signKey);
@@ -48,110 +50,53 @@ export default function SignImage({
   const caja = { width: size, height: size, borderRadius: rounded };
 
   const [index, setIndex] = useState(0);
-  // El destino vive en una ref: dos toques rápidos avanzan dos variaciones
-  // aunque el primer crossfade no haya terminado.
-  const targetRef = useRef(0);
-  const animationRef = useRef(null);
-  const fade = useRef(new Animated.Value(1)).current;
   const hasCarousel = assets.length > 1;
+  const { translateX, panHandlers, step } = useVariationSwipe({
+    index,
+    count: assets.length,
+    width: size,
+    onIndexChange: setIndex,
+  });
 
   // Si cambia la seña mostrada (ej: se reordena un ejercicio) se reinicia.
   useEffect(() => {
-    animationRef.current?.stop();
-    targetRef.current = 0;
     setIndex(0);
-    fade.setValue(1);
-    return () => animationRef.current?.stop();
-  }, [signKey]);
+    translateX.setValue(0);
+  }, [signKey, translateX]);
 
-  const goTo = (nextIndex) => {
-    targetRef.current = nextIndex;
-    animationRef.current?.stop();
-    if (reducedMotion) {
-      setIndex(nextIndex);
-      return;
-    }
-    // Ambas mitades con ease-out: la respuesta al toque empieza de inmediato.
-    const { duration, easing } = theme.motion;
-    animationRef.current = Animated.timing(fade, {
-      toValue: CROSSFADE_FLOOR,
-      duration: duration.fast,
-      easing: easing.enter,
-      useNativeDriver: true,
-    });
-    animationRef.current.start(({ finished }) => {
-      if (!finished) return;
-      setIndex(targetRef.current);
-      animationRef.current = Animated.timing(fade, {
-        toValue: 1,
-        duration: duration.fast,
-        easing: easing.enter,
-        useNativeDriver: true,
-      });
-      animationRef.current.start();
-    });
-  };
-
-  const goPrev = () => goTo((targetRef.current - 1 + assets.length) % assets.length);
-  const goNext = () => goTo((targetRef.current + 1) % assets.length);
-
-  // Las flechas se escalan con la caja para seguir siendo tocables en
-  // casillas chicas (grillas de emparejar) sin taparle la mano a la imagen.
-  const flechaSize = Math.max(11, Math.round(size * 0.16));
-  const flechaCaja = Math.max(18, Math.round(size * 0.32));
-  // Área táctil: en alto llega a MIN_TOUCH; en ancho crece hacia el centro sin
-  // que las dos flechas se pisen (hacia afuera no sirve: en Android los toques
-  // fuera de la imagen no llegan). En casillas de menos de ~92 px el ancho
-  // queda limitado por la propia imagen.
-  const slopAlto = Math.max(8, Math.ceil((theme.minTouch - flechaCaja) / 2));
-  const slopCentro = Math.max(0, Math.min(slopAlto, Math.floor((size - 4 - 2 * flechaCaja) / 2)));
-  const slopIzq = { top: slopAlto, bottom: slopAlto, left: 2, right: slopCentro };
-  const slopDer = { top: slopAlto, bottom: slopAlto, left: slopCentro, right: 2 };
+  // Al arrastrar, la imagen se atenúa un poco hacia los bordes: ayuda a leer
+  // que está por cambiar.
+  const opacity = translateX.interpolate({
+    inputRange: [-size, 0, size],
+    outputRange: [0.4, 1, 0.4],
+    extrapolate: 'clamp',
+  });
 
   if (assets.length > 0) {
+    const nombre = `Seña de ${texto}`;
     return (
-      <View style={[caja, style]}>
+      <View
+        style={[caja, styles.marco, style]}
+        {...(hasCarousel ? panHandlers : null)}
+        accessible
+        accessibilityRole={hasCarousel ? 'adjustable' : 'image'}
+        accessibilityLabel={nombre}
+        accessibilityValue={hasCarousel ? { text: `Variación ${index + 1} de ${assets.length}` } : undefined}
+        accessibilityHint={hasCarousel ? 'Desliza hacia los lados para ver otra variación' : undefined}
+        accessibilityActions={hasCarousel ? VARIATION_ACTIONS : undefined}
+        onAccessibilityAction={(event) => step(event.nativeEvent.actionName === 'increment' ? 1 : -1)}
+      >
         <Animated.Image
           source={assets[index]}
-          style={[styles.imagen, caja, { opacity: fade }]}
+          style={[styles.imagen, caja, hasCarousel && { opacity, transform: [{ translateX }] }]}
           resizeMode="contain"
-          accessible
-          accessibilityRole="image"
-          accessibilityLabel={
-            hasCarousel
-              ? `Seña de ${texto}, variación ${index + 1} de ${assets.length}`
-              : `Seña de ${texto}`
-          }
         />
         {hasCarousel ? (
-          <>
-            <Pressable
-              onPress={goPrev}
-              hitSlop={slopIzq}
-              accessibilityRole="button"
-              accessibilityLabel="Variación anterior"
-              style={[styles.flecha, styles.flechaIzq, { width: flechaCaja, height: flechaCaja, borderRadius: flechaCaja / 2 }]}
-            >
-              <Ionicons name="chevron-back" size={flechaSize} color={theme.colors.onHeader} />
-            </Pressable>
-            <Pressable
-              onPress={goNext}
-              hitSlop={slopDer}
-              accessibilityRole="button"
-              accessibilityLabel="Siguiente variación"
-              style={[styles.flecha, styles.flechaDer, { width: flechaCaja, height: flechaCaja, borderRadius: flechaCaja / 2 }]}
-            >
-              <Ionicons name="chevron-forward" size={flechaSize} color={theme.colors.onHeader} />
-            </Pressable>
-            <View pointerEvents="none" style={styles.dotsRow}>
-              {assets.map((_, dotIndex) => (
-                <View
-                  key={`dot-${dotIndex}`}
-                  style={[styles.dot, dotIndex === index && styles.dotActive]}
-                />
-              ))}
-            </View>
-          </>
+          <View pointerEvents="none" style={styles.dotsRow}>
+            {assets.map((_, dotIndex) => (
+              <View key={`dot-${dotIndex}`} style={[styles.dot, dotIndex === index && styles.dotActive]} />
+            ))}
+          </View>
         ) : null}
       </View>
     );
@@ -192,32 +137,27 @@ function createStyles(theme) {
       left: 0,
       backgroundColor: theme.colors.surfaceSunken,
     },
-    flecha: {
-      position: 'absolute',
-      top: '50%',
-      marginTop: -11,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: theme.colors.scrim,
-    },
-    flechaIzq: { left: 2 },
-    flechaDer: { right: 2 },
+    // Recorta la imagen mientras se arrastra: no se sale de su casilla.
+    marco: { overflow: 'hidden', backgroundColor: theme.colors.surfaceSunken },
     dotsRow: {
       position: 'absolute',
-      bottom: 3,
+      bottom: 4,
       left: 0,
       right: 0,
       flexDirection: 'row',
       justifyContent: 'center',
-      gap: 3,
+      alignItems: 'center',
+      gap: 4,
     },
     dot: {
-      width: 4,
-      height: 4,
-      borderRadius: 2,
+      width: 5,
+      height: 5,
+      borderRadius: 3,
       backgroundColor: theme.colors.borderStrong,
     },
+    // La activa es más ancha además de tener color: no se informa solo con color.
     dotActive: {
+      width: 12,
       backgroundColor: theme.colors.primary,
     },
     placeholder: {

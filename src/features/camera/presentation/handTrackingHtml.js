@@ -39,7 +39,7 @@ export const HAND_HTML = `<!DOCTYPE html>
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
-    body { background:#0F172A; overflow:hidden; width:100vw; height:100vh; }
+    body { background:#120F1D; overflow:hidden; width:100vw; height:100vh; }
     #vid {
       position:absolute; top:0; left:0;
       width:100%; height:100%;
@@ -51,18 +51,21 @@ export const HAND_HTML = `<!DOCTYPE html>
     #overlay { position:absolute; top:0; left:0; display:block; pointer-events:none; }
 
     /* ── Overlay de estado inferior ── */
+    /* Paleta de marca del escenario de cámara (cameraColors en la app). El
+       texto lleva sombra para leerse sobre cualquier fondo del video. */
     #status {
-      position:absolute; bottom:28px; left:0; right:0;
-      text-align:center; color:rgba(255,255,255,0.55);
-      font:13px/1.4 sans-serif; pointer-events:none;
+      position:absolute; bottom:12px; left:12px; right:12px;
+      text-align:center; color:#F4F0FF;
+      font:600 13px/1.4 sans-serif; pointer-events:none;
+      text-shadow:0 1px 3px rgba(0,0,0,0.85);
     }
 
     /* ── Panel de práctica (aparece cuando teachMode=true) ── */
     #panel-practica {
       display:none;
       position:absolute; top:12px; left:12px; right:12px;
-      background:rgba(15,23,42,0.85);
-      border:1px solid rgba(255,255,255,0.12);
+      background:rgba(30,25,48,0.9);
+      border:1.5px solid rgba(224,139,255,0.55);
       border-radius:16px;
       padding:14px 16px 12px;
       backdrop-filter:blur(8px);
@@ -71,11 +74,11 @@ export const HAND_HTML = `<!DOCTYPE html>
     #panel-practica.visible { display:block; }
 
     #nombre-seña {
-      color:#F1F5F9; font:700 17px sans-serif;
+      color:#F4F0FF; font:700 17px sans-serif;
       margin-bottom:4px;
     }
     #instruccion-seña {
-      color:rgba(203,213,225,0.75); font:13px sans-serif;
+      color:#D2C9E4; font:13px sans-serif;
       margin-bottom:10px;
     }
 
@@ -87,14 +90,14 @@ export const HAND_HTML = `<!DOCTYPE html>
     }
     #barra-progreso {
       height:100%; width:0%; border-radius:8px;
-      background:linear-gradient(90deg, #EF4444, #F59E0B, #22C55E);
+      background:linear-gradient(90deg, #FF7A8D, #FCD34D, #7EDB43);
       background-size:300% 100%;
       transition:width 0.25s ease, background-position 0.25s ease;
     }
 
     /* Puntuación numérica */
     #texto-puntuacion {
-      color:#94A3B8; font:12px sans-serif;
+      color:#D2C9E4; font:12px sans-serif;
       text-align:right;
     }
     #texto-puntuacion span {
@@ -198,11 +201,11 @@ export const HAND_HTML = `<!DOCTYPE html>
   // ── 3. Colores de feedback por puntuación ────────────────────────────────────
   // Interpola entre rojo (0) → amarillo (0.7) → verde (1.0)
   function puntuacionAColor(p) {
-    if (p > 0.88) return '#22C55E';   // verde
+    if (p > 0.88) return '#7EDB43';   // verde
     if (p > 0.72) return '#84CC16';   // verde-lima
-    if (p > 0.58) return '#F59E0B';   // amarillo
+    if (p > 0.58) return '#FCD34D';   // amarillo
     if (p > 0.42) return '#F97316';   // naranja
-    return '#EF4444';                   // rojo
+    return '#FF7A8D';                   // rojo
   }
 
   // ── 4. Dibujo 2D de una mano (puntos + líneas, estilo MediaPipe estándar) ───
@@ -253,7 +256,7 @@ export const HAND_HTML = `<!DOCTYPE html>
   // mano real detectada y escalada a su mismo tamaño en pantalla, para poder
   // comparar forma contra forma en vivo (equivalente 2D de la mano fantasma
   // 3D semitransparente que había antes).
-  const COLOR_FANTASMA = 'rgba(56,189,248,0.55)';
+  const COLOR_FANTASMA = 'rgba(224,139,255,0.6)';
 
   function dibujarManoFantasma(formaReferenciaNormalizada, wristPantalla, escalaPantalla) {
     const pts = formaReferenciaNormalizada.map(([dx, dy]) => [
@@ -623,8 +626,8 @@ export const HAND_HTML = `<!DOCTYPE html>
   }
 
   // ── 8b. Loop de dibujo a 60fps (interpola hacia el último objetivo) ─────────
-  const COLORES_NEUTRO_HUESO = CN.map(() => 'rgba(226,232,240,0.85)');
-  const COLORES_NEUTRO_JOINT = new Array(21).fill('rgba(226,232,240,0.85)');
+  const COLORES_NEUTRO_HUESO = CN.map(() => 'rgba(244,240,255,0.85)');
+  const COLORES_NEUTRO_JOINT = new Array(21).fill('rgba(244,240,255,0.85)');
 
   function animar() {
     requestAnimationFrame(animar);

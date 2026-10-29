@@ -1,8 +1,7 @@
 import { useEffect } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import ScreenHeader from '../../../shared/ui/ScreenHeader';
-import { CameraStage, IaBanner, estilos, useSignRecognition } from './signCamera';
+import { StyleSheet, Text, View } from 'react-native';
+import CameraLayout, { CameraButton } from './CameraLayout';
+import { IaBanner, useSignRecognition } from './signCamera';
 import { cameraAlpha, cameraColors } from '../../../shared/theme/tokens/colors';
 import { poppins } from '../../../shared/theme/fonts';
 
@@ -20,9 +19,8 @@ const SEÑAS_ENTRENADAS = ['G', 'J', 'Mi', 'Nombre', 'Presento', 'S', 'X', 'Yo',
  * agregan más señas/signantes, así que no compara contra una seña objetivo.
  */
 export default function DynamicSignMonitorScreen({ onBack }) {
-  const insets = useSafeAreaInsets();
   const recog = useSignRecognition();
-  const { iaResultado, iaEstado, grabando, errorCamara, activarModoLibre, iniciarGrabacion } = recog;
+  const { iaResultado, iaEstado, grabando, activarModoLibre, iniciarGrabacion } = recog;
 
   useEffect(() => {
     if (recog.permisoCamara && !recog.permisoCamara.granted && recog.permisoCamara.canAskAgain) {
@@ -36,96 +34,63 @@ export default function DynamicSignMonitorScreen({ onBack }) {
 
   const procesando = iaEstado === 'procesando';
 
+  const ocupado = grabando || procesando;
+
   return (
-    <View style={estilos.pantalla}>
-      <View style={{ paddingTop: insets.top, paddingHorizontal: 12 }}>
-        <ScreenHeader title="Señas dinámicas (beta)" onBack={onBack} />
-      </View>
+    <CameraLayout
+      title="Señas dinámicas (beta)"
+      onBack={onBack}
+      recog={recog}
+      overlay={
+        <View style={propios.avisoBox}>
+          <Text style={propios.avisoTexto}>Modelo en entrenamiento · señas: {SEÑAS_ENTRENADAS.join(', ')}</Text>
+        </View>
+      }
+    >
+      <IaBanner recog={recog} textoInactivo="Graba una seña con movimiento para probarla" />
 
-      <CameraStage recog={recog} />
-
-      <View style={[propios.avisoBox, { top: insets.top + 54 }]}>
-        <Text style={propios.avisoTexto}>
-          Modelo en entrenamiento · señas: {SEÑAS_ENTRENADAS.join(', ')}
+      {iaResultado && typeof iaResultado.ratioConMano === 'number' ? (
+        <Text style={propios.diagnostico}>
+          {iaResultado.framesProcesados} frames · {Math.round(iaResultado.ratioConMano * 100)}% con mano detectada
         </Text>
-      </View>
+      ) : null}
 
-      <View style={[estilos.barraControl, { paddingBottom: insets.bottom + 8 }]}>
-        {errorCamara ? (
-          <View style={estilos.errorCamaraBox}>
-            <Text style={estilos.errorCamaraTexto}>⚠ {errorCamara}</Text>
-          </View>
-        ) : null}
-
-        <IaBanner recog={recog} textoInactivo="Graba una seña con movimiento para probarla" />
-
-        {iaResultado && typeof iaResultado.ratioConMano === 'number' ? (
-          <Text style={propios.diagnostico}>
-            {iaResultado.framesProcesados} frames · {Math.round(iaResultado.ratioConMano * 100)}% con mano detectada
-          </Text>
-        ) : null}
-
-        <TouchableOpacity
-          style={[propios.btnGrabar, (grabando || procesando) && propios.btnGrabarActivo]}
-          onPress={iniciarGrabacion}
-          disabled={grabando || procesando}
-          accessibilityRole="button"
-          accessibilityLabel={grabando ? 'Grabando seña' : procesando ? 'Procesando seña' : 'Grabar seña'}
-          accessibilityState={{ disabled: grabando || procesando, busy: grabando || procesando }}
-        >
-          {grabando || procesando ? (
-            <>
-              <ActivityIndicator color={cameraColors.text} size="small" />
-              <Text style={propios.btnGrabarTexto}>
-                {grabando ? 'Grabando…' : 'Procesando…'}
-              </Text>
-            </>
-          ) : (
-            <Text style={propios.btnGrabarTexto}>● Grabar seña</Text>
-          )}
-        </TouchableOpacity>
-      </View>
-    </View>
+      <CameraButton
+        label={grabando ? 'Grabando…' : procesando ? 'Procesando…' : 'Grabar seña'}
+        icon="radio-button-on"
+        variant="danger"
+        busy={ocupado}
+        onPress={iniciarGrabacion}
+        accessibilityLabel={grabando ? 'Grabando seña' : procesando ? 'Procesando seña' : 'Grabar seña'}
+      />
+    </CameraLayout>
   );
 }
 
 const propios = StyleSheet.create({
+  // Dentro del visor, arriba y a todo el ancho: el texto no se corta.
   avisoBox: {
     position: 'absolute',
-    left: 14,
-    right: 14,
+    top: 10,
+    left: 10,
+    right: 10,
     alignItems: 'center',
-    backgroundColor: cameraAlpha('stage', 0.75),
+    backgroundColor: cameraAlpha('stage', 0.82),
+    borderWidth: 1,
+    borderColor: cameraAlpha('warning', 0.6),
     borderRadius: 12,
     paddingVertical: 6,
     paddingHorizontal: 10,
   },
   avisoTexto: {
-    color: cameraAlpha('text', 0.75),
-    fontSize: 11,
+    color: cameraColors.warning,
+    fontSize: 12,
     fontFamily: poppins(600),
     textAlign: 'center',
   },
   diagnostico: {
-    color: cameraAlpha('text', 0.45),
-    fontSize: 11,
+    color: cameraColors.textMuted,
+    fontSize: 12,
     textAlign: 'center',
-  },
-  btnGrabar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: cameraColors.danger,
-    paddingVertical: 14,
-    borderRadius: 16,
-  },
-  btnGrabarActivo: {
-    backgroundColor: cameraAlpha('danger', 0.5),
-  },
-  btnGrabarTexto: {
-    color: cameraColors.text,
-    fontFamily: poppins(800),
-    fontSize: 15,
   },
 });

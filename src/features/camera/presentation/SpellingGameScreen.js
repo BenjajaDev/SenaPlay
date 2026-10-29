@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StyleSheet, Text, View } from 'react-native';
 import haptics from '../../../core/feedback/haptics';
-import ScreenHeader from '../../../shared/ui/ScreenHeader';
 import { useRemoteConfig } from '../../remoteConfig/presentation/RemoteConfigProvider';
 import SignImage from '../../signs/presentation/SignImage';
 import { PALABRAS, UMBRAL_DELETREO } from '../data/practiceSigns';
-import { CameraStage, IaBanner, estilos, useSignRecognition } from './signCamera';
+import CameraLayout, { CameraButton } from './CameraLayout';
+import { IaBanner, useSignRecognition } from './signCamera';
 import { cameraAlpha, cameraColors } from '../../../shared/theme/tokens/colors';
 import { poppins } from '../../../shared/theme/fonts';
 
@@ -22,7 +21,6 @@ import { poppins } from '../../../shared/theme/fonts';
  * (mano quieta) y en el dinámico (tramos con movimiento: G, J, S, X, Z).
  */
 export default function SpellingGameScreen({ onBack }) {
-  const insets = useSafeAreaInsets();
   const recog = useSignRecognition({ capturaDinamica: true });
   // Umbral ajustable desde el panel web (difficulty.spellingConfidenceThreshold).
   const { config } = useRemoteConfig();
@@ -36,7 +34,7 @@ export default function SpellingGameScreen({ onBack }) {
   const palabraCompleta = letraIdx >= palabraActual.length;
   const letraObjetivo = palabraCompleta ? null : palabraActual[letraIdx];
 
-  const { iaResultado, movimientoRef, errorCamara, activarModoLibre } = recog;
+  const { iaResultado, movimientoRef, activarModoLibre } = recog;
 
   useEffect(() => {
     if (recog.permisoCamara && !recog.permisoCamara.granted && recog.permisoCamara.canAskAgain) {
@@ -72,106 +70,85 @@ export default function SpellingGameScreen({ onBack }) {
   const reiniciarPalabra = useCallback(() => setLetraIdx(0), []);
 
   return (
-    <View style={estilos.pantalla}>
-      <View style={{ paddingTop: insets.top, paddingHorizontal: 12 }}>
-        <ScreenHeader title="Deletreo" onBack={onBack} />
+    <CameraLayout
+      title="Deletreo"
+      onBack={onBack}
+      recog={recog}
+      overlay={
+        // Guía de la letra objetivo, dentro del visor y arriba para no tapar la mano.
+        !palabraCompleta ? (
+          <View style={propios.guia}>
+            <SignImage signKey={letraObjetivo} label={letraObjetivo} size={78} rounded={14} />
+            <Text style={propios.guiaTexto}>Haz esta seña</Text>
+          </View>
+        ) : null
+      }
+    >
+      <IaBanner recog={recog} objetivo={letraObjetivo} textoInactivo="Haz la seña de la letra resaltada…" />
+
+      <View style={propios.progresoRow}>
+        <Text style={propios.progresoTexto}>
+          Palabra {palabraIdx + 1}/{PALABRAS.length}
+        </Text>
+        <Text style={propios.progresoTexto}>{aciertos} letras acertadas</Text>
       </View>
 
-      <CameraStage recog={recog} />
-
-      {/* Guía de la letra objetivo, arriba para no tapar la mano */}
-      {!palabraCompleta ? (
-        <View style={[propios.guia, { top: insets.top + 54 }]}>
-          <SignImage signKey={letraObjetivo} label={letraObjetivo} size={78} rounded={16} />
-          <Text style={propios.guiaTexto}>Haz esta seña</Text>
-        </View>
-      ) : null}
-
-      <View style={[estilos.barraControl, { paddingBottom: insets.bottom + 8 }]}>
-        {errorCamara ? (
-          <View style={estilos.errorCamaraBox}>
-            <Text style={estilos.errorCamaraTexto}>⚠ {errorCamara}</Text>
-          </View>
-        ) : null}
-
-        <IaBanner
-          recog={recog}
-          objetivo={letraObjetivo}
-          textoInactivo="Haz la seña de la letra resaltada…"
-        />
-
-        <View style={propios.progresoRow}>
-          <Text style={propios.progresoTexto}>
-            Palabra {palabraIdx + 1}/{PALABRAS.length}
-          </Text>
-          <Text style={propios.progresoTexto}>{aciertos} letras acertadas</Text>
-        </View>
-
-        {/* Palabra en curso */}
-        <View style={propios.palabraRow}>
-          {palabraActual.split('').map((ch, i) => (
-            <View
-              key={i}
-              style={[
-                propios.letraChip,
-                i < letraIdx && propios.letraChipOk,
-                i === letraIdx && !palabraCompleta && propios.letraChipActual,
-              ]}
-            >
-              <Text
-                style={[
-                  propios.letraChipTexto,
-                  (i < letraIdx || (i === letraIdx && !palabraCompleta)) &&
-                    propios.letraChipTextoOn,
-                ]}
-              >
+      {/* Palabra en curso: estado por borde, color y ✓ (no solo color) */}
+      <View
+        style={propios.palabraRow}
+        accessible
+        accessibilityLabel={`Palabra ${palabraActual}, ${Math.min(letraIdx, palabraActual.length)} de ${palabraActual.length} letras`}
+      >
+        {palabraActual.split('').map((ch, i) => {
+          const hecha = i < letraIdx;
+          const actual = i === letraIdx && !palabraCompleta;
+          return (
+            <View key={i} style={[propios.letraChip, hecha && propios.letraChipOk, actual && propios.letraChipActual]}>
+              <Text style={[propios.letraChipTexto, hecha && propios.letraChipTextoOk, actual && propios.letraChipTextoActual]}>
                 {ch}
               </Text>
+              {hecha ? <Text style={propios.check}>✓</Text> : null}
             </View>
-          ))}
-        </View>
-
-        {palabraCompleta ? (
-          <View style={propios.footer}>
-            <Text style={propios.ok}>¡Palabra completa! 🎉</Text>
-            <TouchableOpacity
-              style={estilos.btnPrimario}
-              onPress={siguientePalabra}
-              accessibilityRole="button"
-              accessibilityLabel="Siguiente palabra"
-            >
-              <Text style={estilos.btnPrimarioTexto}>Siguiente palabra ›</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={propios.footer}>
-            <Text style={propios.instr}>
-              {'Letra actual: '}
-              <Text style={propios.letraDestacada}>{letraObjetivo}</Text>
-            </Text>
-            <TouchableOpacity onPress={reiniciarPalabra} hitSlop={8} accessibilityRole="button">
-              <Text style={propios.reiniciar}>Reiniciar palabra</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+          );
+        })}
       </View>
-    </View>
+
+      {palabraCompleta ? (
+        <View style={propios.footer}>
+          <Text style={propios.ok} accessibilityLiveRegion="polite">
+            ¡Palabra completa!
+          </Text>
+          <CameraButton label="Siguiente palabra" icon="arrow-forward" variant="primary" onPress={siguientePalabra} style={propios.footerBtn} />
+        </View>
+      ) : (
+        <View style={propios.footerRow}>
+          <Text style={propios.instr}>
+            {'Letra actual: '}
+            <Text style={propios.letraDestacada}>{letraObjetivo}</Text>
+          </Text>
+          <CameraButton label="Reiniciar" icon="refresh" onPress={reiniciarPalabra} accessibilityLabel="Reiniciar palabra" />
+        </View>
+      )}
+    </CameraLayout>
   );
 }
 
 const propios = StyleSheet.create({
   guia: {
     position: 'absolute',
-    right: 14,
+    top: 10,
+    right: 10,
     alignItems: 'center',
     gap: 4,
-    backgroundColor: cameraAlpha('stage', 0.75),
+    backgroundColor: cameraAlpha('stage', 0.82),
+    borderWidth: 1.5,
+    borderColor: cameraColors.highlight,
     borderRadius: 16,
     padding: 8,
   },
-  guiaTexto: { color: cameraAlpha('text', 0.75), fontSize: 11, fontFamily: poppins(700) },
-  progresoRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  progresoTexto: { color: cameraAlpha('text', 0.6), fontSize: 11, fontFamily: poppins(700) },
+  guiaTexto: { color: cameraColors.textStrong, fontSize: 12, fontFamily: poppins(700) },
+  progresoRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
+  progresoTexto: { color: cameraColors.textSoft, fontSize: 12, fontFamily: poppins(700) },
   palabraRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -184,21 +161,20 @@ const propios = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: cameraAlpha('white', 0.07),
+    backgroundColor: cameraColors.surface,
     borderWidth: 1.5,
-    borderColor: cameraAlpha('white', 0.12),
+    borderColor: cameraColors.border,
   },
-  letraChipOk: { backgroundColor: cameraAlpha('success', 0.18), borderColor: cameraColors.success },
-  letraChipActual: { borderColor: cameraColors.accent, backgroundColor: cameraAlpha('accent', 0.15) },
-  letraChipTexto: { fontSize: 20, fontFamily: poppins(900), color: cameraAlpha('white', 0.4) },
-  letraChipTextoOn: { color: cameraColors.text },
-  footer: { alignItems: 'center', gap: 6 },
+  letraChipOk: { backgroundColor: cameraAlpha('success', 0.16), borderColor: cameraColors.success },
+  letraChipActual: { borderColor: cameraColors.highlight, borderWidth: 2, backgroundColor: cameraAlpha('primary', 0.35) },
+  letraChipTexto: { fontSize: 20, fontFamily: poppins(900), color: cameraColors.textMuted },
+  letraChipTextoOk: { color: cameraColors.success },
+  letraChipTextoActual: { color: cameraColors.highlight },
+  check: { position: 'absolute', top: 1, right: 3, fontSize: 10, color: cameraColors.success, fontFamily: poppins(800) },
+  footer: { alignItems: 'center', gap: 8 },
+  footerBtn: { alignSelf: 'stretch' },
+  footerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   ok: { color: cameraColors.success, fontFamily: poppins(800), fontSize: 15 },
-  instr: { color: cameraAlpha('text', 0.8), fontSize: 14 },
-  letraDestacada: { color: cameraColors.accent, fontFamily: poppins(900), fontSize: 18 },
-  reiniciar: {
-    color: cameraAlpha('text', 0.5),
-    fontSize: 12,
-    textDecorationLine: 'underline',
-  },
+  instr: { flexShrink: 1, color: cameraColors.textSoft, fontSize: 14 },
+  letraDestacada: { color: cameraColors.highlight, fontFamily: poppins(900), fontSize: 18 },
 });

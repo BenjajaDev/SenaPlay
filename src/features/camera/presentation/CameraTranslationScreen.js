@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import haptics from '../../../core/feedback/haptics';
-import ScreenHeader from '../../../shared/ui/ScreenHeader';
 import { useRemoteConfig } from '../../remoteConfig/presentation/RemoteConfigProvider';
-import { CameraStage, IaBanner, estilos, useSignRecognition } from './signCamera';
+import CameraLayout, { CameraButton } from './CameraLayout';
+import { IaBanner, useSignRecognition } from './signCamera';
 import { cameraAlpha, cameraColors } from '../../../shared/theme/tokens/colors';
 import { poppins } from '../../../shared/theme/fonts';
 
@@ -40,7 +39,6 @@ const MS_PAUSA_ESPACIO = 1800;
  * se agrega al deletreo y una seña léxica (Yo, Mi, Nombre…) como palabra.
  */
 export default function CameraTranslationScreen({ onBack }) {
-  const insets = useSafeAreaInsets();
   const recog = useSignRecognition({ capturaDinamica: true });
   // Umbral ajustable desde el panel web (difficulty.aiConfidenceThreshold).
   const { config } = useRemoteConfig();
@@ -51,7 +49,7 @@ export default function CameraTranslationScreen({ onBack }) {
   const [activo, setActivo] = useState(true);
 
   const ultimaConfirmada = useRef({ sena: null, cuando: 0 });
-  const { iaResultado, movimientoRef, ultimaDeteccionRef, errorCamara, activarModoLibre } = recog;
+  const { iaResultado, movimientoRef, ultimaDeteccionRef, activarModoLibre } = recog;
 
   useEffect(() => {
     if (recog.permisoCamara && !recog.permisoCamara.granted && recog.permisoCamara.canAskAgain) {
@@ -134,126 +132,86 @@ export default function CameraTranslationScreen({ onBack }) {
     : 0;
 
   return (
-    <View style={estilos.pantalla}>
-      <View style={{ paddingTop: insets.top, paddingHorizontal: 12 }}>
-        <ScreenHeader title="Traducción en vivo" onBack={onBack} />
+    <CameraLayout
+      title="Traducción en vivo"
+      onBack={onBack}
+      recog={recog}
+      overlay={
+        // Letra en proceso de confirmarse, dentro del visor (arriba a la derecha).
+        candidata ? (
+          <View style={propios.candidata} accessibilityLiveRegion="polite" accessibilityLabel={`Confirmando ${candidata.sena}`}>
+            <Text style={propios.candidataLetra}>{candidata.sena}</Text>
+            <View style={propios.candidataTrack}>
+              <View style={[propios.candidataFill, { width: `${progresoCandidata * 100}%` }]} />
+            </View>
+          </View>
+        ) : null
+      }
+    >
+      <IaBanner recog={recog} objetivo={null} textoInactivo="Empieza a hacer señas para traducir…" />
+
+      {/* Texto traducido */}
+      <View style={propios.salidaBox} accessibilityLabel={texto ? `Traducción: ${texto}` : 'Aún no hay traducción'}>
+        <ScrollView style={propios.salidaScroll} contentContainerStyle={propios.salidaContent}>
+          <Text style={texto ? propios.salidaTexto : propios.salidaVacia}>{texto || 'La traducción aparecerá aquí…'}</Text>
+        </ScrollView>
       </View>
 
-      <CameraStage recog={recog} />
-
-      {/* Letra en proceso de confirmarse */}
-      {candidata ? (
-        <View style={[propios.candidata, { top: insets.top + 54 }]}>
-          <Text style={propios.candidataLetra}>{candidata.sena}</Text>
-          <View style={propios.candidataTrack}>
-            <View style={[propios.candidataFill, { width: `${progresoCandidata * 100}%` }]} />
-          </View>
-        </View>
-      ) : null}
-
-      <View style={[estilos.barraControl, { paddingBottom: insets.bottom + 8 }]}>
-        {errorCamara ? (
-          <View style={estilos.errorCamaraBox}>
-            <Text style={estilos.errorCamaraTexto}>⚠ {errorCamara}</Text>
-          </View>
-        ) : null}
-
-        <IaBanner
-          recog={recog}
-          objetivo={null}
-          textoInactivo="Empieza a hacer señas para traducir…"
+      {/* Controles: dos filas para que ningún texto se corte en pantallas angostas */}
+      <View style={propios.controles}>
+        <CameraButton
+          label={activo ? 'Pausar' : 'Reanudar'}
+          icon={activo ? 'pause' : 'play'}
+          variant={activo ? 'secondary' : 'warning'}
+          onPress={() => setActivo((a) => !a)}
+          accessibilityLabel={activo ? 'Pausar traducción' : 'Reanudar traducción'}
+          style={propios.btn}
         />
-
-        {/* Texto traducido */}
-        <View style={propios.salidaBox}>
-          <ScrollView
-            style={propios.salidaScroll}
-            contentContainerStyle={propios.salidaContent}
-          >
-            <Text style={texto ? propios.salidaTexto : propios.salidaVacia}>
-              {texto || 'La traducción aparecerá aquí…'}
-            </Text>
-          </ScrollView>
-        </View>
-
-        {/* Controles */}
-        <View style={propios.controles}>
-          <TouchableOpacity
-            style={[propios.btn, !activo && propios.btnPausado]}
-            onPress={() => setActivo((a) => !a)}
-            accessibilityRole="button"
-            accessibilityLabel={activo ? 'Pausar traducción' : 'Reanudar traducción'}
-          >
-            <Text style={propios.btnTexto}>{activo ? '⏸ Pausar' : '▶ Reanudar'}</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={propios.btn}
-            onPress={agregarEspacio}
-            accessibilityRole="button"
-            accessibilityLabel="Agregar espacio"
-          >
-            <Text style={propios.btnTexto}>␣ Espacio</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={propios.btn}
-            onPress={borrarUltimo}
-            accessibilityRole="button"
-            accessibilityLabel="Borrar la última letra"
-          >
-            <Text style={propios.btnTexto}>⌫ Borrar</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={propios.btn} onPress={limpiar} accessibilityRole="button" accessibilityLabel="Limpiar el texto">
-            <Text style={propios.btnTexto}>✕ Limpiar</Text>
-          </TouchableOpacity>
-        </View>
+        <CameraButton label="Espacio" icon="add" onPress={agregarEspacio} accessibilityLabel="Agregar espacio" style={propios.btn} />
       </View>
-    </View>
+      <View style={propios.controles}>
+        <CameraButton label="Borrar" icon="backspace-outline" onPress={borrarUltimo} accessibilityLabel="Borrar la última letra" style={propios.btn} />
+        <CameraButton label="Limpiar" icon="trash-outline" onPress={limpiar} accessibilityLabel="Limpiar el texto" style={propios.btn} />
+      </View>
+    </CameraLayout>
   );
 }
 
 const propios = StyleSheet.create({
   candidata: {
     position: 'absolute',
-    right: 14,
+    top: 10,
+    right: 10,
     alignItems: 'center',
     gap: 6,
-    backgroundColor: cameraAlpha('stage', 0.78),
+    backgroundColor: cameraAlpha('stage', 0.82),
+    borderWidth: 1.5,
+    borderColor: cameraColors.highlight,
     borderRadius: 16,
     paddingVertical: 10,
     paddingHorizontal: 14,
   },
-  candidataLetra: { color: cameraColors.accent, fontSize: 30, fontFamily: poppins(900) },
+  candidataLetra: { color: cameraColors.highlight, fontSize: 30, fontFamily: poppins(900) },
   candidataTrack: {
     width: 46,
     height: 4,
     borderRadius: 2,
-    backgroundColor: cameraAlpha('white', 0.15),
+    backgroundColor: cameraAlpha('white', 0.18),
     overflow: 'hidden',
   },
-  candidataFill: { height: '100%', backgroundColor: cameraColors.accent, borderRadius: 2 },
+  candidataFill: { height: '100%', backgroundColor: cameraColors.highlight, borderRadius: 2 },
   salidaBox: {
-    backgroundColor: cameraAlpha('white', 0.06),
+    backgroundColor: cameraColors.surface,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: cameraAlpha('white', 0.1),
-    minHeight: 62,
-    maxHeight: 110,
+    borderColor: cameraAlpha('accent', 0.45),
+    minHeight: 58,
+    maxHeight: 104,
   },
   salidaScroll: { flexGrow: 0 },
   salidaContent: { padding: 10 },
   salidaTexto: { color: cameraColors.textStrong, fontSize: 19, fontFamily: poppins(700), letterSpacing: 1 },
-  salidaVacia: { color: cameraAlpha('text', 0.35), fontSize: 13, fontStyle: 'italic' },
-  controles: { flexDirection: 'row', gap: 6 },
-  btn: {
-    flex: 1,
-    paddingVertical: 9,
-    borderRadius: 10,
-    alignItems: 'center',
-    backgroundColor: cameraAlpha('white', 0.08),
-  },
-  btnPausado: { backgroundColor: cameraAlpha('warning', 0.25) },
-  btnTexto: { color: cameraColors.textSoft, fontSize: 11, fontFamily: poppins(800) },
+  salidaVacia: { color: cameraColors.textMuted, fontSize: 13, fontStyle: 'italic' },
+  controles: { flexDirection: 'row', gap: 8 },
+  btn: { flex: 1 },
 });

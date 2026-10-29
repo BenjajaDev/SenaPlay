@@ -18,12 +18,19 @@ export default function Toast({ toast, onHide }) {
   const reducedMotion = useReducedMotion();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const appear = useRef(new Animated.Value(0)).current;
+  // Si llega un aviso con otro ya en pantalla, se reemplaza el contenido sin
+  // volver a entrar desde arriba (un salto en vez de un cambio).
+  const onScreenRef = useRef(false);
   const tone = DIALOG_TONES[toast?.tone] || DIALOG_TONES.info;
   const accent = theme.colors[tone.color];
 
   useEffect(() => {
-    if (!toast) return undefined;
-    appear.setValue(0);
+    if (!toast) {
+      onScreenRef.current = false;
+      return undefined;
+    }
+    if (!onScreenRef.current) appear.setValue(0);
+    onScreenRef.current = true;
     Animated.timing(appear, {
       toValue: 1,
       duration: reducedMotion ? 100 : theme.motion.duration.base,
@@ -31,9 +38,12 @@ export default function Toast({ toast, onHide }) {
       useNativeDriver: true,
     }).start();
     const timer = setTimeout(() => {
-      Animated.timing(appear, { toValue: 0, duration: theme.motion.duration.fast, useNativeDriver: true }).start(
-        () => onHide?.(toast.id),
-      );
+      Animated.timing(appear, {
+        toValue: 0,
+        duration: theme.motion.duration.fast,
+        easing: theme.motion.easing.exit,
+        useNativeDriver: true,
+      }).start(({ finished }) => finished && onHide?.(toast.id));
     }, toast.duration || 2800);
     return () => clearTimeout(timer);
   }, [toast, appear, onHide, reducedMotion, theme]);

@@ -13,10 +13,10 @@ import {
   nextScheduleChange,
 } from '../domain/remoteConfig';
 
-// Los cambios del panel llegan al instante por Realtime; además se consulta
-// cada POLL_INTERVAL_MS con la app abierta (por si Realtime no está activo o
-// se cortó el socket) y al volver a primer plano, sin repetir antes de
-// FOREGROUND_THROTTLE_MS.
+// Los cambios del panel llegan al instante por Realtime. Solo mientras el
+// canal está caído (o Realtime no existe) se consulta cada POLL_INTERVAL_MS
+// con la app abierta; además se refresca al volver a primer plano y al
+// reconectar el canal, sin repetir antes de FOREGROUND_THROTTLE_MS.
 const POLL_INTERVAL_MS = 30 * 1000;
 const FOREGROUND_THROTTLE_MS = 5 * 1000;
 const REALTIME_DEBOUNCE_MS = 400;
@@ -44,6 +44,7 @@ export function RemoteConfigProvider({ userId, isAdmin = false, children }) {
   const [snapshot, setSnapshot] = useState(null);
   const [status, setStatus] = useState('loading');
   const lastFetchRef = useRef(0);
+  const realtimeConnectedRef = useRef(false);
 
   const refresh = useCallback(async () => {
     lastFetchRef.current = Date.now();
@@ -78,17 +79,25 @@ export function RemoteConfigProvider({ userId, isAdmin = false, children }) {
       }
     });
 
-    // Solo con la app en primer plano: en segundo plano no se gasta red ni batería.
+    // Solo con la app en primer plano y sin Realtime: con el canal conectado
+    // los cambios ya llegan solos y sondear sería gastar red y cuota.
     const poll = setInterval(() => {
-      if (AppState.currentState === 'active') refresh().catch(() => {});
+      if (AppState.currentState === 'active' && !realtimeConnectedRef.current) refresh().catch(() => {});
     }, POLL_INTERVAL_MS);
 
     // Un cambio en el panel suele tocar varias filas seguidas: se agrupan.
+    // Al conectar por primera vez ya se acaba de consultar: no se repite.
     let debounce = null;
-    const unsubscribe = repository.subscribe?.(() => {
-      clearTimeout(debounce);
-      debounce = setTimeout(() => refresh().catch(() => {}), REALTIME_DEBOUNCE_MS);
-    });
+    const unsubscribe = repository.subscribe?.(
+      (reason) => {
+        if (reason === 'reconnected' && Date.now() - lastFetchRef.current < FOREGROUND_THROTTLE_MS) return;
+        clearTimeout(debounce);
+        debounce = setTimeout(() => refresh().catch(() => {}), REALTIME_DEBOUNCE_MS);
+      },
+      (connected) => {
+        realtimeConnectedRef.current = connected;
+      },
+    );
 
     return () => {
       mounted = false;

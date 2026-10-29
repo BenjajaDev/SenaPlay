@@ -154,3 +154,18 @@ flowchart TD
 | 4 | QA | Jest estable, `pnpm test`, `pnpm verify:bundle`, `checkMermaid`, `docs/06` y `docs/02` §2.4 | 1-2 |
 
 Orden sugerido si hay que recortar: **A1 → B1 → B2 → A3/A5 → C1 → A7 → A4**.
+
+## Estado tras las fases 2–4
+
+| Paquete | Hallazgos | Estado |
+|---|---|---|
+| 2a Arranque sin espera | A1, A2, A7, A10, C8 | Hecho |
+| 2b Caché primero | A3, A4, A5, A6, A9, A11 (+ A7 en catálogo, señas, videos y config) | Hecho |
+| 2c Config remota | A8 | Hecho (aprobado); `docs/08` actualizado |
+| 3a Movimiento correcto | B1, B2, B3, B4, B5, B8, B9, O1 | Hecho |
+| 3b Pulido | B6, B7, B10, B11, B12, C1, C2, C4, C5, C6, C7 | Hecho. C5 se alineó al documento (diálogos `xl` 20, hojas `xxl` 24) |
+| 4 QA | Jest estable en frío (`testTimeout` 20 s), `pnpm test` 144/144, `pnpm verify:bundle`, 17/17 diagramas | Hecho |
+
+**Pendiente de decisión:** C3, el tamaño mínimo de las etiquetas de la barra inferior. El arrastre para cerrar el `BottomSheet` sigue fuera de alcance.
+
+**Revisar en un dispositivo** (no se puede juzgar desde el código): la curva `drawer` de la hoja, el halo único al responder, el crossfade de variaciones de `SignImage` y el splash con red lenta.

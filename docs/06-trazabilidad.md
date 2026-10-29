@@ -14,9 +14,9 @@ Cada requerimiento se enlaza con los módulos que lo implementan, los endpoints 
 | ID | Requerimiento | Módulos | Endpoints / recursos | Verificación |
 |---|---|---|---|---|
 | RA-01 | Arquitectura desacoplada por capas (feature-first) | `src/features/*/{domain,data,presentation}`, `src/core`, `src/shared` | — | [01-arquitectura](01-arquitectura.md) · `pnpm verify:bundle` |
-| RA-02 | Patrón Repository | `features/*/data/*Repository.js`, `web/src/data/repositories.ts` | REST `levels`, `exercises`, `dictionary`, `signs`, `media`, `app_config`, `feature_flags` | `src/core/__tests__/core.test.js`, `web/src/test/repositories.test.ts` |
+| RA-02 | Patrón Repository (caché primero, timeout de lectura) | `features/*/data/*Repository.js`, `core/data/cachedResource.js`, `core/data/useStaleWhileRevalidate.js`, `core/net/withTimeout.js`, `web/src/data/repositories.ts` | REST `levels`, `exercises`, `dictionary`, `signs`, `media`, `app_config`, `feature_flags`, `profiles` | `core.test.js`, `cachedResource.test.js`, `useStaleWhileRevalidate.test.js`, `withTimeout.test.js`, `catalogRepository.test.js`, `profileRepository.test.js`, `RemoteConfigProvider.test.js`, `web/src/test/repositories.test.ts` |
 | RA-03 | Factory / Builder de entidades | `ExerciseFactory.js`, `LevelBuilder.js` | RPC `save_level` | `levels.domain.test.js` (valida el catálogo completo) |
-| RA-04 | State Machine / Observer | `sessionMachine.js`, `RootNavigator.js`, `EventBus.js`, `useUserProgress.js` | — | `levels.domain.test.js`, `core.test.js`, `LevelSessionScreen.test.js` |
+| RA-04 | State Machine / Observer | `sessionMachine.js`, `RootNavigator.js`, `SessionProvider.js`, `EventBus.js`, `useUserProgress.js` | — | `levels.domain.test.js`, `core.test.js`, `LevelSessionScreen.test.js` (nivel fijo durante la sesión), `SessionProvider.test.js` |
 | RA-05 | Componentes atómicos y reutilizables | `src/shared/ui/*`, `web/src/ui/*` | — | `designSystem.test.js` |
 
 ## 6.2 Sistema de diseño
@@ -32,9 +32,9 @@ Cada requerimiento se enlaza con los módulos que lo implementan, los endpoints 
 
 | ID | Requerimiento | Módulos | Endpoints | Verificación |
 |---|---|---|---|---|
-| FB-01 | Confirmación de acciones críticas | `FeedbackProvider.confirm()`: cerrar sesión (`MainAppScreen`), guardar perfil y foto (`ProfileTabScreen`), salir de un nivel, reiniciar o salir de memoria · web: eliminar, publicar, cambiar rol, mantenimiento | AUTH `logout` · AUTH `user` · REST `*` DELETE/PATCH | `designSystem.test.js`, `LevelSessionScreen.test.js`, `web/src/test/ui.test.tsx` |
-| FB-02 | Spinner temático | `loading/Spinner.js` · `ui/Display.Spinner` | — | render en `designSystem.test.js` |
-| FB-03 | Skeleton loaders | `loading/Skeleton.js` (niveles, diccionario, progreso, videos) · `SkeletonRows` (web) | — | `screens.smoke.test.js` |
+| FB-01 | Confirmación de acciones críticas | `FeedbackProvider.confirm()`: cerrar sesión (`MainAppScreen`), guardar perfil y foto (`ProfileTabScreen`), salir de un nivel, reiniciar o salir de memoria · web: eliminar, publicar, cambiar rol, mantenimiento | AUTH `logout` · AUTH `user` · REST `*` DELETE/PATCH | `designSystem.test.js`, `feedbackDialogs.test.js` (contenido estable al cerrarse), `LevelSessionScreen.test.js`, `web/src/test/ui.test.tsx` |
+| FB-02 | Spinner temático y arranque | `loading/Spinner.js` · splash nativo hasta conocer la sesión (`app/splash.js`, máx. 1,5 s) · `ui/Display.Spinner` | — | render en `designSystem.test.js` |
+| FB-03 | Skeleton loaders | `loading/Skeleton.js` (niveles, progreso, videos sin caché; pulso compartido en `SkeletonList`) · el Diccionario muestra su contenido local al instante · `SkeletonRows` (web) | — | `screens.smoke.test.js` |
 | FB-04 | Bloqueo de pantalla en operaciones async | `BlockingOverlay` + `runBlocking()` (login, registro, OTP, guardar) | AUTH `token`, `signup`, `verify` | `designSystem.test.js` («runBlocking») |
 
 ## 6.4 Portal web
@@ -56,14 +56,14 @@ Cada requerimiento se enlaza con los módulos que lo implementan, los endpoints 
 | ID | Requerimiento | Módulos | Verificación |
 |---|---|---|---|
 | MX-01 | Feedback multimodal (háptica + visual) | `core/feedback/haptics.js`, `FeedbackPanel` (borde luminoso), `MessageDialog`, `Toast`, juegos | `LevelSessionScreen.test.js` |
-| MX-02 | Lector de pantalla y contraste WCAG 2.1 AA | `core/a11y/announce.js`, `accessibilityLabel` y roles en todos los componentes · `contrast.test.js` | `contrast.test.js`, consultas por rol y label en tests |
+| MX-02 | Lector de pantalla y contraste WCAG 2.1 AA | `core/a11y/announce.js`, `accessibilityLabel` y roles en todos los componentes (incluidas las pantallas de cámara) · `contrast.test.js` | `contrast.test.js`, consultas por rol y label en tests (`bottomSheet.test.js`) |
 | MX-03 | Subtítulos y tipografía legible | `VideosTabScreen` (insignia CC), `MediaPage` (pista `.vtt`), `typography` (Poppins por peso) | [07-design-system](07-design-system.md) |
-| MX-04 | Transiciones suaves entre pestañas y rutas | `FadeInView` con key por destino (`MainAppScreen`, `RootNavigator`), `AppBottomNav` animado | revisión manual |
+| MX-04 | Transiciones suaves entre pestañas y rutas | `FadeInView` con key por destino (`MainAppScreen`, `RootNavigator`) y por ejercicio (`LevelSessionScreen`, solo opacidad), `AppBottomNav` animado, `BottomSheet` con entrada y salida, cada pestaña abre arriba | `bottomSheet.test.js` · revisión manual |
 | MX-05 | Entrada escalonada | `StaggerItem` (niveles, juegos, progreso, videos) | revisión manual |
 | MX-06 | Celebración al completar | `LevelCompleteCelebration` + `Confetti` (flag `levels.celebration`) | `LevelSessionScreen.test.js` |
 | MX-07 | Pérdida de vida no punitiva | `LivesCounter` (temblor de 6px y desvanecimiento), mensaje «¡Casi lo logras!» | `LevelSessionScreen.test.js` |
 | MX-08 | Pistas con botón flotante y globo contextual | `session/HintFab.js` (`HintFab`, `HintPopover`) | `LevelSessionScreen.test.js` («Ver pista») |
-| MX-09 | Reducir movimiento | `useReducedMotion` en todas las animaciones · `prefers-reduced-motion` (web) | revisión manual |
+| MX-09 | Reducir movimiento | `useReducedMotion` (valor global leído en el arranque) en todas las animaciones · `prefers-reduced-motion` (web) | `useReducedMotion.test.js` · revisión manual |
 
 ## 6.6 Documentación
 

@@ -126,11 +126,12 @@ sequenceDiagram
   participant K as CatalogProvider
   participant SB as Supabase
 
-  U->>R: abre la app
-  R->>R: carga fuentes y preferencias (vibración)
+  U->>R: abre la app (splash nativo)
+  R->>R: en paralelo: fuentes, preferencias y «reducir movimiento»
   R->>S: getSession()
-  S->>SB: auth.getSession
-  SB-->>S: sesión + rol (profiles)
+  S->>S: sesión (almacenamiento) + último rol guardado
+  S-->>U: oculta el splash (máx. 1,5 s, luego Spinner con texto)
+  S->>SB: revalida el rol en segundo plano (solo espera la 1.ª vez, tope 4 s)
   S->>C: userId, isAdmin
   C->>C: config en caché (instantánea)
   C->>SB: app_config + feature_flags (en segundo plano)
@@ -138,9 +139,9 @@ sequenceDiagram
   alt mantenimiento o versión mínima
     C-->>U: AppGateScreen (bloqueo)
   else operativa
-    K->>K: catálogo local (instantáneo)
-    K->>SB: levels + exercises
-    SB-->>K: filas → LevelBuilder (valida) → caché
+    K->>K: catálogo local → caché del dispositivo (instantáneos)
+    K->>SB: levels + exercises (tope 8 s)
+    SB-->>K: filas → LevelBuilder (valida) → caché, re-render solo si cambió
     K-->>U: MainAppScreen
   end
 ```

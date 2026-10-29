@@ -19,7 +19,10 @@ function Star({ filled, index, reducedMotion, theme }) {
     ]).start();
   }, [index, pop, reducedMotion, theme]);
   return (
-    <Animated.View style={{ transform: [{ scale: pop }], opacity: pop }}>
+    // Desde 0.6, no desde 0: nada aparece de la nada.
+    <Animated.View
+      style={{ opacity: pop, transform: [{ scale: pop.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] }) }] }}
+    >
       <Ionicons name={filled ? 'star' : 'star-outline'} size={index === 1 ? 46 : 36} color={filled ? theme.colors.gold : theme.colors.textMuted} />
     </Animated.View>
   );
@@ -126,7 +129,7 @@ function createStyles(theme) {
       alignSelf: 'center',
       width: '100%',
       maxWidth: 420,
-      borderRadius: radius.xxl,
+      borderRadius: radius.xl,
       backgroundColor: colors.surfaceRaised,
       overflow: 'hidden',
       paddingBottom: spacing.lg,

@@ -114,7 +114,7 @@ function createStyles(theme) {
       backgroundColor: colors.surfaceRaised,
       borderColor: colors.border,
       borderWidth: 1,
-      borderRadius: radius.xxl,
+      borderRadius: radius.xl,
       paddingHorizontal: spacing.xl,
       paddingTop: spacing.xxl,
       paddingBottom: spacing.lg,

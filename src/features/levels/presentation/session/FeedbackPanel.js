@@ -7,7 +7,8 @@ import { useAppTheme } from '../../../../shared/theme/ThemeProvider';
 
 /**
  * Panel de respuesta (acierto / error) — feedback MULTIMODAL:
- *  - visual: borde luminoso de color + icono grande (✓ / ↻) + título y mensaje
+ *  - visual: borde de color + icono grande (✓ / ↻) + título y mensaje; el
+ *    halo luminoso lo pone la tarjeta del ejercicio (LevelSessionScreen)
  *  - háptico: lo dispara useLevelSession en la misma transición
  *  - lector de pantalla: región viva (accessibilityLiveRegion)
  *
@@ -18,26 +19,25 @@ export default function FeedbackPanel({ feedback, onContinue }) {
   const reducedMotion = useReducedMotion();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const appear = useRef(new Animated.Value(0)).current;
-  const glow = useRef(new Animated.Value(0)).current;
   const correct = feedback?.kind === 'correct';
 
   useEffect(() => {
     if (!feedback) return undefined;
-    appear.setValue(reducedMotion ? 1 : 0);
-    glow.setValue(1);
-    const animation = Animated.parallel([
-      Animated.timing(appear, {
-        toValue: 1,
-        duration: theme.motion.duration.base,
-        easing: theme.motion.easing.pop,
-        useNativeDriver: true,
-      }),
-      // El halo se apaga lento: marca el momento sin quedarse encendido.
-      Animated.timing(glow, { toValue: 0.35, duration: 900, useNativeDriver: true }),
-    ]);
+    if (reducedMotion) {
+      appear.setValue(1);
+      return undefined;
+    }
+    appear.setValue(0);
+    // Sin rebote: aparece decenas de veces por sesión y debe sentirse ágil.
+    const animation = Animated.timing(appear, {
+      toValue: 1,
+      duration: theme.motion.duration.base,
+      easing: theme.motion.easing.enter,
+      useNativeDriver: true,
+    });
     animation.start();
     return () => animation.stop();
-  }, [feedback, reducedMotion, appear, glow, theme]);
+  }, [feedback, reducedMotion, appear, theme]);
 
   if (!feedback) return null;
   const accent = correct ? theme.colors.success : theme.colors.danger;
@@ -55,8 +55,6 @@ export default function FeedbackPanel({ feedback, onContinue }) {
         },
       ]}
     >
-      {/* Halo luminoso: capa de sombra del color del resultado. */}
-      <Animated.View pointerEvents="none" style={[styles.glow, { shadowColor: accent, borderColor: accent, opacity: glow }]} />
       <View style={styles.row}>
         <View style={[styles.iconWrap, { backgroundColor: accent }]}>
           <Ionicons
@@ -93,16 +91,6 @@ function createStyles(theme) {
       padding: theme.spacing.md + 2,
       borderRadius: theme.radius.xl,
       borderWidth: 2,
-    },
-    glow: {
-      ...StyleSheet.absoluteFillObject,
-      borderRadius: theme.radius.xl,
-      borderWidth: 2,
-      shadowOpacity: 0.9,
-      shadowRadius: 14,
-      shadowOffset: { width: 0, height: 0 },
-      elevation: 8,
-      margin: -2,
     },
     row: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md },
     iconWrap: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },

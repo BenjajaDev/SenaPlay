@@ -1,3 +1,5 @@
+import { createCachedResource } from '../../../core/data/cachedResource';
+import { withTimeout } from '../../../core/net/withTimeout';
 import { storageKey } from '../../../core/storage/jsonStorage';
 
 const CACHE_KEYS = { dictionary: storageKey('dictionary', 'v1'), vocabulary: storageKey('vocabulary', 'v1') };
@@ -5,58 +7,64 @@ const CACHE_KEYS = { dictionary: storageKey('dictionary', 'v1'), vocabulary: sto
 /**
  * Repositorio de contenido de señas: diccionario (letras, números, acciones)
  * y vocabulario léxico (palabras del diccionario MINEDUC). Misma estrategia
- * remoto → caché → local que el catálogo de niveles.
+ * remoto → caché → local que el catálogo de niveles, y la lectura remota se
+ * recuerda unos minutos: entrar y salir del Diccionario no repite consultas.
  *
- *   getDictionary() → { entries, source }
- *   getVocabulary() → { signs, source }
+ *   getDictionary()        → { entries, source }
+ *   getCachedDictionary()  → { entries, source: 'cache' } | null
+ *   getVocabulary()        → { signs, source }
+ *   getCachedVocabulary()  → { signs, source: 'cache' } | null
  */
 export function createSignsRepository({ supabase, storage, localDictionary, localVocabulary }) {
-  const withFallback = async (cacheKey, fetchRemote, local) => {
-    try {
-      const remote = await fetchRemote();
-      if (remote?.length) {
-        await storage.set(cacheKey, remote);
-        return { items: remote, source: 'remote' };
-      }
-    } catch {
-      /* sin red */
-    }
-    const cached = await storage.get(cacheKey, null);
-    if (Array.isArray(cached) && cached.length) return { items: cached, source: 'cache' };
-    return { items: local, source: 'local' };
-  };
+  const dictionary = createCachedResource({
+    storage,
+    cacheKey: CACHE_KEYS.dictionary,
+    local: localDictionary,
+    fetchRemote: async () => {
+      const { data, error } = await withTimeout(
+        supabase
+          .from('dictionary')
+          .select('letter, sign, description, category, difficulty')
+          .order('sort_order', { ascending: true }),
+      );
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const vocabulary = createCachedResource({
+    storage,
+    cacheKey: CACHE_KEYS.vocabulary,
+    local: localVocabulary,
+    fetchRemote: async () => {
+      const { data, error } = await withTimeout(
+        supabase.from('signs').select('word, type, meaning, how_to, theme, page').order('word', { ascending: true }),
+      );
+      if (error) throw error;
+      // how_to (columna SQL) → howTo (forma que usa la app).
+      return (data || []).map(({ how_to: howTo, ...rest }) => ({ ...rest, howTo }));
+    },
+  });
 
   return {
     async getDictionary() {
-      const { items, source } = await withFallback(
-        CACHE_KEYS.dictionary,
-        async () => {
-          const { data, error } = await supabase
-            .from('dictionary')
-            .select('letter, sign, description, category, difficulty')
-            .order('sort_order', { ascending: true });
-          return error ? null : data;
-        },
-        localDictionary,
-      );
-      return { entries: items, source };
+      const { value, source } = await dictionary.read();
+      return { entries: value, source };
+    },
+
+    async getCachedDictionary() {
+      const cached = await dictionary.readCached();
+      return cached ? { entries: cached, source: 'cache' } : null;
     },
 
     async getVocabulary() {
-      const { items, source } = await withFallback(
-        CACHE_KEYS.vocabulary,
-        async () => {
-          const { data, error } = await supabase
-            .from('signs')
-            .select('word, type, meaning, how_to, theme, page')
-            .order('word', { ascending: true });
-          if (error) return null;
-          // how_to (columna SQL) → howTo (forma que usa la app).
-          return data.map(({ how_to: howTo, ...rest }) => ({ ...rest, howTo }));
-        },
-        localVocabulary,
-      );
-      return { signs: items, source };
+      const { value, source } = await vocabulary.read();
+      return { signs: value, source };
+    },
+
+    async getCachedVocabulary() {
+      const cached = await vocabulary.readCached();
+      return cached ? { signs: cached, source: 'cache' } : null;
     },
   };
 }

@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
+import useStaleWhileRevalidate from '../../../core/data/useStaleWhileRevalidate';
 import { useServices } from '../../../core/di/ServicesProvider';
 import {
   AppText,
@@ -11,7 +12,6 @@ import {
   EmptyState,
   SectionHeader,
   SegmentedControl,
-  SkeletonList,
   TextField,
 } from '../../../shared/ui';
 import { useAppTheme } from '../../../shared/theme/ThemeProvider';
@@ -19,6 +19,9 @@ import { DICTIONARY_ENTRIES, DICTIONARY_FILTERS } from '../../signs/data/local/d
 import { REAL_SIGNS, SIGN_THEMES } from '../../signs/data/local/signsData';
 import SignImage from '../../signs/presentation/SignImage';
 import SignDetailModal from './SignDetailModal';
+
+const LOCAL_DICTIONARY = { entries: DICTIONARY_ENTRIES, source: 'local' };
+const LOCAL_VOCABULARY = { signs: REAL_SIGNS, source: 'local' };
 
 const MODES = [
   { key: 'deletreo', label: 'Deletreo' },
@@ -127,23 +130,21 @@ export default function DictionaryTabScreen() {
   const [mode, setMode] = useState('deletreo');
   const [filter, setFilter] = useState('Todos');
   const [query, setQuery] = useState('');
-  const [entries, setEntries] = useState(DICTIONARY_ENTRIES);
-  const [signs, setSigns] = useState(REAL_SIGNS);
-  const [loading, setLoading] = useState(true);
   const [detail, setDetail] = useState(null);
-
-  useEffect(() => {
-    let mounted = true;
-    Promise.all([signsRepository.getDictionary(), signsRepository.getVocabulary()]).then(([dictionary, vocabulary]) => {
-      if (!mounted) return;
-      setEntries(dictionary.entries);
-      setSigns(vocabulary.signs);
-      setLoading(false);
-    });
-    return () => {
-      mounted = false;
-    };
-  }, [signsRepository]);
+  // El contenido empaquetado se ve desde el primer frame; la caché y luego el
+  // remoto lo reemplazan en silencio. Por eso aquí no hay skeleton.
+  const { data: dictionary } = useStaleWhileRevalidate(
+    signsRepository.getCachedDictionary,
+    signsRepository.getDictionary,
+    LOCAL_DICTIONARY,
+  );
+  const { data: vocabulary } = useStaleWhileRevalidate(
+    signsRepository.getCachedVocabulary,
+    signsRepository.getVocabulary,
+    LOCAL_VOCABULARY,
+  );
+  const entries = dictionary.entries;
+  const signs = vocabulary.signs;
 
   // Al cambiar de modo se resetea el filtro: las categorías difieren.
   const handleModeChange = (nextMode) => {
@@ -207,11 +208,10 @@ export default function DictionaryTabScreen() {
           <Chip key={item} label={item} selected={item === filter} onPress={() => setFilter(item)} />
         ))}
       </View>
-      {loading ? <SkeletonList count={3} label="Cargando diccionario" /> : null}
     </View>
   );
 
-  const empty = loading ? null : (
+  const empty = (
     <EmptyState icon="search" title="Sin resultados" message="Prueba con otra palabra o quita el filtro." />
   );
 
@@ -234,7 +234,7 @@ export default function DictionaryTabScreen() {
       {mode === 'deletreo' ? (
         <FlatList
           key="grid"
-          data={loading ? [] : dictionaryItems}
+          data={dictionaryItems}
           keyExtractor={(item) => `${item.letter}-${item.sign}`}
           numColumns={2}
           columnWrapperStyle={styles.gridRow}
@@ -244,7 +244,7 @@ export default function DictionaryTabScreen() {
       ) : (
         <FlatList
           key="list"
-          data={loading ? [] : signItems}
+          data={signItems}
           keyExtractor={(item) => item.word}
           renderItem={renderSignItem}
           {...listProps}

@@ -27,7 +27,8 @@ La app anima con la API `Animated` de React Native. Ejemplos reales para copiar 
 Curvas:
 - Entrar: `Easing.out(Easing.cubic)`.
 - Salir: `Easing.in(Easing.cubic)` y un poco más rápido que la entrada.
-- Pop con rebote leve: `Easing.out(Easing.back(1.4))` o `Animated.spring({ friction: 6, tension: 120 })`.
+- Pop con rebote leve: `Easing.out(Easing.back(1.4))` o `Animated.spring({ friction: 6, tension: 120 })`. Solo en momentos raros (celebración, diálogo): en lo que se ve a cada rato (panel de respuesta, barra inferior, globo de pista) va sin rebote.
+- Hojas inferiores: `theme.motion.easing.drawer` (`Easing.bezier(0.32, 0.72, 0, 1)`), desde el alto medido de la hoja.
 - Evita `linear` salvo en spinners y timers.
 
 Estas duraciones y curvas existen como tokens: `theme.motion.duration.*` y `theme.motion.easing.*` (ver `src/shared/theme/tokens/scales.js`). Úsalos en vez de números sueltos.
@@ -44,32 +45,13 @@ Estas duraciones y curvas existen como tokens: `theme.motion.duration.*` y `them
 
 ## 3. Reducir movimiento
 
-Algunas personas se marean con movimiento. Usa el hook `src/core/a11y/useReducedMotion.js` (ya existe) en toda animación nueva. Su implementación:
+Algunas personas se marean con movimiento. Usa el hook `src/core/a11y/useReducedMotion.js` en toda animación nueva:
 
 ```js
-import { useEffect, useState } from 'react';
-import { AccessibilityInfo } from 'react-native';
-
-// Respeta el ajuste "Reducir movimiento" del sistema. Con él activo, las
-// animaciones deben saltar al estado final (o limitarse a un fade corto).
-export default function useReducedMotion() {
-  const [reduced, setReduced] = useState(false);
-
-  useEffect(() => {
-    let mounted = true;
-    AccessibilityInfo.isReduceMotionEnabled().then((value) => {
-      if (mounted) setReduced(value);
-    });
-    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduced);
-    return () => {
-      mounted = false;
-      sub.remove();
-    };
-  }, []);
-
-  return reduced;
-}
+const reducedMotion = useReducedMotion();
 ```
+
+Es un valor **global** con un solo listener del sistema (`useSyncExternalStore`). `AppRoot` lo lee con `primeReducedMotion()` antes de montar la interfaz, así que el primer render de cualquier componente ya trae el ajuste real. No lo consultes por tu cuenta con `AccessibilityInfo`: volverías al problema de partir en `false` y animar de más en el montaje.
 
 Con `reduced === true`: reemplaza shakes, rebotes y slides por un fade de ≤150 ms o por `setValue(final)` directo. El feedback visual (color, icono, texto) se mantiene igual: lo que se quita es el movimiento, no la información.
 

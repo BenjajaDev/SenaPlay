@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
 import useReducedMotion from '../../../core/a11y/useReducedMotion';
 import { useAppTheme } from '../../theme/ThemeProvider';
@@ -10,23 +10,32 @@ import { useAppTheme } from '../../theme/ThemeProvider';
  *
  * Pulso de opacidad con native driver (un shimmer con gradiente animado
  * obligaría a animar layout). Con "reducir movimiento" queda estático.
+ * Dentro de SkeletonList todos los bloques comparten UN pulso: van
+ * sincronizados y no corre un loop por bloque.
  */
-export default function Skeleton({ width = '100%', height = 16, radius, style }) {
-  const theme = useAppTheme();
-  const reducedMotion = useReducedMotion();
-  const opacity = useRef(new Animated.Value(0.55)).current;
+const SharedPulseContext = createContext(null);
 
+function usePulse(value, enabled) {
   useEffect(() => {
-    if (reducedMotion) return undefined;
+    if (!enabled) return undefined;
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(opacity, { toValue: 1, duration: 650, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-        Animated.timing(opacity, { toValue: 0.55, duration: 650, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(value, { toValue: 1, duration: 650, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(value, { toValue: 0.55, duration: 650, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
       ]),
     );
     loop.start();
     return () => loop.stop();
-  }, [reducedMotion, opacity]);
+  }, [value, enabled]);
+}
+
+export default function Skeleton({ width = '100%', height = 16, radius, style }) {
+  const theme = useAppTheme();
+  const reducedMotion = useReducedMotion();
+  const shared = useContext(SharedPulseContext);
+  const own = useRef(new Animated.Value(0.55)).current;
+  usePulse(own, !shared && !reducedMotion);
+  const opacity = shared ?? own;
 
   return (
     <Animated.View
@@ -66,12 +75,17 @@ export function SkeletonCard({ lines = 2, style }) {
 /** Lista de tarjetas esqueleto, con label accesible único para toda la lista. */
 export function SkeletonList({ count = 4, lines = 2, label = 'Cargando contenido' }) {
   const theme = useAppTheme();
+  const reducedMotion = useReducedMotion();
+  const pulse = useRef(new Animated.Value(0.55)).current;
+  usePulse(pulse, !reducedMotion);
   return (
-    <View accessible accessibilityRole="progressbar" accessibilityLabel={label} style={{ gap: theme.spacing.md }}>
-      {Array.from({ length: count }).map((_, index) => (
-        <SkeletonCard key={index} lines={lines} />
-      ))}
-    </View>
+    <SharedPulseContext.Provider value={pulse}>
+      <View accessible accessibilityRole="progressbar" accessibilityLabel={label} style={{ gap: theme.spacing.md }}>
+        {Array.from({ length: count }).map((_, index) => (
+          <SkeletonCard key={index} lines={lines} />
+        ))}
+      </View>
+    </SharedPulseContext.Provider>
   );
 }
 

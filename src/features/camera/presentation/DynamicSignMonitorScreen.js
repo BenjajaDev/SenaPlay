@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ScreenHeader from '../../../shared/ui/ScreenHeader';
 import { CameraStage, IaBanner, estilos, useSignRecognition } from './signCamera';
 import { cameraAlpha, cameraColors } from '../../../shared/theme/tokens/colors';
+import { poppins } from '../../../shared/theme/fonts';
 
 // Señas que hoy tiene entrenadas el modelo dinámico (TCN). Solo informativo:
 // el modelo igual devuelve su mejor intento con cualquier seña que se grabe.
@@ -68,6 +69,9 @@ export default function DynamicSignMonitorScreen({ onBack }) {
           style={[propios.btnGrabar, (grabando || procesando) && propios.btnGrabarActivo]}
           onPress={iniciarGrabacion}
           disabled={grabando || procesando}
+          accessibilityRole="button"
+          accessibilityLabel={grabando ? 'Grabando seña' : procesando ? 'Procesando seña' : 'Grabar seña'}
+          accessibilityState={{ disabled: grabando || procesando, busy: grabando || procesando }}
         >
           {grabando || procesando ? (
             <>
@@ -99,7 +103,7 @@ const propios = StyleSheet.create({
   avisoTexto: {
     color: cameraAlpha('text', 0.75),
     fontSize: 11,
-    fontWeight: '600',
+    fontFamily: poppins(600),
     textAlign: 'center',
   },
   diagnostico: {
@@ -121,7 +125,7 @@ const propios = StyleSheet.create({
   },
   btnGrabarTexto: {
     color: cameraColors.text,
-    fontWeight: '800',
+    fontFamily: poppins(800),
     fontSize: 15,
   },
 });

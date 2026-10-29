@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, BackHandler, ScrollView, StyleSheet, View } from 'react-native';
 import useReducedMotion from '../../../core/a11y/useReducedMotion';
-import { AppText, Button, Card, MessageDialog, ProgressBar, ScreenHeader, useFeedback } from '../../../shared/ui';
+import { AppText, Button, Card, FadeInView, MessageDialog, ProgressBar, ScreenHeader, useFeedback } from '../../../shared/ui';
 import { useAppTheme } from '../../../shared/theme/ThemeProvider';
 import { useRemoteConfig } from '../../remoteConfig/presentation/RemoteConfigProvider';
 import { pickSessionExercises } from '../domain/exerciseRotation';
@@ -32,7 +32,7 @@ import useLevelSession from './session/useLevelSession';
  *   onBack         salir de la sesión
  */
 export default function LevelSessionScreen({
-  level: baseLevel,
+  level: openedLevel,
   startingLives = 3,
   rotateExercises = false,
   focusKeys,
@@ -46,6 +46,9 @@ export default function LevelSessionScreen({
   const styles = useMemo(() => createStyles(theme), [theme]);
   const { config, isEnabled } = useRemoteConfig();
   const { confirm } = useFeedback();
+  // El nivel se fija al abrir la sesión: si el catálogo remoto llega a mitad
+  // de partida, no se vuelven a sortear los ejercicios bajo la persona.
+  const [baseLevel] = useState(openedLevel);
   const hintsEnabled = config.difficulty?.hintsEnabled !== false;
 
   // Cada intento (incluido «Intentar de nuevo») sortea otros ejercicios del
@@ -78,11 +81,19 @@ export default function LevelSessionScreen({
       glow.setValue(0);
       return;
     }
-    glow.setValue(1);
-    if (!reducedMotion) {
-      Animated.timing(glow, { toValue: 0.4, duration: 1100, useNativeDriver: true }).start();
+    // El halo se apaga lento: marca el momento sin quedarse encendido.
+    if (reducedMotion) {
+      glow.setValue(0.4);
+      return;
     }
-  }, [state.feedback, glow, reducedMotion]);
+    glow.setValue(1);
+    Animated.timing(glow, {
+      toValue: 0.4,
+      duration: theme.motion.duration.celebration,
+      easing: theme.motion.easing.enter,
+      useNativeDriver: true,
+    }).start();
+  }, [state.feedback, glow, reducedMotion, theme]);
 
   const requestExit = async () => {
     if (!hasProgress || state.status === SESSION_STATUS.COMPLETED) {
@@ -158,15 +169,18 @@ export default function LevelSessionScreen({
             keyboardShouldPersistTaps="handled"
           >
             {ExerciseComponent ? (
-              <ExerciseComponent
-                key={exerciseKey}
-                exercise={exercise}
-                answer={answer}
-                onAnswerChange={actions.changeAnswer}
-                onPairResult={actions.reportMistake}
-                onHint={hintsEnabled ? actions.showHint : undefined}
-                disabled={!answering}
-              />
+              // Solo opacidad, sin desplazamiento: el cambio lo pide la persona
+              // («Continuar») y la seña nunca se mueve.
+              <FadeInView key={exerciseKey} distance={0} duration={theme.motion.duration.fast} style={styles.exerciseFill}>
+                <ExerciseComponent
+                  exercise={exercise}
+                  answer={answer}
+                  onAnswerChange={actions.changeAnswer}
+                  onPairResult={actions.reportMistake}
+                  onHint={hintsEnabled ? actions.showHint : undefined}
+                  disabled={!answering}
+                />
+              </FadeInView>
             ) : (
               <AppText tone="secondary">Este ejercicio no está disponible en tu versión de la app.</AppText>
             )}
@@ -237,6 +251,7 @@ function createStyles(theme) {
     exerciseCard: { flex: 1, gap: spacing.sm },
     exerciseTitle: { fontSize: 16 },
     exerciseContent: { flexGrow: 1, paddingBottom: 72 },
+    exerciseFill: { flexGrow: 1 },
     glow: {
       ...StyleSheet.absoluteFillObject,
       borderRadius: radius.lg,

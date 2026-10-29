@@ -4,6 +4,10 @@ import { APP_EVENTS } from '../../../core/events/EventBus';
 
 const SessionContext = createContext(null);
 
+// Solo la primera vez en el dispositivo (sin rol guardado) se espera a la red,
+// y con tope: más vale entrar como 'user' y corregir que dejar el arranque colgado.
+const FIRST_ROLE_TIMEOUT_MS = 4000;
+
 /**
  * Estado de autenticación de la app (Observer sobre Supabase Auth):
  *   status  'loading' | 'signedIn' | 'signedOut'
@@ -33,13 +37,16 @@ export function SessionProvider({ children }) {
       const nextUser = session?.user ?? null;
       let nextRole = 'user';
       if (nextUser) {
-        const cached = roleCacheRef.current;
         // El rol se resuelve ANTES de marcar la sesión como iniciada. Antes se
         // entraba como 'user' y un instante después pasaba a 'admin': el
         // mantenimiento aparecía y desaparecía solo para los administradores.
-        nextRole = cached.id === nextUser.id ? cached.role : await profile.getRole(nextUser.id);
+        // Por eso se usa el último rol conocido (memoria o dispositivo) y la
+        // red solo se espera si no hay ninguno.
+        const inMemory = roleCacheRef.current.id === nextUser.id ? roleCacheRef.current.role : null;
+        const known = inMemory ?? (await profile.getCachedRole(nextUser.id));
+        nextRole = known ?? (await profile.getRole(nextUser.id, { timeoutMs: FIRST_ROLE_TIMEOUT_MS }));
         roleCacheRef.current = { id: nextUser.id, role: nextRole };
-        if (cached.id === nextUser.id) {
+        if (known) {
           profile.getRole(nextUser.id).then((fresh) => {
             if (fresh !== roleCacheRef.current.role && roleCacheRef.current.id === nextUser.id) {
               roleCacheRef.current = { id: nextUser.id, role: fresh };

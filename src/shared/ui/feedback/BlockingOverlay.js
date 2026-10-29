@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { Animated, Modal, StyleSheet, View } from 'react-native';
+import useReducedMotion from '../../../core/a11y/useReducedMotion';
 import { useAppTheme } from '../../theme/ThemeProvider';
 import Spinner from '../loading/Spinner';
 
@@ -13,14 +14,21 @@ import Spinner from '../loading/Spinner';
  */
 export default function BlockingOverlay({ visible, label = 'Cargando…' }) {
   const theme = useAppTheme();
+  const reducedMotion = useReducedMotion();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const scale = useRef(new Animated.Value(0.9)).current;
   const opacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (!visible) return;
-    scale.setValue(0.9);
     opacity.setValue(0);
+    // Con reducir movimiento: sin pop, solo un fade breve.
+    if (reducedMotion) {
+      scale.setValue(1);
+      Animated.timing(opacity, { toValue: 1, duration: theme.motion.duration.instant, useNativeDriver: true }).start();
+      return;
+    }
+    scale.setValue(0.9);
     Animated.parallel([
       Animated.timing(scale, {
         toValue: 1,
@@ -30,7 +38,7 @@ export default function BlockingOverlay({ visible, label = 'Cargando…' }) {
       }),
       Animated.timing(opacity, { toValue: 1, duration: theme.motion.duration.fast, useNativeDriver: true }),
     ]).start();
-  }, [visible, scale, opacity, theme]);
+  }, [visible, reducedMotion, scale, opacity, theme]);
 
   return (
     <Modal visible={visible} transparent animationType="fade" statusBarTranslucent onRequestClose={() => {}}>

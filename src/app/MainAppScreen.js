@@ -81,6 +81,13 @@ export default function MainAppScreen() {
     () => scrollRef.current?.scrollTo({ y: 0, animated: !reducedMotion }),
     [reducedMotion],
   );
+  // Todas las pestañas comparten el ScrollView: sin esto, la nueva se abría a
+  // la altura en que había quedado la anterior. Sin animación: es un cambio
+  // de contexto, no un desplazamiento dentro de la misma pantalla.
+  const changeTab = useCallback((tab) => {
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+    setActiveTab(tab);
+  }, []);
   const [frequentMistakes, setFrequentMistakes] = useState(null);
 
   // Al abrir Progreso se leen los errores frecuentes (locales, al instante) y
@@ -201,7 +208,7 @@ export default function MainAppScreen() {
           isLoading={!progressLoaded}
           frequentMistakes={frequentMistakes}
           onOpenLevel={(levelId) => {
-            setActiveTab('levels');
+            changeTab('levels');
             openLevel(levelId);
           }}
         />
@@ -292,13 +299,13 @@ export default function MainAppScreen() {
           </ScrollView>
         )}
 
-        {showChrome ? <AppBottomNav activeTab={activeTab} onChangeTab={setActiveTab} isEnabled={isEnabled} /> : null}
+        {showChrome ? <AppBottomNav activeTab={activeTab} onChangeTab={changeTab} isEnabled={isEnabled} /> : null}
 
         <ProfileActionsModal
           visible={isProfileMenuVisible && showChrome}
           onClose={() => setIsProfileMenuVisible(false)}
           onEditProfile={() => {
-            setActiveTab('profile');
+            changeTab('profile');
             setIsProfileMenuVisible(false);
             setEditTrigger((prev) => prev + 1);
           }}

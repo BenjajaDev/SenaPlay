@@ -9,6 +9,7 @@ import {
 import { useFonts } from 'expo-font';
 import { useEffect, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { primeReducedMotion } from '../core/a11y/useReducedMotion';
 import { ServicesProvider } from '../core/di/ServicesProvider';
 import migrateLegacyStorage from '../core/storage/migrateLegacyStorage';
 import { SessionProvider, useSession } from '../features/auth/presentation/SessionProvider';
@@ -47,7 +48,8 @@ export default function AppRoot() {
   // En paralelo con las fuentes, antes de montar cualquier provider que lea
   // el almacenamiento local: 1) migra las claves antiguas oratiolingo.* →
   // senaplay.* (conserva el progreso de quienes ya usaban la app), 2) carga
-  // preferencias.
+  // preferencias. A la vez se lee «reducir movimiento», para que la primera
+  // animación ya lo respete.
   const [storageReady, setStorageReady] = useState(false);
   const [fontsLoaded, fontError] = useFonts({
     [APP_FONTS.sign]: require('../../assets/fonts/LenguaDeSenasChilenaHef-Regular.ttf'),
@@ -60,9 +62,9 @@ export default function AppRoot() {
   });
 
   useEffect(() => {
-    migrateLegacyStorage()
-      .then(hydratePreferences)
-      .finally(() => setStorageReady(true));
+    Promise.all([migrateLegacyStorage().then(hydratePreferences), primeReducedMotion()]).finally(() =>
+      setStorageReady(true),
+    );
   }, []);
 
   // Si una fuente falla se sigue con la del sistema: quedarse en el splash

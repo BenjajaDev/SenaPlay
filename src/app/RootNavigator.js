@@ -11,6 +11,7 @@ import { Spinner } from '../shared/ui';
 import FadeInView from '../shared/ui/motion/FadeInView';
 import { useAppTheme } from '../shared/theme/ThemeProvider';
 import MainAppScreen from './MainAppScreen';
+import { hideSplash, SPLASH_MAX_MS } from './splash';
 
 /**
  * Navegación de nivel superior como máquina de estados explícita:
@@ -37,9 +38,21 @@ export default function RootNavigator() {
     if (session.status === 'signedOut') setRoute((prev) => (prev.name === 'main' ? { name: 'login' } : prev));
   }, [session.status]);
 
+  // El splash nativo se mantiene hasta conocer la sesión; con red lenta se
+  // retira a los SPLASH_MAX_MS y queda el Spinner con texto de abajo.
+  const booting = session.status === 'loading';
+  useEffect(() => {
+    if (!booting) {
+      hideSplash();
+      return undefined;
+    }
+    const timer = setTimeout(hideSplash, SPLASH_MAX_MS);
+    return () => clearTimeout(timer);
+  }, [booting]);
+
   // Primero se espera la sesión (y su rol): decidir el mantenimiento antes
   // mostraba la pantalla de bloqueo a administradores por un instante.
-  if (session.status === 'loading') {
+  if (booting) {
     return (
       <View style={styles.loader}>
         <Spinner size={64} label="Preparando SeñaPlay…" />

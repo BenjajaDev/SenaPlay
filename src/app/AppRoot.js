@@ -7,9 +7,7 @@ import {
   Poppins_900Black,
 } from '@expo-google-fonts/poppins';
 import { useFonts } from 'expo-font';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ServicesProvider } from '../core/di/ServicesProvider';
 import migrateLegacyStorage from '../core/storage/migrateLegacyStorage';
@@ -18,9 +16,12 @@ import { CatalogProvider } from '../features/levels/presentation/CatalogContext'
 import { hydratePreferences } from '../features/profile/presentation/usePreferences';
 import { RemoteConfigProvider } from '../features/remoteConfig/presentation/RemoteConfigProvider';
 import { APP_FONTS } from '../shared/theme/fonts';
-import { AppThemeProvider, useAppTheme } from '../shared/theme/ThemeProvider';
+import { AppThemeProvider } from '../shared/theme/ThemeProvider';
 import { FeedbackProvider } from '../shared/ui';
 import RootNavigator from './RootNavigator';
+import { keepSplashVisible } from './splash';
+
+keepSplashVisible();
 
 // La config remota depende del usuario (rollouts por usuario, bypass de
 // mantenimiento para administradores), por eso va debajo de la sesión.
@@ -33,9 +34,22 @@ function SessionAwareProviders({ children }) {
   );
 }
 
-function FontGate({ children }) {
-  const theme = useAppTheme();
-  const [fontsLoaded] = useFonts({
+/**
+ * Raíz de la app: compone los providers en orden de dependencia.
+ *
+ *   SafeArea → Tema → Servicios (DI) → Feedback global →
+ *   Sesión → Config remota → Catálogo → Navegación
+ *
+ * Mientras se prepara el almacenamiento y cargan las fuentes se ve el splash
+ * nativo (RootNavigator lo oculta cuando la sesión está lista).
+ */
+export default function AppRoot() {
+  // En paralelo con las fuentes, antes de montar cualquier provider que lea
+  // el almacenamiento local: 1) migra las claves antiguas oratiolingo.* →
+  // senaplay.* (conserva el progreso de quienes ya usaban la app), 2) carga
+  // preferencias.
+  const [storageReady, setStorageReady] = useState(false);
+  const [fontsLoaded, fontError] = useFonts({
     [APP_FONTS.sign]: require('../../assets/fonts/LenguaDeSenasChilenaHef-Regular.ttf'),
     Poppins_400Regular,
     Poppins_500Medium,
@@ -45,57 +59,29 @@ function FontGate({ children }) {
     Poppins_900Black,
   });
 
-  if (!fontsLoaded) {
-    // Sin fuentes aún no se puede usar el Spinner temático (usa texto con Poppins).
-    return (
-      <LinearGradient {...theme.gradients.header} style={styles.loader}>
-        <ActivityIndicator size="large" color={theme.colors.onHeader} accessibilityLabel="Cargando" />
-      </LinearGradient>
-    );
-  }
-  return children;
-}
-
-/**
- * Raíz de la app: compone los providers en orden de dependencia.
- *
- *   SafeArea → Tema → Fuentes → Servicios (DI) → Feedback global →
- *   Sesión → Config remota → Catálogo → Navegación
- */
-export default function AppRoot() {
-  // Antes de montar cualquier provider que lea el almacenamiento local:
-  // 1) migra las claves antiguas oratiolingo.* → senaplay.* (conserva el
-  //    progreso de quienes ya usaban la app), 2) carga preferencias.
-  const [storageReady, setStorageReady] = useState(false);
   useEffect(() => {
     migrateLegacyStorage()
       .then(hydratePreferences)
       .finally(() => setStorageReady(true));
   }, []);
 
-  if (!storageReady) return <View style={styles.boot} />;
+  // Si una fuente falla se sigue con la del sistema: quedarse en el splash
+  // para siempre sería peor que una tipografía distinta.
+  if (!storageReady || !(fontsLoaded || fontError)) return null;
 
   return (
     <SafeAreaProvider>
       <AppThemeProvider>
-        <FontGate>
-          <ServicesProvider>
-            <FeedbackProvider>
-              <SessionProvider>
-                <SessionAwareProviders>
-                  <RootNavigator />
-                </SessionAwareProviders>
-              </SessionProvider>
-            </FeedbackProvider>
-          </ServicesProvider>
-        </FontGate>
+        <ServicesProvider>
+          <FeedbackProvider>
+            <SessionProvider>
+              <SessionAwareProviders>
+                <RootNavigator />
+              </SessionAwareProviders>
+            </SessionProvider>
+          </FeedbackProvider>
+        </ServicesProvider>
       </AppThemeProvider>
     </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  // Fondo neutro durante los milisegundos de la migración (antes del tema).
-  boot: { flex: 1, backgroundColor: '#120F1D' },
-  loader: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-});

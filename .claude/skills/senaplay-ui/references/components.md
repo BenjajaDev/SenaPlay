@@ -46,4 +46,4 @@ Todos usan `useAppTheme()` y funcionan en claro/oscuro. Importar desde el índic
 
 ## Otros
 
-`features/signs/presentation/SignImage` (signKey, size, rounded; carrusel manual de variaciones y placeholder) · `app/navigation/AppBottomNav` (tabs con flag remoto) · `features/remoteConfig/presentation/AnnouncementBanner` · `AppGateScreen`.
+`features/signs/presentation/SignImage` (signKey, size, rounded; variaciones al arrastrar la seña hacia los lados, sin botones, y placeholder) · `app/navigation/AppBottomNav` (tabs con flag remoto) · `features/remoteConfig/presentation/AnnouncementBanner` · `AppGateScreen`.

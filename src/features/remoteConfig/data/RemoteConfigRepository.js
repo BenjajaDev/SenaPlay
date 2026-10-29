@@ -1,3 +1,4 @@
+import { withTimeout } from '../../../core/net/withTimeout';
 import { storageKey } from '../../../core/storage/jsonStorage';
 
 const CACHE_KEY = storageKey('remoteConfig', 'v1');
@@ -25,8 +26,8 @@ export function createRemoteConfigRepository({ supabase, storage }) {
     async fetch() {
       try {
         const [configResult, flagsResult] = await Promise.all([
-          supabase.from('app_config').select('key, value'),
-          supabase.from('feature_flags').select('key, enabled, rollout_percentage, starts_at, ends_at'),
+          withTimeout(supabase.from('app_config').select('key, value')),
+          withTimeout(supabase.from('feature_flags').select('key, enabled, rollout_percentage, starts_at, ends_at')),
         ]);
         if (configResult.error && flagsResult.error) throw configResult.error;
         const snapshot = {
@@ -52,23 +53,30 @@ export function createRemoteConfigRepository({ supabase, storage }) {
      *   postgres_changes      cambios en app_config / feature_flags hechos
      *                         por cualquier medio (migración 008)
      *
-     * Además, cada vez que el canal (re)conecta se refresca: recupera lo que
-     * haya cambiado mientras el socket estuvo caído o la app en segundo plano.
-     * Devuelve la función para desuscribirse. Sin Realtime no hace nada: el
-     * sondeo periódico cubre ese caso.
+     *   onChange(reason)          'changed' (llegó un cambio) | 'reconnected'
+     *                             (el canal volvió: puede haberse perdido algo)
+     *   onConnectionChange(bool)  true mientras el canal está suscrito; con él
+     *                             caído, quien llama debe sondear
+     *
+     * Devuelve la función para desuscribirse. Sin Realtime no hace nada y
+     * nunca reporta conexión: el sondeo periódico cubre ese caso.
      */
-    subscribe(onChange) {
+    subscribe(onChange, onConnectionChange = () => {}) {
       if (!supabase?.channel) return () => {};
       try {
+        const changed = () => onChange('changed');
         const channel = supabase
           .channel(REMOTE_CONFIG_CHANNEL)
-          .on('broadcast', { event: REMOTE_CONFIG_EVENT }, () => onChange())
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'app_config' }, () => onChange())
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'feature_flags' }, () => onChange())
+          .on('broadcast', { event: REMOTE_CONFIG_EVENT }, changed)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'app_config' }, changed)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'feature_flags' }, changed)
           .subscribe((status) => {
-            if (status === 'SUBSCRIBED') onChange();
+            const connected = status === 'SUBSCRIBED';
+            onConnectionChange(connected);
+            if (connected) onChange('reconnected');
           });
         return () => {
+          onConnectionChange(false);
           supabase.removeChannel(channel);
         };
       } catch {

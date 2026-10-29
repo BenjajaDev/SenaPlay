@@ -1,3 +1,5 @@
+import { createCachedResource } from '../../../core/data/cachedResource';
+import { withTimeout } from '../../../core/net/withTimeout';
 import { storageKey } from '../../../core/storage/jsonStorage';
 import ExerciseFactory from '../domain/ExerciseFactory';
 import LevelBuilder from '../domain/LevelBuilder';
@@ -17,7 +19,9 @@ const CACHE_KEY = storageKey('catalog', 'v2');
  * LevelBuilder en modo tolerante: un ejercicio mal cargado desde el admin se
  * omite (y se reporta en `warnings`) en vez de romper la pantalla.
  *
- *   getLevels() → { levels, source: 'remote' | 'cache' | 'local', warnings }
+ *   getLocalLevels()   → levels                                     (empaquetado, instantáneo)
+ *   getCachedLevels()  → { levels, source: 'cache', warnings } | null (dispositivo, sin red)
+ *   getLevels()        → { levels, source: 'remote' | 'cache' | 'local', warnings }
  */
 export function createCatalogRepository({ supabase, storage, localLevels }) {
   const buildLevels = (rawLevels) => {
@@ -39,12 +43,14 @@ export function createCatalogRepository({ supabase, storage, localLevels }) {
   };
 
   const fetchRemote = async () => {
-    const { data, error } = await supabase
-      .from('levels')
-      .select('id, title, description, category, available, sort_order, exercises(position, type, title, hint, payload)')
-      .order('sort_order', { ascending: true });
-    if (error || !data?.length) return null;
-    return data.map((row) => ({
+    const { data, error } = await withTimeout(
+      supabase
+        .from('levels')
+        .select('id, title, description, category, available, sort_order, exercises(position, type, title, hint, payload)')
+        .order('sort_order', { ascending: true }),
+    );
+    if (error) throw error;
+    return (data || []).map((row) => ({
       ...row,
       exercises: (row.exercises || [])
         .slice()
@@ -53,31 +59,26 @@ export function createCatalogRepository({ supabase, storage, localLevels }) {
     }));
   };
 
+  // Un catálogo solo vale si al menos un nivel sobrevive a LevelBuilder.
+  const resource = createCachedResource({
+    storage,
+    cacheKey: CACHE_KEY,
+    fetchRemote,
+    local: localLevels,
+    isValid: (rows) => Array.isArray(rows) && rows.length > 0 && buildLevels(rows).levels.length > 0,
+  });
+
   return {
     async getLevels() {
-      try {
-        const remote = await fetchRemote();
-        if (remote) {
-          const built = buildLevels(remote);
-          if (built.levels.length) {
-            await storage.set(CACHE_KEY, remote);
-            return { ...built, source: 'remote' };
-          }
-        }
-      } catch {
-        /* sin red: se intenta la caché */
-      }
-
-      const cached = await storage.get(CACHE_KEY, null);
-      if (Array.isArray(cached) && cached.length) {
-        const built = buildLevels(cached);
-        if (built.levels.length) return { ...built, source: 'cache' };
-      }
-
-      return { ...buildLevels(localLevels), source: 'local' };
+      const { value, source } = await resource.read();
+      return { ...buildLevels(value), source };
     },
 
-    /** Solo para el catálogo local empaquetado (arranque instantáneo). */
+    async getCachedLevels() {
+      const cached = await resource.readCached();
+      return cached ? { ...buildLevels(cached), source: 'cache' } : null;
+    },
+
     getLocalLevels() {
       return buildLevels(localLevels).levels;
     },

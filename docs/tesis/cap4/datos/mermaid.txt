@@ -1,0 +1,20 @@
+✓ 01-arquitectura.md:7
+✓ 01-arquitectura.md:48
+✓ 01-arquitectura.md:119
+✓ 01-arquitectura.md:150
+✓ 01-arquitectura.md:175
+✓ 02-patrones-de-diseno.md:16
+✓ 02-patrones-de-diseno.md:116
+✓ 02-patrones-de-diseno.md:136
+✓ 02-patrones-de-diseno.md:156
+✓ 03-modelo-de-dominio.md:5
+✓ 03-modelo-de-dominio.md:138
+✓ 04-casos-de-uso.md:7
+✓ 04-casos-de-uso.md:60
+✓ 05-despliegue.md:5
+✓ 05-despliegue.md:92
+✓ 07-design-system.md:44
+✓ 08-configuracion-remota.md:7
+
+17/17 diagramas válidos
+exit=0

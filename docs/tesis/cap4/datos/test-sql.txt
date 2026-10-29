@@ -1,0 +1,66 @@
+NOTICE:  database "senaplay_migrations_test" does not exist, skipping
+→ supabase/catalog.sql
+→ supabase/dictionary.sql
+→ supabase/signs.sql
+→ supabase/dynamic_signs_capture.sql
+→ supabase/migrations/20260924000100_profiles_roles.sql
+→ supabase/migrations/20260924000200_content_admin.sql
+→ supabase/migrations/20260924000300_remote_config.sql
+→ supabase/migrations/20260924000400_media.sql
+→ supabase/migrations/20260924000500_admin_stats.sql
+→ supabase/migrations/20260925000100_site_content.sql
+→ supabase/migrations/20260925000200_publications.sql
+→ supabase/migrations/20260925000300_realtime_and_mistakes.sql
+→ supabase/migrations/20261017000100_team_socials_and_profile.sql
+→ segunda pasada (idempotencia)
+roles: admin@x.cl=admin, editor@x.cl=editor, user@x.cl=user
+psql:supabase/tests/10_rls_policies.sql:16: NOTICE:  OK user no cambia su rol
+psql:supabase/tests/10_rls_policies.sql:17: NOTICE:  OK user no inserta niveles (RLS)
+psql:supabase/tests/10_rls_policies.sql:18: NOTICE:  OK user no usa save_level
+psql:supabase/tests/10_rls_policies.sql:19: NOTICE:  OK user no edita config
+user ve perfiles (solo el suyo): 1
+user lee flags: 9
+psql:supabase/tests/10_rls_policies.sql:22: NOTICE:  OK user no edita site_content
+psql:supabase/tests/10_rls_policies.sql:23: NOTICE:  OK user no agrega integrantes
+psql:supabase/tests/10_rls_policies.sql:24: NOTICE:  OK user no publica
+user edita su nombre: Usuaria Editada
+psql:supabase/tests/10_rls_policies.sql:27: NOTICE:  OK user no edita perfiles ajenos
+psql:supabase/tests/10_rls_policies.sql:28: NOTICE:  OK user no edita redes del equipo
+user registra y ve sus errores: 2
+psql:supabase/tests/10_rls_policies.sql:31: NOTICE:  OK user no registra errores ajenos
+psql:supabase/tests/10_rls_policies.sql:32: NOTICE:  OK user no ve métricas de errores
+editor save_level -> 13
+ejercicios nivel 13: 0:true-false, 1:matching
+reemplaza -> 13
+nivel 13 ahora: Saludos 2 / 1 ejercicio(s)
+psql:supabase/tests/10_rls_policies.sql:38: NOTICE:  OK editor no edita config
+editor ve media: 2
+editor subió objeto a media: ok
+editor edita misión: Fomentar la LSCh
+editor ve integrantes (incluye ocultos): 2
+editor guarda redes: linkedin
+psql:supabase/tests/10_rls_policies.sql:50: NOTICE:  OK redes deben ser una lista
+editor mistake_stats: multiple-choice:b errores=2 personas=1 sin_vidas=1 resp=D
+editor ve publicaciones (incluye borradores): 2 · autor registrado: true
+psql:supabase/tests/10_rls_policies.sql:57: NOTICE:  OK categoría inválida rechazada
+psql:supabase/tests/10_rls_policies.sql:58: NOTICE:  OK tipo inválido rechazado
+auditoria: site_content/about/UPDATE; app_config/maintenance/UPDATE; feature_flags/games.quiz/UPDATE
+updated_by admin: true
+admin promueve a user: editor
+psql:supabase/tests/10_rls_policies.sql:67: NOTICE:  OK editor no cambia su propio rol
+psql:supabase/tests/10_rls_policies.sql:71: NOTICE:  OK user no sube a media
+user sube su avatar: ok
+psql:supabase/tests/10_rls_policies.sql:74: NOTICE:  OK user no sube avatar ajeno
+anon ve media publicada: 1
+anon lee config: 6
+anon lee misión: Fomentar la LSCh
+anon ve integrantes publicados: 1
+anon ve redes publicadas: 1
+anon ve publicaciones publicadas: 1
+anon ve errores: 0
+psql:supabase/tests/10_rls_policies.sql:83: NOTICE:  OK anon no edita publicaciones
+anon lee auditoria: 0
+anon stats: {"levels": 13, "videos": 1, "learners": 3, "exercises": 91, "dictionary": 47, "vocabulary": 7}
+correo confirmado se copia a profiles: nueva@x.cl
+✓ Migraciones y políticas OK
+sql_exit=0

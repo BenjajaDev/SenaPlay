@@ -1,0 +1,29 @@
+sequenceDiagram
+  autonumber
+  actor U as Estudiante
+  participant W as WebView (MediaPipe Hands)
+  participant H as useSignRecognition
+  participant S as Servidor IA (FastAPI)
+  participant RF as Random Forest
+  participant T as Holistic + TCN
+  U->>W: ejecuta la seña frente a la cámara
+  loop cada ~500 ms con la mano quieta
+    W->>H: 21 landmarks de la mano
+    H->>S: POST /clasificar
+    S->>RF: 85 características
+    RF-->>S: letra + confianza
+    S-->>H: {seña, confianza}
+  end
+  opt se detecta un tramo con movimiento
+    W->>H: cuadros JPEG del búfer (15 fps, 480 px)
+    H->>S: POST /clasificar_frames
+    S->>T: 527 valores por cuadro, ventana de 60
+    T-->>S: ranking de clases
+    alt clase «ninguna» o muñeca casi inmóvil
+      S-->>H: es_seña = false (motivo)
+    else seña dinámica
+      S-->>H: {seña, confianza, alternativas}
+    end
+  end
+  H->>H: umbral de confianza (0,55 estática / 0,6 dinámica)
+  H-->>U: banner de IA, vibración y anuncio accesible

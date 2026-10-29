@@ -1,0 +1,86 @@
+G3ST-1	Épica	-	En curso	2026-09-11	2026-10-31	-	Épica A — Incrementos App Gamificada
+G3ST-2	Épica	-	En curso	2026-09-11	2026-11-03	-	Épica B — Incrementos Módulo IA
+G3ST-3	Épica	-	Listo	2026-09-27	2026-10-27	-	Épica C — Integración & Backend
+G3ST-4	Épica	-	En curso	2026-09-11	2026-11-10	-	Épica D — Comunidad LSCh Talca (Obtención de Información / Validación)
+G3ST-5	Épica	-	En curso	2026-07-31	2026-12-04	-	Épica E — Tesis / Entregables académicos
+G3ST-6	Historia	G3ST-1	Listo	2026-09-12	2026-09-19	-	Autenticación y perfil de usuario
+G3ST-7	Historia	G3ST-1	En curso	2026-09-28	2026-10-05	-	Catálogo/diccionario de señas (UI)
+G3ST-8	Historia	G3ST-1	Listo	2026-10-10	2026-10-17	-	Sistema de niveles progresivos
+G3ST-9	Historia	G3ST-1	En curso	2026-10-24	2026-10-31	-	Minijuegos: Memory, QuickQuiz y juego de cultura sorda
+G3ST-10	Historia	G3ST-1	Listo	2026-10-12	2026-10-19	-	Seguimiento de progreso del usuario
+G3ST-11	Historia	G3ST-1	Listo	2026-09-11	2026-09-15	-	Theming claro/oscuro (AppThemeProvider)
+G3ST-12	Historia	G3ST-2	Listo	2026-09-11	2026-09-18	-	Extracción de landmarks (MediaPipe Holistic)
+G3ST-13	Historia	G3ST-2	Listo	2026-09-21	2026-09-29	-	Modelo Random Forest (señas estáticas) — MVP prioritario
+G3ST-14	Historia	G3ST-2	Por hacer	2026-10-24	2026-11-03	-	Modelo TCN y línea base LSTM (señas dinámicas, ventana deslizante 30 frames)
+G3ST-15	Historia	G3ST-2	En curso	2026-10-01	2026-10-09	-	Servicio de inferencia FastAPI
+G3ST-16	Historia	G3ST-2	En curso	2026-09-22	2026-09-30	-	Augmentación de datos / mitigación de overfitting
+G3ST-17	Historia	G3ST-4	En curso	2026-10-05	2026-10-16	-	Reclutamiento y grabación de señantes adicionales
+G3ST-18	Historia	G3ST-3	Listo	2026-09-27	2026-10-05	-	Conexión app ↔ Supabase (catálogo, auth, storage)
+G3ST-19	Historia	G3ST-3	Listo	2026-10-06	2026-10-14	-	Conexión app ↔ servicio FastAPI (envío de landmarks, recepción de predicciones)
+G3ST-20	Historia	G3ST-3	Listo	2026-10-16	2026-10-27	-	Deploy del servicio IA (Supabase Edge Functions o Render Free Tier)
+G3ST-21	Historia	G3ST-4	En curso	2026-10-21	2026-10-29	-	Sesión de co-creación de catálogo LSCh nivel A2 (variantes regionales de Talca)
+G3ST-22	Historia	G3ST-4	Por hacer	2026-10-30	2026-11-07	-	Sesión de grabación con señantes adicionales
+G3ST-23	Historia	G3ST-4	Listo	2026-10-07	2026-10-15	-	Sesión de validación de usabilidad y precisión con usuarios
+G3ST-24	Historia	G3ST-4	Listo	2026-09-11	2026-09-14	-	Definir protocolo de feedback estructurado hacia Épicas A/B
+G3ST-25	Tarea	G3ST-5	Listo	-	2026-08-16	-	Anteproyecto
+G3ST-26	Tarea	G3ST-5	Listo	-	2026-08-31	-	Entrega 1
+G3ST-27	Tarea	G3ST-5	Listo	-	2026-09-25	-	Entrega 2
+G3ST-28	Tarea	G3ST-5	En curso	-	2026-10-30	-	Entrega 3
+G3ST-29	Tarea	G3ST-5	Por hacer	-	2026-11-20	-	Documento final
+G3ST-30	Tarea	G3ST-5	Por hacer	-	2026-11-27	-	Predefensa
+G3ST-31	Tarea	G3ST-5	Por hacer	-	2026-12-04	-	Defensa final
+G3ST-32	Subtask	G3ST-6	Listo	-	2026-09-12	-	Diseñar flujo de autenticación y modelo de perfil
+G3ST-33	Subtask	G3ST-6	Listo	-	2026-09-16	-	Implementar pantallas de login/registro
+G3ST-34	Subtask	G3ST-6	Listo	-	2026-09-19	-	Conectar autenticación con Supabase Auth y persistencia de sesión
+G3ST-35	Subtask	G3ST-7	En curso	-	2026-09-30	-	Diseñar wireframe de UI de catálogo/diccionario
+G3ST-36	Subtask	G3ST-7	En curso	-	2026-10-03	-	Implementar listado y detalle de señas
+G3ST-37	Subtask	G3ST-7	En curso	-	2026-10-05	-	Integrar búsqueda/filtro por categoría (salud)
+G3ST-38	Subtask	G3ST-8	Listo	-	2026-10-10	-	Definir estructura de niveles y criterios de avance
+G3ST-39	Subtask	G3ST-8	Listo	-	2026-10-14	-	Implementar lógica de progresión de niveles
+G3ST-40	Subtask	G3ST-8	Listo	-	2026-10-17	-	Implementar UI de selección/visualización de niveles
+G3ST-41	Subtask	G3ST-9	En curso	-	2026-10-24	-	Implementar minijuego Memory
+G3ST-42	Subtask	G3ST-9	En curso	-	2026-10-28	-	Implementar minijuego QuickQuiz
+G3ST-43	Subtask	G3ST-9	En curso	-	2026-10-31	-	Definir y prototipar juego de cultura sorda con la comunidad
+G3ST-44	Subtask	G3ST-10	Listo	-	2026-10-12	-	Diseñar modelo de datos de progreso de usuario
+G3ST-45	Subtask	G3ST-10	Listo	-	2026-10-16	-	Implementar tracking de progreso (niveles, catálogo, minijuegos)
+G3ST-46	Subtask	G3ST-10	Listo	-	2026-10-19	-	Implementar UI de visualización de progreso/estadísticas
+G3ST-47	Subtask	G3ST-11	Listo	-	2026-09-11	-	Implementar AppThemeProvider con modo claro/oscuro
+G3ST-48	Subtask	G3ST-11	Listo	-	2026-09-15	-	Aplicar theming a componentes existentes
+G3ST-49	Subtask	G3ST-12	Listo	-	2026-09-11	-	Configurar pipeline MediaPipe Holistic
+G3ST-50	Subtask	G3ST-12	Listo	-	2026-09-15	-	Implementar extracción y normalización de landmarks
+G3ST-51	Subtask	G3ST-12	Listo	-	2026-09-18	-	Validar calidad de extracción con muestras de prueba
+G3ST-52	Subtask	G3ST-13	Listo	-	2026-09-21	-	Preparar dataset etiquetado de señas estáticas
+G3ST-53	Subtask	G3ST-13	Listo	-	2026-09-25	-	Entrenar y ajustar modelo Random Forest
+G3ST-54	Subtask	G3ST-13	Listo	-	2026-09-29	-	Exportar modelo (estatico.pkl) y evaluar métricas
+G3ST-55	Subtask	G3ST-14	Por hacer	-	2026-10-24	-	Preparar dataset de secuencias (ventanas 30 frames)
+G3ST-56	Subtask	G3ST-14	Por hacer	-	2026-10-29	-	Entrenar modelo TCN y línea base LSTM en PyTorch
+G3ST-57	Subtask	G3ST-14	Por hacer	-	2026-11-03	-	Exportar modelo (dinamico.pt) y evaluar métricas
+G3ST-58	Subtask	G3ST-15	Listo	-	2026-10-01	-	Diseñar contrato de API de inferencia (endpoints, payloads)
+G3ST-59	Subtask	G3ST-15	Listo	-	2026-10-06	-	Implementar servidor FastAPI con carga de modelos
+G3ST-60	Subtask	G3ST-15	En curso	-	2026-10-09	-	Implementar endpoint de inferencia en tiempo real y pruebas
+G3ST-61	Subtask	G3ST-16	Listo	-	2026-09-22	-	Implementar pipeline de augmentación (rotación, escalado, espejo, ruido)
+G3ST-62	Subtask	G3ST-16	En curso	-	2026-09-26	-	Aplicar augmentación al dataset de entrenamiento
+G3ST-63	Subtask	G3ST-16	Validación	-	2026-09-30	-	Evaluar impacto en overfitting (curvas train/val)
+G3ST-64	Subtask	G3ST-17	En curso	-	2026-10-08	-	Coordinar con Épica D reclutamiento de señantes
+G3ST-65	Subtask	G3ST-17	Por hacer	-	2026-10-14	-	Planificar y ejecutar sesiones de grabación
+G3ST-66	Subtask	G3ST-17	Por hacer	-	2026-10-16	-	Procesar e incorporar grabaciones al dataset
+G3ST-67	Subtask	G3ST-18	Listo	-	2026-09-27	-	Definir esquema de datos en Supabase (catálogo, usuarios)
+G3ST-68	Subtask	G3ST-18	Listo	-	2026-10-01	-	Implementar capa de acceso backend/ (catálogo, auth, storage)
+G3ST-69	Subtask	G3ST-18	Listo	-	2026-10-05	-	Conectar app con capa de acceso y pruebas de integración
+G3ST-70	Subtask	G3ST-19	Listo	-	2026-10-06	-	Implementar captura de video/imagen (expo-camera/image-picker)
+G3ST-71	Subtask	G3ST-19	Listo	-	2026-10-10	-	Implementar envío de landmarks/frames al servicio FastAPI
+G3ST-72	Subtask	G3ST-19	En curso	-	2026-10-14	-	Implementar recepción y visualización de predicciones en la app
+G3ST-73	Subtask	G3ST-20	Listo	-	2026-10-16	-	Evaluar Supabase Edge Functions vs Render Free Tier (recursos/límites)
+G3ST-74	Subtask	G3ST-20	Listo	-	2026-10-20	-	Configurar despliegue del servicio elegido
+G3ST-75	Subtask	G3ST-20	Listo	-	2026-10-24	-	Pruebas de disponibilidad y latencia en producción
+G3ST-76	Subtask	G3ST-21	Por hacer	-	2026-10-23	-	Planificar y convocar sesión con comunidad sorda de Talca
+G3ST-77	Subtask	G3ST-21	Por hacer	-	2026-10-27	-	Ejecutar sesión de co-creación de señas nivel A2 (salud)
+G3ST-78	Subtask	G3ST-21	Por hacer	-	2026-10-29	-	Sistematizar resultados y crear issues derivadas en A/B
+G3ST-79	Subtask	G3ST-22	Por hacer	-	2026-10-31	-	Coordinar logística de grabación con señantes adicionales
+G3ST-80	Subtask	G3ST-22	Por hacer	-	2026-11-05	-	Ejecutar sesiones de grabación
+G3ST-81	Subtask	G3ST-22	Por hacer	-	2026-11-07	-	Entregar dataset a Épica B (issue de incorporación)
+G3ST-82	Subtask	G3ST-23	Por hacer	-	2026-10-07	-	Diseñar protocolo de prueba de usabilidad y precisión
+G3ST-83	Subtask	G3ST-23	Por hacer	-	2026-10-11	-	Ejecutar sesión de validación con usuarios
+G3ST-84	Subtask	G3ST-23	Por hacer	-	2026-10-15	-	Sistematizar hallazgos, crear issues correctivas y actualizar TRL
+G3ST-85	Subtask	G3ST-24	Listo	-	2026-09-11	-	Diseñar plantilla/checklist de traspaso de feedback
+G3ST-86	Subtask	G3ST-24	Listo	-	2026-09-14	-	Socializar protocolo de feedback con el equipo

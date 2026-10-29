@@ -1,0 +1,13 @@
+stateDiagram-v2
+  [*] --> answering
+  answering --> answering: SUBMIT (incompleta) / aviso, sin perder vida
+  answering --> answering: USE_HINT / +1 pista por ejercicio
+  answering --> feedback: SUBMIT (correcta) / hits+1, vibración de éxito
+  answering --> feedback: SUBMIT (incorrecta, quedan vidas) / vida−1
+  answering --> gameOver: SUBMIT (incorrecta, sin vidas)
+  feedback --> answering: CONTINUE tras error / reintenta el mismo ejercicio
+  feedback --> answering: CONTINUE tras acierto / siguiente ejercicio
+  feedback --> completed: CONTINUE tras acierto en el último
+  completed --> answering: RESTART
+  gameOver --> answering: RESTART
+  completed --> [*]

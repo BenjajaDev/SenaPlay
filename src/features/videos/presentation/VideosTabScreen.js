@@ -18,6 +18,7 @@ import {
 import { useAppTheme } from '../../../shared/theme/ThemeProvider';
 import { formatDuration } from '../data/MediaRepository';
 import VideoPlayerScreen from './VideoPlayerScreen';
+import VideoThumbnail from './VideoThumbnail';
 
 const normalizeText = (value) =>
   String(value || '')
@@ -39,6 +40,11 @@ export default function VideosTabScreen({ onScrollToTop }) {
   const { data } = useStaleWhileRevalidate(media.getCachedVideos, media.listVideos);
   const videos = useMemo(() => data?.videos ?? [], [data]);
   const loading = !data;
+  // Sin videos publicados (o borrados desde el panel) no tiene sentido buscar:
+  // se muestra solo el aviso de que aquí se añadirán.
+  const hasVideos = videos.length > 0;
+  // `local` = no respondió Supabase y no había nada guardado.
+  const offline = data?.source === 'local';
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('Todos');
   // Video en reproducción: se ve aquí mismo, sin abrir el navegador.
@@ -84,14 +90,16 @@ export default function VideosTabScreen({ onScrollToTop }) {
   return (
     <View style={styles.container}>
       <SectionHeader title="Videos" subtitle="Aprende con videos cortos por nivel" />
-      <TextField
-        icon="search"
-        placeholder="Buscar videos…"
-        value={query}
-        onChangeText={setQuery}
-        accessibilityLabel="Buscar videos"
-        returnKeyType="search"
-      />
+      {hasVideos ? (
+        <TextField
+          icon="search"
+          placeholder="Buscar videos…"
+          value={query}
+          onChangeText={setQuery}
+          accessibilityLabel="Buscar videos"
+          returnKeyType="search"
+        />
+      ) : null}
       {categories.length > 2 ? (
         <View style={styles.chips}>
           {categories.map((item) => (
@@ -102,6 +110,20 @@ export default function VideosTabScreen({ onScrollToTop }) {
 
       {loading ? (
         <SkeletonList count={4} label="Cargando videos" />
+      ) : !hasVideos ? (
+        offline ? (
+          <EmptyState
+            icon="cloud-offline-outline"
+            title="No pudimos cargar los videos"
+            message="Revisa tu conexión. Cuando vuelvas a tener internet, los videos aparecerán aquí."
+          />
+        ) : (
+          <EmptyState
+            icon="videocam-outline"
+            title="Aún no hay videos"
+            message="Aquí se añadirán los videos de Lengua de Señas Chilena que publique el equipo de SeñaPlay."
+          />
+        )
       ) : filtered.length === 0 ? (
         <EmptyState icon="videocam-outline" title="Sin videos" message="Prueba con otra búsqueda." />
       ) : (
@@ -115,9 +137,7 @@ export default function VideosTabScreen({ onScrollToTop }) {
                 accessibilityHint="Reproduce el video dentro de la app"
               >
                 <View style={styles.row}>
-                  <View style={[styles.thumb, { backgroundColor: theme.colors.primarySoft, borderRadius: theme.radius.md }]}>
-                    <Ionicons name="play-circle" size={32} color={theme.colors.primary} />
-                  </View>
+                  <VideoThumbnail uri={video.thumbnailUrl} iconSize={16} style={[styles.thumb, { borderRadius: theme.radius.md }]} />
                   <View style={styles.info}>
                     <AppText variant="bodyStrong" numberOfLines={2}>
                       {video.title}
@@ -145,7 +165,8 @@ const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   list: { gap: 8 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  thumb: { width: 64, height: 54, alignItems: 'center', justifyContent: 'center' },
+  // 16:9, como el reproductor.
+  thumb: { width: 96, height: 54 },
   info: { flex: 1, gap: 4 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
 });

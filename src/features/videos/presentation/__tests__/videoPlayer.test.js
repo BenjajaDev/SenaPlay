@@ -29,7 +29,9 @@ const VIDEOS = [
 const metrics = { frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } };
 
 async function renderVideos(props = {}) {
-  const services = { media: { listVideos: async () => ({ videos: VIDEOS, source: 'remote' }) } };
+  const services = {
+    media: { listVideos: async () => ({ videos: VIDEOS, source: 'remote' }), getCachedVideos: async () => null },
+  };
   await render(
     <SafeAreaProvider initialMetrics={metrics}>
       <AppThemeProvider>

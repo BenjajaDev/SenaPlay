@@ -1,3 +1,5 @@
+import { createCachedResource } from '../../../core/data/cachedResource';
+import { withTimeout } from '../../../core/net/withTimeout';
 import { storageKey } from '../../../core/storage/jsonStorage';
 
 const CACHE_KEY = storageKey('media', 'v1');
@@ -13,8 +15,10 @@ export const LOCAL_VIDEOS = [
 /**
  * Recursos multimedia administrados desde el Gestor de Medios del panel web
  * (tabla `media` + bucket `media` de Storage). La app solo ve los publicados.
+ * Misma estrategia remoto → caché → local que el catálogo.
  *
- *   listVideos() → { videos, source }
+ *   listVideos()        → { videos, source }
+ *   getCachedVideos()   → { videos, source: 'cache' } | null
  */
 export function createMediaRepository({ supabase, storage }) {
   const toVideo = (row) => ({
@@ -29,26 +33,33 @@ export function createMediaRepository({ supabase, storage }) {
     signKey: row.sign_key || null,
   });
 
-  return {
-    async listVideos() {
-      try {
-        const { data, error } = await supabase
+  const videos = createCachedResource({
+    storage,
+    cacheKey: CACHE_KEY,
+    local: LOCAL_VIDEOS,
+    fetchRemote: async () => {
+      const { data, error } = await withTimeout(
+        supabase
           .from('media')
           .select('id, title, description, category, duration_seconds, public_url, thumbnail_url, captions_url, sign_key')
           .eq('kind', 'video')
           .eq('published', true)
-          .order('sort_order', { ascending: true });
-        if (!error && data?.length) {
-          const videos = data.map(toVideo);
-          await storage.set(CACHE_KEY, videos);
-          return { videos, source: 'remote' };
-        }
-      } catch {
-        /* sin red */
-      }
-      const cached = await storage.get(CACHE_KEY, null);
-      if (Array.isArray(cached) && cached.length) return { videos: cached, source: 'cache' };
-      return { videos: LOCAL_VIDEOS, source: 'local' };
+          .order('sort_order', { ascending: true }),
+      );
+      if (error) throw error;
+      return (data || []).map(toVideo);
+    },
+  });
+
+  return {
+    async listVideos() {
+      const { value, source } = await videos.read();
+      return { videos: value, source };
+    },
+
+    async getCachedVideos() {
+      const cached = await videos.readCached();
+      return cached ? { videos: cached, source: 'cache' } : null;
     },
   };
 }

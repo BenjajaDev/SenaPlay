@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import useStaleWhileRevalidate from '../../../core/data/useStaleWhileRevalidate';
 import { useServices } from '../../../core/di/ServicesProvider';
 import {
   AppText,
@@ -33,24 +34,15 @@ export default function VideosTabScreen({ onScrollToTop }) {
   const theme = useAppTheme();
   const { media } = useServices();
   const { notify } = useFeedback();
-  const [videos, setVideos] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // Sin contenido empaquetado útil (los videos locales son solo «Muy
+  // pronto»): skeleton hasta tener la caché o la respuesta remota.
+  const { data } = useStaleWhileRevalidate(media.getCachedVideos, media.listVideos);
+  const videos = useMemo(() => data?.videos ?? [], [data]);
+  const loading = !data;
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('Todos');
   // Video en reproducción: se ve aquí mismo, sin abrir el navegador.
   const [selected, setSelected] = useState(null);
-
-  useEffect(() => {
-    let mounted = true;
-    media.listVideos().then((result) => {
-      if (!mounted) return;
-      setVideos(result.videos);
-      setLoading(false);
-    });
-    return () => {
-      mounted = false;
-    };
-  }, [media]);
 
   const categories = useMemo(() => ['Todos', ...new Set(videos.map((video) => video.category))], [videos]);
   const filtered = useMemo(() => {

@@ -1,15 +1,30 @@
+import { withTimeout } from '../../../core/net/withTimeout';
 import { fail, ok, toUserMessage } from '../../../core/result';
+import { storageKey } from '../../../core/storage/jsonStorage';
 
 const AVATAR_BUCKET = 'avatars';
+const ROLES = ['user', 'editor', 'admin'];
 
 /**
- * Repositorio de perfil: datos personales (user_metadata de Supabase Auth) y
- * foto de perfil (bucket `avatars`, ruta `<userId>/avatar.jpg`).
+ * Repositorio de perfil: rol (tabla `profiles`), datos personales
+ * (user_metadata de Supabase Auth) y foto de perfil (bucket `avatars`, ruta
+ * `<userId>/avatar.jpg`).
  *
- *   updateProfile(user, { fullName, phone, birthdate, gender }) → Result<user>
+ *   getCachedRole(userId)                                        → rol | null (local, instantáneo)
+ *   getRole(userId, { timeoutMs })                               → rol (remoto; respaldo: caché → 'user')
+ *   updateProfile(user, { fullName, phone, birthdate, gender })  → Result<user>
  *   uploadAvatar(user, localUri)                                 → Result<user>
+ *
+ * El rol se guarda en el dispositivo para que el arranque no espere a la red.
+ * La caché solo decide qué se muestra mientras llega el rol real: los
+ * permisos de verdad los aplica RLS en el servidor.
  */
-export function createProfileRepository(supabase) {
+export function createProfileRepository(supabase, { storage = null } = {}) {
+  const roleKey = (userId) => storageKey('role', 'v1', userId);
+  // Consultas de rol en curso por usuario: al arrancar, getSession() y el
+  // evento INITIAL_SESSION piden el mismo rol casi a la vez.
+  const pendingRoles = new Map();
+
   const updateMetadata = async (user, patch) => {
     const { data, error } = await supabase.auth.updateUser({
       data: { ...(user?.user_metadata || {}), ...patch },
@@ -18,16 +33,37 @@ export function createProfileRepository(supabase) {
     return ok(data?.user ?? null);
   };
 
+  const getCachedRole = async (userId) => {
+    if (!userId || !storage) return null;
+    const role = await storage.get(roleKey(userId), null);
+    return ROLES.includes(role) ? role : null;
+  };
+
+  const fetchRole = async (userId, timeoutMs) => {
+    try {
+      const { data, error } = await withTimeout(
+        supabase.from('profiles').select('role').eq('id', userId).maybeSingle(),
+        timeoutMs,
+      );
+      if (error) throw error;
+      const role = ROLES.includes(data?.role) ? data.role : 'user';
+      if (storage) await storage.set(roleKey(userId), role);
+      return role;
+    } catch {
+      return (await getCachedRole(userId)) ?? 'user';
+    }
+  };
+
   return {
-    /** Rol del usuario (tabla `profiles`): 'user' | 'editor' | 'admin'. */
-    async getRole(userId) {
-      if (!userId) return 'user';
-      try {
-        const { data, error } = await supabase.from('profiles').select('role').eq('id', userId).maybeSingle();
-        return error ? 'user' : data?.role || 'user';
-      } catch {
-        return 'user';
+    getCachedRole,
+
+    getRole(userId, { timeoutMs } = {}) {
+      if (!userId) return Promise.resolve('user');
+      if (!pendingRoles.has(userId)) {
+        const request = fetchRole(userId, timeoutMs).finally(() => pendingRoles.delete(userId));
+        pendingRoles.set(userId, request);
       }
+      return pendingRoles.get(userId);
     },
 
     async updateProfile(user, { fullName, phone, birthdate, gender }) {

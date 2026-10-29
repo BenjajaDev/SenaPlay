@@ -26,7 +26,7 @@ export function createServices({ supabase = defaultSupabase, storage = jsonStora
   return {
     events,
     auth: createAuthRepository(supabase),
-    profile: createProfileRepository(supabase),
+    profile: createProfileRepository(supabase, { storage }),
     catalog: createCatalogRepository({ supabase, storage, localLevels: LEVELS_CATALOG }),
     progress: createProgressRepository({ storage }),
     mistakes: createMistakesRepository({ supabase, storage }),

@@ -4,6 +4,7 @@ import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import useReducedMotion from '../../../core/a11y/useReducedMotion';
 import { getSignAssets } from '../data/local/signAssets';
 import { useAppTheme } from '../../../shared/theme/ThemeProvider';
+import { poppins } from '../../../shared/theme/fonts';
 
 // La imagen no llega a desaparecer del todo al cambiar de variación: un cuadro
 // vacío entre dos fotos se siente como un parpadeo.
@@ -98,6 +99,14 @@ export default function SignImage({
   // casillas chicas (grillas de emparejar) sin taparle la mano a la imagen.
   const flechaSize = Math.max(11, Math.round(size * 0.16));
   const flechaCaja = Math.max(18, Math.round(size * 0.32));
+  // Área táctil: en alto llega a MIN_TOUCH; en ancho crece hacia el centro sin
+  // que las dos flechas se pisen (hacia afuera no sirve: en Android los toques
+  // fuera de la imagen no llegan). En casillas de menos de ~92 px el ancho
+  // queda limitado por la propia imagen.
+  const slopAlto = Math.max(8, Math.ceil((theme.minTouch - flechaCaja) / 2));
+  const slopCentro = Math.max(0, Math.min(slopAlto, Math.floor((size - 4 - 2 * flechaCaja) / 2)));
+  const slopIzq = { top: slopAlto, bottom: slopAlto, left: 2, right: slopCentro };
+  const slopDer = { top: slopAlto, bottom: slopAlto, left: slopCentro, right: 2 };
 
   if (assets.length > 0) {
     return (
@@ -118,7 +127,7 @@ export default function SignImage({
           <>
             <Pressable
               onPress={goPrev}
-              hitSlop={8}
+              hitSlop={slopIzq}
               accessibilityRole="button"
               accessibilityLabel="Variación anterior"
               style={[styles.flecha, styles.flechaIzq, { width: flechaCaja, height: flechaCaja, borderRadius: flechaCaja / 2 }]}
@@ -127,7 +136,7 @@ export default function SignImage({
             </Pressable>
             <Pressable
               onPress={goNext}
-              hitSlop={8}
+              hitSlop={slopDer}
               accessibilityRole="button"
               accessibilityLabel="Siguiente variación"
               style={[styles.flecha, styles.flechaDer, { width: flechaCaja, height: flechaCaja, borderRadius: flechaCaja / 2 }]}
@@ -225,7 +234,7 @@ function createStyles(theme) {
       opacity: 0.75,
     },
     texto: {
-      fontWeight: '900',
+      fontFamily: poppins(900),
       color: theme.colors.primary,
       textAlign: 'center',
     },

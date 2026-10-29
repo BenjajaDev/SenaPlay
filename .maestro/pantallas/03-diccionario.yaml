@@ -1,0 +1,16 @@
+# Diccionario: deletreo, señas reales y detalle de una seña.
+appId: com.benjajadev.senaplay
+---
+- runFlow:
+    file: ../subflujos/volver-a-pestana.yaml
+    env:
+      TAB: "Diccionario"
+- takeScreenshot: ${OUT}/20-diccionario-deletreo
+- tapOn: "Ver la seña de A.*"
+- waitForAnimationToEnd
+- takeScreenshot: ${OUT}/21-diccionario-detalle
+- back
+- waitForAnimationToEnd
+- tapOn: "Señas reales"
+- waitForAnimationToEnd
+- takeScreenshot: ${OUT}/22-diccionario-senas-reales

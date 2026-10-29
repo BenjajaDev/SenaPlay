@@ -1,0 +1,76 @@
+# Juegos con cámara. En un emulador la cámara muestra su escena virtual;
+# en un teléfono, lo que tenga enfrente (pon tu mano para que se vea el
+# seguimiento). Se espera unos segundos a que cargue el visor.
+appId: com.benjajadev.senaplay
+---
+# La lista de juegos es más alta que la pantalla: cada tarjeta se busca con
+# scroll antes de tocarla (al volver de un juego el scroll puede cambiar).
+- scrollUntilVisible:
+    element:
+      text: "Práctica de señas.*"
+    direction: UP
+    timeout: 10000
+- tapOn: "Práctica de señas.*"
+- extendedWaitUntil:
+    visible: "Modo Libre"
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: ${OUT}/50-camara-practica-libre
+- tapOn: "Modo Práctica guiada"
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: ${OUT}/51-camara-practica-guiada
+- tapOn: "Salir"
+- waitForAnimationToEnd
+
+- scrollUntilVisible:
+    element:
+      text: "Deletreo.*"
+    direction: DOWN
+    timeout: 10000
+- tapOn: "Deletreo.*"
+- extendedWaitUntil:
+    visible: "Haz esta seña"
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: ${OUT}/52-camara-deletreo
+- tapOn: "Salir"
+- waitForAnimationToEnd
+
+- scrollUntilVisible:
+    element:
+      text: "Traducción en vivo.*"
+    direction: DOWN
+    timeout: 10000
+- tapOn: "Traducción en vivo.*"
+- extendedWaitUntil:
+    visible: "Pausar traducción"
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: ${OUT}/53-camara-traduccion
+- tapOn: "Salir"
+- waitForAnimationToEnd
+
+# Beta: solo si el flag remoto la tiene activa.
+- scrollUntilVisible:
+    element:
+      text: "Señas dinámicas.*"
+    direction: DOWN
+    timeout: 10000
+    optional: true
+- runFlow:
+    when:
+      visible: "Señas dinámicas.*"
+    commands:
+      - tapOn: "Señas dinámicas.*"
+      - extendedWaitUntil:
+          visible: "Grabar seña"
+          timeout: 15000
+      - waitForAnimationToEnd:
+          timeout: 5000
+      - takeScreenshot: ${OUT}/54-camara-senas-dinamicas
+      - tapOn: "Salir"
+      - waitForAnimationToEnd

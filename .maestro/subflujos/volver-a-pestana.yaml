@@ -1,0 +1,6 @@
+# Toca una pestaña de la barra inferior y espera a que termine la transición.
+# Uso: runFlow con env TAB (Niveles, Diccionario, Videos, Juegos, Progreso).
+appId: com.benjajadev.senaplay
+---
+- tapOn: ${TAB}
+- waitForAnimationToEnd

@@ -1,0 +1,16 @@
+# Juegos sin cámara: lista, memoria y quiz.
+appId: com.benjajadev.senaplay
+---
+- runFlow:
+    file: ../subflujos/volver-a-pestana.yaml
+    env:
+      TAB: "Juegos"
+- takeScreenshot: ${OUT}/40-juegos
+- tapOn: "Memoria de señas.*"
+- waitForAnimationToEnd
+- takeScreenshot: ${OUT}/41-juego-memoria
+- runFlow: ../subflujos/salir-de-juego.yaml
+- tapOn: "Quiz rápido.*"
+- waitForAnimationToEnd
+- takeScreenshot: ${OUT}/42-juego-quiz
+- runFlow: ../subflujos/salir-de-juego.yaml

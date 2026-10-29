@@ -1,0 +1,13 @@
+appId: com.benjajadev.senaplay
+---
+- tapOn: "tuemail@correo.com"
+- inputText: ${EMAIL}
+- tapOn: "••••••••"
+- inputText: ${PASSWORD}
+- hideKeyboard
+- tapOn: "Entrar"
+# La primera vez en el dispositivo se espera el rol desde Supabase (tope 4 s).
+- extendedWaitUntil:
+    visible: "Ruta de niveles"
+    timeout: 30000
+- waitForAnimationToEnd

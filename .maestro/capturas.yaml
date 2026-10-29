@@ -1,0 +1,23 @@
+# Recorre la app y guarda una captura de cada pantalla (para la tesis y la
+# documentación). No se corre directo: úsalo con scripts/capturas.sh, que
+# prepara el teléfono (hora fija, modo claro/oscuro) y pasa las variables:
+#
+#   EMAIL, PASSWORD  cuenta de PRUEBA (nunca la de una persona real)
+#   OUT              carpeta absoluta donde quedan los PNG
+appId: com.benjajadev.senaplay
+name: Capturas de SeñaPlay
+---
+# Estado limpio en cada corrida: sin sesión ni tema guardado, así la app
+# sigue el modo claro/oscuro del sistema que fija el script.
+- launchApp:
+    clearState: true
+    permissions:
+      camera: allow
+- runFlow: pantallas/01-acceso.yaml
+- runFlow: subflujos/iniciar-sesion.yaml
+- runFlow: pantallas/02-niveles.yaml
+- runFlow: pantallas/03-diccionario.yaml
+- runFlow: pantallas/04-videos.yaml
+- runFlow: pantallas/05-juegos.yaml
+- runFlow: pantallas/06-camara.yaml
+- runFlow: pantallas/07-progreso-y-perfil.yaml

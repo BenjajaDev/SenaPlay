@@ -6,7 +6,7 @@ const [mermaidJs, dir, out] = process.argv.slice(2);
 fs.mkdirSync(out, { recursive: true });
 (async () => {
   const browser = await chromium.launch();
-  const page = await browser.newPage({ deviceScaleFactor: 2.5, viewport: { width: 1400, height: 1000 } });
+  const page = await browser.newPage({ deviceScaleFactor: 2.5, viewport: { width: 4000, height: 4000 } });
   await page.setContent('<html><body style="margin:0;background:#fff"><div id="c" style="display:inline-block;padding:16px;background:#fff"></div></body></html>');
   await page.addScriptTag({ path: mermaidJs });
   await page.evaluate(() => window.mermaid.initialize({ startOnLoad: false, theme: 'neutral', fontFamily: 'Arial, sans-serif', flowchart: { htmlLabels: true, wrappingWidth: 320, padding: 18 }, sequence: { mirrorActors: false } }));
@@ -16,7 +16,14 @@ fs.mkdirSync(out, { recursive: true });
     try {
       await page.evaluate(async (code) => {
         const { svg } = await window.mermaid.render('d' + Date.now(), code);
-        document.getElementById('c').innerHTML = svg;
+        const c = document.getElementById('c');
+        c.innerHTML = svg;
+        // Mermaid ajusta el SVG al contenedor (width 100%); se fija su tamaño natural.
+        const el = c.querySelector('svg');
+        const box = el.viewBox.baseVal;
+        el.setAttribute('width', box.width);
+        el.setAttribute('height', box.height);
+        el.style.maxWidth = 'none';
       }, code);
       await page.locator('#c').screenshot({ path: path.join(out, f.replace('.mmd', '.png')) });
       console.log('ok', f);

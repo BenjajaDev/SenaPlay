@@ -1,0 +1,19 @@
+erDiagram
+  APP_CONFIG ||--o{ CONFIG_AUDIT : "se audita en"
+  FEATURE_FLAGS ||--o{ CONFIG_AUDIT : "se audita en"
+  APP_CONFIG {
+    text key PK
+    jsonb value
+  }
+  FEATURE_FLAGS {
+    text key PK
+    bool enabled
+    int rollout_percentage
+  }
+  CONFIG_AUDIT {
+    bigint id PK
+    text table_name
+    jsonb old_value
+    jsonb new_value
+    uuid changed_by FK
+  }

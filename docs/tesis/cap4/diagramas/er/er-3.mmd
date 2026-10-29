@@ -1,0 +1,26 @@
+erDiagram
+  DICTIONARY {
+    bigint id PK
+    text letter
+    text category
+  }
+  SIGNS {
+    bigint id PK
+    text word
+    text meaning
+    text how_to
+  }
+  MEDIA {
+    uuid id PK
+    text kind
+    text public_url
+    text captions_url
+    bool published
+  }
+  DYNAMIC_SIGN_CAPTURES {
+    bigint id PK
+    text sign_id
+    text signer_id
+    bool consent
+    text processing_status
+  }

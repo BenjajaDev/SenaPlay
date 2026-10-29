@@ -6,6 +6,7 @@ import ScreenHeader from '../../../shared/ui/ScreenHeader';
 import { useRemoteConfig } from '../../remoteConfig/presentation/RemoteConfigProvider';
 import { CameraStage, IaBanner, estilos, useSignRecognition } from './signCamera';
 import { cameraAlpha, cameraColors } from '../../../shared/theme/tokens/colors';
+import { poppins } from '../../../shared/theme/fonts';
 
 // ── Parámetros del tracking ───────────────────────────────────────────────────
 // Traducir en vivo no es "clasificar un frame": el clasificador emite ~2
@@ -180,19 +181,31 @@ export default function CameraTranslationScreen({ onBack }) {
           <TouchableOpacity
             style={[propios.btn, !activo && propios.btnPausado]}
             onPress={() => setActivo((a) => !a)}
+            accessibilityRole="button"
+            accessibilityLabel={activo ? 'Pausar traducción' : 'Reanudar traducción'}
           >
             <Text style={propios.btnTexto}>{activo ? '⏸ Pausar' : '▶ Reanudar'}</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={propios.btn} onPress={agregarEspacio}>
+          <TouchableOpacity
+            style={propios.btn}
+            onPress={agregarEspacio}
+            accessibilityRole="button"
+            accessibilityLabel="Agregar espacio"
+          >
             <Text style={propios.btnTexto}>␣ Espacio</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={propios.btn} onPress={borrarUltimo}>
+          <TouchableOpacity
+            style={propios.btn}
+            onPress={borrarUltimo}
+            accessibilityRole="button"
+            accessibilityLabel="Borrar la última letra"
+          >
             <Text style={propios.btnTexto}>⌫ Borrar</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={propios.btn} onPress={limpiar}>
+          <TouchableOpacity style={propios.btn} onPress={limpiar} accessibilityRole="button" accessibilityLabel="Limpiar el texto">
             <Text style={propios.btnTexto}>✕ Limpiar</Text>
           </TouchableOpacity>
         </View>
@@ -212,7 +225,7 @@ const propios = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 14,
   },
-  candidataLetra: { color: cameraColors.accent, fontSize: 30, fontWeight: '900' },
+  candidataLetra: { color: cameraColors.accent, fontSize: 30, fontFamily: poppins(900) },
   candidataTrack: {
     width: 46,
     height: 4,
@@ -231,7 +244,7 @@ const propios = StyleSheet.create({
   },
   salidaScroll: { flexGrow: 0 },
   salidaContent: { padding: 10 },
-  salidaTexto: { color: cameraColors.textStrong, fontSize: 19, fontWeight: '700', letterSpacing: 1 },
+  salidaTexto: { color: cameraColors.textStrong, fontSize: 19, fontFamily: poppins(700), letterSpacing: 1 },
   salidaVacia: { color: cameraAlpha('text', 0.35), fontSize: 13, fontStyle: 'italic' },
   controles: { flexDirection: 'row', gap: 6 },
   btn: {
@@ -242,5 +255,5 @@ const propios = StyleSheet.create({
     backgroundColor: cameraAlpha('white', 0.08),
   },
   btnPausado: { backgroundColor: cameraAlpha('warning', 0.25) },
-  btnTexto: { color: cameraColors.textSoft, fontSize: 11, fontWeight: '800' },
+  btnTexto: { color: cameraColors.textSoft, fontSize: 11, fontFamily: poppins(800) },
 });

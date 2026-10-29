@@ -5,6 +5,7 @@ import ScreenHeader from '../../../shared/ui/ScreenHeader';
 import { SIGNS } from '../data/practiceSigns';
 import { CameraStage, IaBanner, estilos, useSignRecognition } from './signCamera';
 import { cameraAlpha, cameraColors } from '../../../shared/theme/tokens/colors';
+import { poppins } from '../../../shared/theme/fonts';
 
 // Bajo este valor se considera que un dedo está mal colocado y se nombra en la
 // corrección. La nota por dedo la calcula el visor (0–1 por dedo).
@@ -108,6 +109,9 @@ export default function SignPracticeScreen({ onBack }) {
               key={m.key}
               style={[estilos2.toggleBtn, modoActivo === m.key && estilos2.toggleActivo]}
               onPress={() => cambiarModo(m.key)}
+              accessibilityRole="button"
+              accessibilityLabel={`Modo ${m.label}`}
+              accessibilityState={{ selected: modoActivo === m.key }}
             >
               <Text
                 style={[
@@ -145,7 +149,12 @@ export default function SignPracticeScreen({ onBack }) {
 
             {/* Navegación de señas */}
             <View style={estilos2.signNav}>
-              <TouchableOpacity style={estilos2.btnNav} onPress={() => navSign(-1)}>
+              <TouchableOpacity
+                style={estilos2.btnNav}
+                onPress={() => navSign(-1)}
+                accessibilityRole="button"
+                accessibilityLabel="Seña anterior"
+              >
                 <Text style={estilos2.btnNavTexto}>‹</Text>
               </TouchableOpacity>
 
@@ -166,7 +175,12 @@ export default function SignPracticeScreen({ onBack }) {
                 )}
               </View>
 
-              <TouchableOpacity style={estilos2.btnNav} onPress={() => navSign(1)}>
+              <TouchableOpacity
+                style={estilos2.btnNav}
+                onPress={() => navSign(1)}
+                accessibilityRole="button"
+                accessibilityLabel="Seña siguiente"
+              >
                 <Text style={estilos2.btnNavTexto}>›</Text>
               </TouchableOpacity>
             </View>
@@ -186,7 +200,7 @@ const estilos2 = StyleSheet.create({
   },
   toggleBtn: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 10 },
   toggleActivo: { backgroundColor: cameraColors.accent },
-  toggleTexto: { color: cameraAlpha('white', 0.5), fontWeight: '700', fontSize: 13 },
+  toggleTexto: { color: cameraAlpha('white', 0.5), fontFamily: poppins(700), fontSize: 13 },
   toggleTextoActivo: { color: cameraColors.text },
   instruccion: {
     color: cameraAlpha('text', 0.75),
@@ -212,7 +226,7 @@ const estilos2 = StyleSheet.create({
     backgroundColor: cameraAlpha('danger', 0.15),
     borderColor: cameraAlpha('danger', 0.4),
   },
-  consejoTexto: { color: cameraColors.textStrong, fontSize: 13, fontWeight: '700', textAlign: 'center' },
+  consejoTexto: { color: cameraColors.textStrong, fontSize: 13, fontFamily: poppins(700), textAlign: 'center' },
   consejoDedos: { color: cameraAlpha('text', 0.75), fontSize: 12 },
   signNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   btnNav: {
@@ -223,8 +237,8 @@ const estilos2 = StyleSheet.create({
     backgroundColor: cameraAlpha('white', 0.08),
     borderRadius: 10,
   },
-  btnNavTexto: { color: cameraColors.text, fontSize: 22, fontWeight: '300', lineHeight: 26 },
+  btnNavTexto: { color: cameraColors.text, fontSize: 22, fontFamily: poppins(300), lineHeight: 26 },
   signInfo: { flex: 1, alignItems: 'center' },
-  signName: { color: cameraColors.textStrong, fontWeight: '800', fontSize: 15 },
-  puntuacion: { fontWeight: '800', fontSize: 20, marginTop: 2 },
+  signName: { color: cameraColors.textStrong, fontFamily: poppins(800), fontSize: 15 },
+  puntuacion: { fontFamily: poppins(800), fontSize: 20, marginTop: 2 },
 });

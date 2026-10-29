@@ -5,6 +5,7 @@ import { useCameraPermissions } from 'expo-camera';
 import { HAND_HTML } from './handTrackingHtml';
 import env from '../../../core/config/env';
 import { cameraAlpha, cameraColors } from '../../../shared/theme/tokens/colors';
+import { poppins } from '../../../shared/theme/fonts';
 
 // ── Servidor Python de IA ──────────────────────────────────────────────────
 // En desarrollo es la IP local de tu PC en la misma WiFi. Se configura con
@@ -267,7 +268,7 @@ export function CameraStage({ recog }) {
         <Text style={estilos.permisoTexto}>
           Para reconocer tus señas con la mano necesitamos acceso a la cámara.
         </Text>
-        <TouchableOpacity style={estilos.permisoBtn} onPress={pedirPermisoCamara}>
+        <TouchableOpacity style={estilos.permisoBtn} onPress={pedirPermisoCamara} accessibilityRole="button">
           <Text style={estilos.permisoBtnTexto}>
             {permisoCamara && !permisoCamara.canAskAgain
               ? 'Abrir ajustes y permitir'
@@ -372,7 +373,7 @@ export const estilos = StyleSheet.create({
     paddingHorizontal: 32,
     gap: 14,
   },
-  permisoTitulo: { color: cameraColors.textStrong, fontSize: 20, fontWeight: '800' },
+  permisoTitulo: { color: cameraColors.textStrong, fontSize: 20, fontFamily: poppins(800) },
   permisoTexto: {
     color: cameraAlpha('text', 0.7),
     fontSize: 14,
@@ -386,7 +387,7 @@ export const estilos = StyleSheet.create({
     borderRadius: 14,
     marginTop: 4,
   },
-  permisoBtnTexto: { color: cameraColors.text, fontWeight: '800', fontSize: 15 },
+  permisoBtnTexto: { color: cameraColors.text, fontFamily: poppins(800), fontSize: 15 },
   permisoNota: { color: cameraAlpha('text', 0.5), fontSize: 12, textAlign: 'center' },
   barraControl: {
     position: 'absolute',
@@ -408,12 +409,12 @@ export const estilos = StyleSheet.create({
     backgroundColor: cameraAlpha('white', 0.05),
     borderRadius: 10,
   },
-  iaTexto: { color: cameraColors.textSoft, fontSize: 14, fontWeight: '600' },
-  iaLetra: { fontSize: 18, fontWeight: '900' },
-  iaOrigen: { color: cameraAlpha('text', 0.6), fontSize: 11, fontWeight: '700' },
-  iaOrigenDinamico: { color: cameraColors.warning, fontSize: 11, fontWeight: '800' },
+  iaTexto: { color: cameraColors.textSoft, fontSize: 14, fontFamily: poppins(600) },
+  iaLetra: { fontSize: 18, fontFamily: poppins(900) },
+  iaOrigen: { color: cameraAlpha('text', 0.6), fontSize: 11, fontFamily: poppins(700) },
+  iaOrigenDinamico: { color: cameraColors.warning, fontSize: 11, fontFamily: poppins(800) },
   iaTextoTenue: { color: cameraAlpha('text', 0.5), fontSize: 12 },
-  iaTextoError: { color: cameraColors.dangerLight, fontSize: 11, fontWeight: '600', textAlign: 'center' },
+  iaTextoError: { color: cameraColors.dangerLight, fontSize: 11, fontFamily: poppins(600), textAlign: 'center' },
   errorCamaraBox: {
     backgroundColor: cameraAlpha('danger', 0.15),
     borderRadius: 10,
@@ -423,7 +424,7 @@ export const estilos = StyleSheet.create({
   errorCamaraTexto: {
     color: cameraColors.dangerLight,
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: poppins(600),
     textAlign: 'center',
   },
   btnPrimario: {
@@ -432,5 +433,5 @@ export const estilos = StyleSheet.create({
     paddingVertical: 9,
     borderRadius: 12,
   },
-  btnPrimarioTexto: { color: cameraColors.text, fontWeight: '800', fontSize: 14 },
+  btnPrimarioTexto: { color: cameraColors.text, fontFamily: poppins(800), fontSize: 14 },
 });

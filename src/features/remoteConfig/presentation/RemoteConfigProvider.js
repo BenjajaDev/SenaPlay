@@ -65,7 +65,8 @@ export function RemoteConfigProvider({ userId, isAdmin = false, children }) {
     repository.getCached().then((cached) => {
       if (!mounted) return;
       if (cached) {
-        setSnapshot(cached);
+        // Si la red respondió antes que el almacenamiento, gana lo fresco.
+        setSnapshot((prev) => prev ?? cached);
         setStatus('ready');
       }
     });

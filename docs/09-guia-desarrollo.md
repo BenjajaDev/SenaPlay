@@ -38,8 +38,10 @@
 |---|---|---|
 | `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY` | app | proyecto actual |
 | `EXPO_PUBLIC_AI_SERVER_URL` | app | `http://192.168.1.5:8000` |
-| `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` | web (`web/.env.local`) | proyecto actual |
+| `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` | web (`web/.env.local`, plantilla `web/.env.example`) | ninguno: obligatorias |
 | `VITE_ANDROID_URL`, `VITE_IOS_URL` | web | vacío («Próximamente») |
+
+El portal valida sus `VITE_*` con zod (`web/src/lib/envSchema.ts`) al arrancar `pnpm dev` y `pnpm build`: si falta una obligatoria, se detiene con un mensaje que la nombra. Vitest usa valores ficticios definidos en `web/src/test/setup.ts`, así que las pruebas no necesitan `.env`.
 
 Solo van claves **públicas** (*publishable*); la seguridad está en RLS. Nunca uses la *service key* en un cliente.
 

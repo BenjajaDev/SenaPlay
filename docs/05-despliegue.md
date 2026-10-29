@@ -120,6 +120,8 @@ Cada entorno usa sus propias variables `EXPO_PUBLIC_*` y `VITE_*`. El código no
    | `NODE_VERSION` | `22.22.0` |
    | `SKIP_DEPENDENCY_INSTALL` | `true` |
 
+   `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` son obligatorias y no tienen valor por defecto en el código: `web/src/lib/envSchema.ts` (zod) las valida al iniciar `vite`/`vite build`, y si faltan o son inválidas el build falla con la lista de variables a corregir. Los nombres están en `web/.env.example`.
+
 4. **Deployments → Retry deployment** (las variables solo se aplican en un deploy nuevo).
 5. Verificar en `https://<proyecto>.pages.dev`: la portada carga contenido, `/admin` permite entrar y recargar una ruta interna (por ejemplo `/admin/media`) no da 404. Cloudflare trata el sitio como SPA porque no hay `404.html`: no agregar uno.
 

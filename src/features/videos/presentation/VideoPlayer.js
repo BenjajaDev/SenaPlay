@@ -6,6 +6,7 @@ import announce from '../../../core/a11y/announce';
 import { AppText, Button } from '../../../shared/ui';
 import { useAppTheme } from '../../../shared/theme/ThemeProvider';
 import { buildVideoHtml, mediaOrigin } from './videoPlayerHtml';
+import VideoThumbnail from './VideoThumbnail';
 
 const ERROR_MESSAGES = {
   2: 'Se cortó la conexión mientras cargaba el video.',
@@ -99,10 +100,15 @@ export default function VideoPlayer({ video, onEnded, onCaptionsError }) {
       />
 
       {status === 'loading' ? (
-        <View style={[StyleSheet.absoluteFill, styles.center, styles.overlay]} pointerEvents="none" accessibilityRole="progressbar" accessibilityLabel="Cargando video">
-          {/* Indicador propio: el Spinner del sistema usa texto oscuro, ilegible sobre el fondo del video. */}
-          <ActivityIndicator size="large" color={theme.colors.onHeader} />
-          <AppText variant="caption" tone="onHeader">Cargando video…</AppText>
+        <View style={StyleSheet.absoluteFill} pointerEvents="none" accessibilityRole="progressbar" accessibilityLabel="Cargando video">
+          {/* Vista previa mientras carga: la miniatura del panel o la portada
+              de marca, con un velo para que el texto se lea encima. */}
+          <VideoThumbnail uri={video.thumbnailUrl} showPlay={false} style={StyleSheet.absoluteFill} />
+          <View style={[StyleSheet.absoluteFill, styles.center, styles.scrim]}>
+            {/* Indicador propio: el Spinner del sistema usa texto oscuro, ilegible sobre el video. */}
+            <ActivityIndicator size="large" color={theme.colors.onHeader} />
+            <AppText variant="caption" tone="onHeader">Cargando video…</AppText>
+          </View>
         </View>
       ) : null}
 
@@ -135,6 +141,7 @@ function createStyles(theme) {
     webview: { flex: 1, backgroundColor: colors.photoBackdrop },
     center: { alignItems: 'center', justifyContent: 'center', gap: spacing.sm, padding: spacing.lg },
     overlay: { backgroundColor: colors.photoBackdrop },
+    scrim: { backgroundColor: colors.scrim },
     errorText: { opacity: 0.9 },
   });
 }

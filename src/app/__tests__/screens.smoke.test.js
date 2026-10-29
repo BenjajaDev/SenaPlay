@@ -14,7 +14,6 @@ import ProgressTabScreen from '../../features/progress/presentation/ProgressTabS
 import { DICTIONARY_ENTRIES } from '../../features/signs/data/local/dictionaryData';
 import { REAL_SIGNS } from '../../features/signs/data/local/signsData';
 import VideosTabScreen from '../../features/videos/presentation/VideosTabScreen';
-import { LOCAL_VIDEOS } from '../../features/videos/data/MediaRepository';
 import LevelBuilder from '../../features/levels/domain/LevelBuilder';
 import { AppThemeProvider } from '../../shared/theme/ThemeProvider';
 import { FeedbackProvider } from '../../shared/ui';
@@ -44,7 +43,13 @@ function fakeServices(overrides = {}) {
       getVocabulary: async () => ({ signs: REAL_SIGNS, source: 'local' }),
       getCachedVocabulary: async () => null,
     },
-    media: { listVideos: async () => ({ videos: LOCAL_VIDEOS, source: 'local' }), getCachedVideos: async () => null },
+    media: {
+      listVideos: async () => ({
+        videos: [{ id: 'v1', title: 'Vocabulario para saludos', category: 'Básico', durationSeconds: 525, url: 'https://x/v.mp4' }],
+        source: 'remote',
+      }),
+      getCachedVideos: async () => null,
+    },
     remoteConfig: {},
     ...overrides,
   };

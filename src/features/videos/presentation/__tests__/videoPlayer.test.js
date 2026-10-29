@@ -28,9 +28,9 @@ const VIDEOS = [
 
 const metrics = { frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } };
 
-async function renderVideos(props = {}) {
+async function renderVideos(props = {}, result = { videos: VIDEOS, source: 'remote' }) {
   const services = {
-    media: { listVideos: async () => ({ videos: VIDEOS, source: 'remote' }), getCachedVideos: async () => null },
+    media: { listVideos: async () => result, getCachedVideos: async () => null },
   };
   await render(
     <SafeAreaProvider initialMetrics={metrics}>
@@ -112,5 +112,18 @@ describe('Videos dentro de la app', () => {
     await fireEvent.press(screen.getByLabelText('Volver a la lista de videos'));
     expect(screen.queryByTestId('video-webview')).toBeNull();
     expect(screen.getByLabelText(/Próximamente/)).toBeTruthy();
+  });
+});
+
+describe('Videos sin contenido', () => {
+  test('si el panel no tiene videos publicados avisa que aquí se añadirán y no ofrece buscar', async () => {
+    await renderVideos({}, { videos: [], source: 'remote' });
+    expect(await screen.findByText('Aún no hay videos')).toBeTruthy();
+    expect(screen.queryByLabelText('Buscar videos')).toBeNull();
+  });
+
+  test('sin conexión ni caché lo dice, en vez de mostrar videos de relleno', async () => {
+    await renderVideos({}, { videos: [], source: 'local' });
+    expect(await screen.findByText('No pudimos cargar los videos')).toBeTruthy();
   });
 });

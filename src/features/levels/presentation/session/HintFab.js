@@ -43,11 +43,15 @@ export function HintPopover({ hint, onClose }) {
 
   useEffect(() => {
     if (!hint) return;
-    appear.setValue(reducedMotion ? 1 : 0);
+    if (reducedMotion) {
+      appear.setValue(1);
+      return;
+    }
+    appear.setValue(0);
     Animated.timing(appear, {
       toValue: 1,
       duration: theme.motion.duration.base,
-      easing: theme.motion.easing.pop,
+      easing: theme.motion.easing.enter,
       useNativeDriver: true,
     }).start();
   }, [hint, reducedMotion, appear, theme]);
@@ -62,7 +66,9 @@ export function HintPopover({ hint, onClose }) {
         styles.popover,
         {
           opacity: appear,
+          // Crece desde la ampolleta (abajo a la derecha), no desde su centro.
           transform: [
+            { translateX: appear.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) },
             { translateY: appear.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) },
             { scale: appear.interpolate({ inputRange: [0, 1], outputRange: [0.94, 1] }) },
           ],

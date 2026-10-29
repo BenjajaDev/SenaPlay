@@ -1,0 +1,17 @@
+# Generado por instalar-skills.sh. No lo edites a mano.
+# nombre	repo	ruta	commit	licencia
+animate	emilkowalski/skills	skills/animate	e8a175de22ae1e49370fc144c1f3bb9aeedf988d	MIT
+animate-expo	emilkowalski/skills	skills/animate-expo	e8a175de22ae1e49370fc144c1f3bb9aeedf988d	MIT
+animation-performance	emilkowalski/skills	skills/animation-performance	2d228630ba1446365f614a108cb8252f1feda202	MIT
+animation-vocabulary	emilkowalski/skills	skills/animation-vocabulary	e8a175de22ae1e49370fc144c1f3bb9aeedf988d	MIT
+apple-design	emilkowalski/skills	skills/apple-design	e8a175de22ae1e49370fc144c1f3bb9aeedf988d	MIT
+break-ui	emilkowalski/skills	skills/break-ui	e8a175de22ae1e49370fc144c1f3bb9aeedf988d	MIT
+emil-design-eng	emilkowalski/skills	skills/emil-design-eng	e8a175de22ae1e49370fc144c1f3bb9aeedf988d	MIT
+find-animation-opportunities	emilkowalski/skills	skills/find-animation-opportunities	e8a175de22ae1e49370fc144c1f3bb9aeedf988d	MIT
+frontend-design	anthropics/claude-plugins-official	plugins/frontend-design/skills/frontend-design	d182ca456ca09d31d139f7d3818d1d333b103cce	Apache-2.0
+improve-animations	emilkowalski/skills	skills/improve-animations	e8a175de22ae1e49370fc144c1f3bb9aeedf988d	MIT
+mobile-native	emilkowalski/skills	skills/mobile-native	e8a175de22ae1e49370fc144c1f3bb9aeedf988d	MIT
+pick-ui-library	emilkowalski/skills	skills/pick-ui-library	e8a175de22ae1e49370fc144c1f3bb9aeedf988d	MIT
+prototype	emilkowalski/skills	skills/prototype	e8a175de22ae1e49370fc144c1f3bb9aeedf988d	MIT
+review-animations	emilkowalski/skills	skills/review-animations	e8a175de22ae1e49370fc144c1f3bb9aeedf988d	MIT
+ui-ux-pro-max	nextlevelbuilder/ui-ux-pro-max-skill	.claude/skills/ui-ux-pro-max	477bcb28c9812b385cb51a4605ddf30d7b2266e2	MIT

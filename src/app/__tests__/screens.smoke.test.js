@@ -32,13 +32,19 @@ function fakeServices(overrides = {}) {
     events: createEventBus(),
     auth: { signIn: jest.fn(async () => ok({ id: 'u1' })), signUp: jest.fn(async () => ok()) },
     profile: {},
-    catalog: { getLocalLevels: () => levels, getLevels: async () => ({ levels, source: 'local', warnings: [] }) },
+    catalog: {
+      getLocalLevels: () => levels,
+      getCachedLevels: async () => null,
+      getLevels: async () => ({ levels, source: 'local', warnings: [] }),
+    },
     progress: {},
     signs: {
       getDictionary: async () => ({ entries: DICTIONARY_ENTRIES, source: 'local' }),
+      getCachedDictionary: async () => null,
       getVocabulary: async () => ({ signs: REAL_SIGNS, source: 'local' }),
+      getCachedVocabulary: async () => null,
     },
-    media: { listVideos: async () => ({ videos: LOCAL_VIDEOS, source: 'local' }) },
+    media: { listVideos: async () => ({ videos: LOCAL_VIDEOS, source: 'local' }), getCachedVideos: async () => null },
     remoteConfig: {},
     ...overrides,
   };

@@ -56,6 +56,8 @@ export const motion = {
     exit: Easing.in(Easing.cubic),
     standard: Easing.inOut(Easing.cubic),
     pop: Easing.out(Easing.back(1.4)),
+    // Hojas inferiores: arranca rápido y se asienta suave (curva tipo iOS).
+    drawer: Easing.bezier(0.32, 0.72, 0, 1),
   },
   spring: {
     press: { friction: 7, tension: 220 },

@@ -8,6 +8,7 @@ import SignImage from '../../signs/presentation/SignImage';
 import { PALABRAS, UMBRAL_DELETREO } from '../data/practiceSigns';
 import { CameraStage, IaBanner, estilos, useSignRecognition } from './signCamera';
 import { cameraAlpha, cameraColors } from '../../../shared/theme/tokens/colors';
+import { poppins } from '../../../shared/theme/fonts';
 
 /**
  * Juego de Deletreo: escribe una palabra letra por letra haciendo las señas.
@@ -133,7 +134,12 @@ export default function SpellingGameScreen({ onBack }) {
         {palabraCompleta ? (
           <View style={propios.footer}>
             <Text style={propios.ok}>¡Palabra completa! 🎉</Text>
-            <TouchableOpacity style={estilos.btnPrimario} onPress={siguientePalabra}>
+            <TouchableOpacity
+              style={estilos.btnPrimario}
+              onPress={siguientePalabra}
+              accessibilityRole="button"
+              accessibilityLabel="Siguiente palabra"
+            >
               <Text style={estilos.btnPrimarioTexto}>Siguiente palabra ›</Text>
             </TouchableOpacity>
           </View>
@@ -143,7 +149,7 @@ export default function SpellingGameScreen({ onBack }) {
               {'Letra actual: '}
               <Text style={propios.letraDestacada}>{letraObjetivo}</Text>
             </Text>
-            <TouchableOpacity onPress={reiniciarPalabra} hitSlop={8}>
+            <TouchableOpacity onPress={reiniciarPalabra} hitSlop={8} accessibilityRole="button">
               <Text style={propios.reiniciar}>Reiniciar palabra</Text>
             </TouchableOpacity>
           </View>
@@ -163,9 +169,9 @@ const propios = StyleSheet.create({
     borderRadius: 16,
     padding: 8,
   },
-  guiaTexto: { color: cameraAlpha('text', 0.75), fontSize: 11, fontWeight: '700' },
+  guiaTexto: { color: cameraAlpha('text', 0.75), fontSize: 11, fontFamily: poppins(700) },
   progresoRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  progresoTexto: { color: cameraAlpha('text', 0.6), fontSize: 11, fontWeight: '700' },
+  progresoTexto: { color: cameraAlpha('text', 0.6), fontSize: 11, fontFamily: poppins(700) },
   palabraRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -184,12 +190,12 @@ const propios = StyleSheet.create({
   },
   letraChipOk: { backgroundColor: cameraAlpha('success', 0.18), borderColor: cameraColors.success },
   letraChipActual: { borderColor: cameraColors.accent, backgroundColor: cameraAlpha('accent', 0.15) },
-  letraChipTexto: { fontSize: 20, fontWeight: '900', color: cameraAlpha('white', 0.4) },
+  letraChipTexto: { fontSize: 20, fontFamily: poppins(900), color: cameraAlpha('white', 0.4) },
   letraChipTextoOn: { color: cameraColors.text },
   footer: { alignItems: 'center', gap: 6 },
-  ok: { color: cameraColors.success, fontWeight: '800', fontSize: 15 },
+  ok: { color: cameraColors.success, fontFamily: poppins(800), fontSize: 15 },
   instr: { color: cameraAlpha('text', 0.8), fontSize: 14 },
-  letraDestacada: { color: cameraColors.accent, fontWeight: '900', fontSize: 18 },
+  letraDestacada: { color: cameraColors.accent, fontFamily: poppins(900), fontSize: 18 },
   reiniciar: {
     color: cameraAlpha('text', 0.5),
     fontSize: 12,

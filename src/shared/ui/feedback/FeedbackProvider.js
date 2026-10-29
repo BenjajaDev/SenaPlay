@@ -13,6 +13,11 @@ const MIN_BLOCKING_MS = 450;
 
 const FeedbackContext = createContext(null);
 
+// Un diálogo cerrado conserva sus opciones: el Modal se desvanece unos
+// cientos de ms y, si se vaciaran al cerrar, se vería perder título, mensaje
+// y color justo mientras desaparece.
+const CLOSED = { open: false, options: null };
+
 /**
  * Orquesta el feedback global con una API imperativa basada en promesas, para
  * que las pantallas no tengan que manejar `visible`/`setVisible` de cada modal:
@@ -27,8 +32,8 @@ const FeedbackContext = createContext(null);
  * propaga a quien llamó.
  */
 export function FeedbackProvider({ children }) {
-  const [confirmState, setConfirmState] = useState(null);
-  const [messageState, setMessageState] = useState(null);
+  const [confirmState, setConfirmState] = useState(CLOSED);
+  const [messageState, setMessageState] = useState(CLOSED);
   const [blockingLabel, setBlockingLabel] = useState(null);
   const [toast, setToast] = useState(null);
   const blockingCount = useRef(0);
@@ -37,15 +42,19 @@ export function FeedbackProvider({ children }) {
   const confirm = useCallback(
     (options = {}) =>
       new Promise((resolve, reject) => {
+        const close = () => setConfirmState((prev) => ({ ...prev, open: false }));
         setConfirmState({
-          ...options,
-          resolve: (value) => {
-            setConfirmState(null);
-            resolve(value);
-          },
-          reject: (error) => {
-            setConfirmState(null);
-            reject(error);
+          open: true,
+          options: {
+            ...options,
+            resolve: (value) => {
+              close();
+              resolve(value);
+            },
+            reject: (error) => {
+              close();
+              reject(error);
+            },
           },
         });
       }),
@@ -56,10 +65,13 @@ export function FeedbackProvider({ children }) {
     (options = {}) =>
       new Promise((resolve) => {
         setMessageState({
-          ...options,
-          resolve: (value) => {
-            setMessageState(null);
-            resolve(value);
+          open: true,
+          options: {
+            ...options,
+            resolve: (value) => {
+              setMessageState((prev) => ({ ...prev, open: false }));
+              resolve(value);
+            },
           },
         });
       }),
@@ -103,8 +115,14 @@ export function FeedbackProvider({ children }) {
     [confirm, showMessage, runBlocking, notify],
   );
 
+  const confirmOptions = confirmState.options;
+  const messageOptions = messageState.options;
+  // Solo el diálogo abierto responde: un toque durante el desvanecimiento no
+  // vuelve a resolver una promesa ya resuelta.
+  const answerMessage = (value) => messageState.open && messageOptions?.resolve(value);
+
   const handleConfirm = async () => {
-    const state = confirmState;
+    const state = confirmState.open ? confirmOptions : null;
     if (!state) return;
     if (!state.onConfirm) {
       state.resolve(true);
@@ -125,22 +143,22 @@ export function FeedbackProvider({ children }) {
         <Toast toast={toast} onHide={hideToast} />
       </View>
       <ConfirmDialog
-        visible={Boolean(confirmState)}
-        title={confirmState?.title}
-        message={confirmState?.message}
-        confirmLabel={confirmState?.confirmLabel}
-        cancelLabel={confirmState?.cancelLabel}
-        tone={confirmState?.tone}
-        icon={confirmState?.icon}
+        visible={confirmState.open}
+        title={confirmOptions?.title}
+        message={confirmOptions?.message}
+        confirmLabel={confirmOptions?.confirmLabel}
+        cancelLabel={confirmOptions?.cancelLabel}
+        tone={confirmOptions?.tone}
+        icon={confirmOptions?.icon}
         onConfirm={handleConfirm}
-        onCancel={() => confirmState?.resolve(false)}
+        onCancel={() => confirmState.open && confirmOptions?.resolve(false)}
       />
       <MessageDialog
-        visible={Boolean(messageState)}
-        {...(messageState || {})}
-        onPrimaryPress={() => messageState?.resolve('primary')}
-        onSecondaryPress={() => messageState?.resolve('secondary')}
-        onRequestClose={() => messageState?.resolve('dismiss')}
+        visible={messageState.open}
+        {...(messageOptions || {})}
+        onPrimaryPress={() => answerMessage('primary')}
+        onSecondaryPress={() => answerMessage('secondary')}
+        onRequestClose={() => answerMessage('dismiss')}
       />
       <BlockingOverlay visible={Boolean(blockingLabel)} label={blockingLabel || undefined} />
     </FeedbackContext.Provider>

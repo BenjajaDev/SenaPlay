@@ -509,7 +509,7 @@ E_051,E,/clasificar,200,200,P,P,0.2379,0.2379,,,,,,,igual,Δconfianza 0.00e+00
 E_052,E,/clasificar,200,200,H,H,0.1492,0.1492,,,,,,,igual,Δconfianza 0.00e+00
 E_053,E,/clasificar,200,200,H,H,0.2582,0.2582,,,,,,,igual,Δconfianza 0.00e+00
 E_054,E,/clasificar,200,200,Y,Y,0.193,0.193,,,,,,,igual,Δconfianza 0.00e+00
-E_055,E,/clasificar,200,200,P,P,0.2353,0.2353,,,,,,,igual,Δconfianza 0.00e+00
+E_055,E,/clasificar,200,200,P,P,0.2352,0.2352,,,,,,,igual,Δconfianza 0.00e+00
 E_056,E,/clasificar,200,200,Y,Y,0.2201,0.2201,,,,,,,igual,Δconfianza 0.00e+00
 E_057,E,/clasificar,200,200,L,L,0.1419,0.1419,,,,,,,igual,Δconfianza 0.00e+00
 E_058,E,/clasificar,200,200,L,L,0.1596,0.1596,,,,,,,igual,Δconfianza 0.00e+00
@@ -556,7 +556,7 @@ E_098,E,/clasificar,200,200,Y,Y,0.2146,0.2146,,,,,,,igual,Δconfianza 0.00e+00
 E_099,E,/clasificar,200,200,P,P,0.1575,0.1575,,,,,,,igual,Δconfianza 0.00e+00
 E_100,E,/clasificar,200,200,Y,Y,0.13,0.13,,,,,,,igual,Δconfianza 0.00e+00
 E_101,E,/clasificar,200,200,E,E,0.1692,0.1692,,,,,,,igual,Δconfianza 0.00e+00
-E_102,E,/clasificar,200,200,Q,Q,0.4252,0.4252,,,,,,,igual,Δconfianza 0.00e+00
+E_102,E,/clasificar,200,200,Q,Q,0.4253,0.4252,,,,,,,igual,Δconfianza 1.00e-04
 E_103,E,/clasificar,200,200,P,P,0.1874,0.1874,,,,,,,igual,Δconfianza 0.00e+00
 E_104,E,/clasificar,200,200,Q,Q,0.2972,0.2972,,,,,,,igual,Δconfianza 0.00e+00
 E_105,E,/clasificar,200,200,F,F,0.1397,0.1397,,,,,,,igual,Δconfianza 0.00e+00
@@ -581,7 +581,7 @@ E_123,E,/clasificar,200,200,P,P,0.1554,0.1554,,,,,,,igual,Δconfianza 0.00e+00
 E_124,E,/clasificar,200,200,P,P,0.2933,0.2933,,,,,,,igual,Δconfianza 0.00e+00
 E_125,E,/clasificar,200,200,Y,Y,0.2032,0.2032,,,,,,,igual,Δconfianza 0.00e+00
 E_126,E,/clasificar,200,200,Y,Y,0.1688,0.1688,,,,,,,igual,Δconfianza 0.00e+00
-E_127,E,/clasificar,200,200,Q,Q,0.1787,0.1788,,,,,,,igual,Δconfianza 1.00e-04
+E_127,E,/clasificar,200,200,Q,Q,0.1787,0.1787,,,,,,,igual,Δconfianza 0.00e+00
 E_128,E,/clasificar,200,200,Y,Y,0.1353,0.1353,,,,,,,igual,Δconfianza 0.00e+00
 E_129,E,/clasificar,200,200,P,P,0.2239,0.2239,,,,,,,igual,Δconfianza 0.00e+00
 E_130,E,/clasificar,200,200,P,P,0.243,0.243,,,,,,,igual,Δconfianza 0.00e+00
@@ -593,17 +593,17 @@ E_135,E,/clasificar,200,200,M,M,0.2844,0.2844,,,,,,,igual,Δconfianza 0.00e+00
 E_136,E,/clasificar,200,200,P,P,0.5084,0.5084,,,,,,,igual,Δconfianza 0.00e+00
 E_137,E,/clasificar,200,200,Q,Q,0.1935,0.1935,,,,,,,igual,Δconfianza 0.00e+00
 E_138,E,/clasificar,200,200,A,A,0.1848,0.1848,,,,,,,igual,Δconfianza 0.00e+00
-E_139,E,/clasificar,200,200,Q,Q,0.3328,0.3327,,,,,,,igual,Δconfianza 1.00e-04
+E_139,E,/clasificar,200,200,Q,Q,0.3327,0.3327,,,,,,,igual,Δconfianza 0.00e+00
 E_140,E,/clasificar,200,200,Q,Q,0.1372,0.1372,,,,,,,igual,Δconfianza 0.00e+00
 E_141,E,/clasificar,200,200,Q,Q,0.3588,0.3588,,,,,,,igual,Δconfianza 0.00e+00
 E_142,E,/clasificar,200,200,A,A,0.1778,0.1778,,,,,,,igual,Δconfianza 0.00e+00
 E_143,E,/clasificar,200,200,Y,Y,0.2073,0.2073,,,,,,,igual,Δconfianza 0.00e+00
 E_144,E,/clasificar,200,200,P,P,0.2916,0.2916,,,,,,,igual,Δconfianza 0.00e+00
 E_145,E,/clasificar,200,200,P,P,0.2468,0.2468,,,,,,,igual,Δconfianza 0.00e+00
-E_146,E,/clasificar,200,200,P,P,0.2698,0.2698,,,,,,,igual,Δconfianza 0.00e+00
+E_146,E,/clasificar,200,200,P,P,0.2697,0.2698,,,,,,,igual,Δconfianza 1.00e-04
 E_147,E,/clasificar,200,200,P,P,0.2469,0.2469,,,,,,,igual,Δconfianza 0.00e+00
 E_148,E,/clasificar,200,200,M,M,0.4773,0.4773,,,,,,,igual,Δconfianza 0.00e+00
-E_149,E,/clasificar,200,200,E,E,0.1902,0.1902,,,,,,,igual,Δconfianza 0.00e+00
+E_149,E,/clasificar,200,200,E,E,0.1902,0.1903,,,,,,,igual,Δconfianza 1.00e-04
 E_150,E,/clasificar,200,200,H,H,0.1816,0.1816,,,,,,,igual,Δconfianza 0.00e+00
 E_151,E,/clasificar,200,200,Q,Q,0.2792,0.2792,,,,,,,igual,Δconfianza 0.00e+00
 E_152,E,/clasificar,200,200,Q,Q,0.1855,0.1855,,,,,,,igual,Δconfianza 0.00e+00

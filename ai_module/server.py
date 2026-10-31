@@ -31,10 +31,11 @@ from contextlib import asynccontextmanager
 import numpy as np
 from fastapi import APIRouter, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from typing import Optional
 
-from inferencia import barreras
+from inferencia import barreras, entrada
 from inferencia.ajustes import Ajustes, AjustesInvalidos, cargar_ajustes
 from inferencia.modelos import cargar_modelo_dinamico
 from inferencia.puerto import ModeloDinamico
@@ -164,8 +165,9 @@ class TramoMovimiento(BaseModel):
     # (ver handTrackingHtml.js, sección 9b) para que el modelo dinámico
     # clasifique en sincronía con el estático, sin botón de grabar.
     # Tope generoso (el visor manda ~50 como máximo: 3 s + 0,4 s a 15 fps); el
-    # servidor es público y cada cuadro cuesta ~50 ms de CPU.
-    frames: list[str] = Field(max_length=120)
+    # servidor es público y cada cuadro cuesta ~50 ms de CPU. El tope y el
+    # tamaño por cuadro salen de Ajustes (max_cuadros_tramo, max_bytes_cuadro).
+    frames: list[str]
     fps: float = Field(default=15.0, gt=0, le=60)
 
 
@@ -244,7 +246,12 @@ def clasificar_seña_estatica(req: FrameMano, request: Request):
             "Primero entrénalo ejecutando: python model/train_static.py"
         )
 
-    landmarks = np.array(req.landmarks, dtype=np.float32)
+    try:
+        landmarks = np.array(req.landmarks, dtype=np.float32)
+    except ValueError:  # filas de distinto largo
+        landmarks = None
+    if landmarks is None or landmarks.shape != (21, 3):
+        raise HTTPException(422, "Se esperan exactamente 21 landmarks con [x, y, z] cada uno")
     seña, confianza = modelo.predecir(landmarks)
     return {"seña": seña, "confianza": round(float(confianza), 4)}
 
@@ -256,6 +263,9 @@ def clasificar_seña_dinamica(req: SecuenciaMano, request: Request):
     holísticos (ver SecuenciaMano).
     """
     modelo = _modelo_dinamico(request)
+    maximo = request.app.state.ajustes.max_cuadros_tramo
+    if len(req.frames) > maximo:
+        raise HTTPException(422, f"La secuencia trae {len(req.frames)} cuadros; el máximo es {maximo}")
     try:
         seña, confianza = modelo.ranking_vectores_v1(np.array(req.frames, dtype=np.float32))[0]
     except ValueError as e:  # filas de distinto largo, ancho ≠ 527 o secuencia vacía
@@ -273,11 +283,12 @@ def clasificar_seña_video(req: VideoSena, request: Request):
     """
     modelo = _modelo_dinamico(request)
 
-    sufijo = ".webm" if "webm" in req.mime else ".mp4"
+    datos, sufijo = entrada.validar_video(req.video_base64, req.mime,
+                                          request.app.state.ajustes.max_bytes_video)
     ruta_temp = None
     try:
         with tempfile.NamedTemporaryFile(suffix=sufijo, delete=False) as archivo_temp:
-            archivo_temp.write(base64.b64decode(req.video_base64))
+            archivo_temp.write(datos)
             ruta_temp = archivo_temp.name
 
         cfg_extraccion = modelo.cfg_extraccion
@@ -287,8 +298,10 @@ def clasificar_seña_video(req: VideoSena, request: Request):
             confianza_deteccion=cfg_extraccion["confianza_deteccion"],
             confianza_landmarks=cfg_extraccion["confianza_landmarks"],
         )
-    except Exception as e:
-        raise HTTPException(422, f"No se pudo procesar el video: {e}")
+    except Exception:
+        # El detalle (que puede traer la ruta del archivo temporal) va al log, no al cliente.
+        logger.warning("No se pudo procesar el video", exc_info=True)
+        raise HTTPException(422, "No se pudo procesar el video")
     finally:
         if ruta_temp and os.path.exists(ruta_temp):
             os.remove(ruta_temp)
@@ -338,11 +351,11 @@ def clasificar_tramo_movimiento(req: TramoMovimiento, request: Request):
     rechazo («ninguna», si la tiene) o casi no hubo mano en cuadro: la app lo trata
     como "no era una seña con movimiento" y sigue con el modelo estático.
     """
-    import cv2
-
     modelo = _modelo_dinamico(request)
-    if not req.frames:
-        raise HTTPException(422, "El tramo no trae cuadros")
+    ajustes = request.app.state.ajustes
+    # Todo el tramo se valida antes de crear el detector o decodificar nada.
+    jpegs = entrada.validar_cuadros(req.frames, ajustes.max_cuadros_tramo, ajustes.max_bytes_cuadro)
+    cuadros = entrada.decodificar_cuadros(jpegs)
 
     config = modelo.cfg_extraccion
     detector = crear_detector_holistic(
@@ -353,18 +366,10 @@ def clasificar_tramo_movimiento(req: TramoMovimiento, request: Request):
     paso_ms = max(1, round(1000 / (req.fps or 15.0)))
     detectados = []
     try:
-        for i, datos in enumerate(req.frames):
-            crudo = np.frombuffer(base64.b64decode(datos.split(",", 1)[-1]), dtype=np.uint8)
-            imagen = cv2.imdecode(crudo, cv2.IMREAD_COLOR)
-            if imagen is not None:
-                detectados.append(detectar_frame(detector, imagen, i * paso_ms))
-    except ValueError as e:
-        raise HTTPException(422, f"Cuadro inválido: {e}")
+        for cuadro in cuadros:
+            detectados.append(detectar_frame(detector, cuadro.imagen, cuadro.indice * paso_ms))
     finally:
         detector.close()
-
-    if not detectados:
-        raise HTTPException(422, "Ningún cuadro se pudo decodificar")
 
     con_mano = sum(1 for f in detectados if any(presencia_manos(f)))
     stats = {"frames": len(detectados), "ratio_con_mano": round(con_mano / len(detectados), 3)}
@@ -426,6 +431,23 @@ def comparar_con_referencia(req: SolicitudComparacion):
 
 # ── Aplicación ────────────────────────────────────────────────────────────────
 
+async def _responder_entrada_invalida(_request: Request, error: entrada.EntradaInvalida):
+    return JSONResponse(status_code=error.status, content={"detail": error.mensaje})
+
+
+def _limite_cuerpo(scope) -> int | None:
+    """Bytes máximos del cuerpo según la ruta; sin ajustes cargados, sin límite."""
+    ajustes = getattr(scope["app"].state, "ajustes", None)
+    if ajustes is None:
+        return None
+    ruta = scope.get("path", "")
+    if ruta == "/clasificar_frames":
+        return ajustes.max_bytes_cuerpo_frames
+    if ruta == "/clasificar_video":
+        return ajustes.max_bytes_cuerpo_video
+    return ajustes.max_bytes_cuerpo
+
+
 def crear_app(ajustes: Ajustes | None = None) -> FastAPI:
     """
     Arma la aplicación. Sin `ajustes`, se leen del entorno al arrancar; las
@@ -434,6 +456,10 @@ def crear_app(ajustes: Ajustes | None = None) -> FastAPI:
     aplicacion = FastAPI(title="SeñaPlay IA de Señas", version="0.4.0",
                          lifespan=_ciclo_de_vida)
     aplicacion.state.ajustes_fijos = ajustes
+    aplicacion.add_exception_handler(entrada.EntradaInvalida, _responder_entrada_invalida)
+    # Se agrega antes que CORS para que CORS quede por fuera y también los 413
+    # lleven sus encabezados.
+    aplicacion.add_middleware(entrada.LimiteCuerpo, limite_para=_limite_cuerpo)
     # Permitir peticiones desde cualquier origen (WebView de React Native incluida)
     aplicacion.add_middleware(
         CORSMiddleware,

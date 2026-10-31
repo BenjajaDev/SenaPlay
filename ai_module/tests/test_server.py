@@ -96,6 +96,73 @@ def test_clasificar_video_mantiene_el_contrato(cliente, modo, monkeypatch):
             assert cuerpo["motivo"] != "modelo_sin_seña"
 
 
+def _jpeg_b64() -> str:
+    import cv2
+
+    ok, jpeg = cv2.imencode(".jpg", np.full((24, 24, 3), 100, np.uint8))
+    return "data:image/jpeg;base64," + base64.b64encode(jpeg.tobytes()).decode()
+
+
+def deteccion_desde(monkeypatch, cruda):
+    """
+    Reemplaza MediaPipe: la llamada i a detectar_frame devuelve el cuadro i de
+    `cruda` (en el formato de extraction.detectar_frame). Devuelve la lista de
+    timestamps con que se llamó.
+    """
+    import preprocessing.extraction as extraction
+
+    timestamps = []
+
+    class _Detector:
+        def close(self):
+            pass
+
+    def detectar(_detector, _imagen, timestamp_ms=None):
+        t = len(timestamps)
+        timestamps.append(timestamp_ms)
+        return {
+            "mano_izq": cruda.manos[t, 0] if cruda.presencia_manos[t, 0] > 0.5 else None,
+            "mano_der": cruda.manos[t, 1] if cruda.presencia_manos[t, 1] > 0.5 else None,
+            "pose": cruda.pose[t] if cruda.presencia_pose[t] > 0.5 else None,
+            "cara": cruda.cara[t] if cruda.presencia_cara[t] > 0.5 else None,
+        }
+
+    monkeypatch.setattr(extraction, "crear_detector", lambda cfg, modo_video=True: _Detector())
+    monkeypatch.setattr(extraction, "detectar_frame", detectar)
+    return timestamps
+
+
+def test_clasificar_frames_mantiene_el_contrato(cliente, modo, monkeypatch):
+    for semilla in range(6):
+        cruda = secuencia_sintetica(semilla % 6, semilla % 5, np.random.default_rng(semilla))
+        timestamps = deteccion_desde(monkeypatch, cruda)
+        r = cliente.post("/clasificar_frames", json={"frames": [_jpeg_b64()] * len(cruda), "fps": 15})
+        assert r.status_code == 200
+        cuerpo = r.json()
+        assert set(cuerpo) == CLAVES_DINAMICA
+        assert cuerpo["motivo"] in MOTIVOS and cuerpo["es_seña"] == (cuerpo["motivo"] is None)
+        assert len(cuerpo["alternativas"]) == 2
+        assert cuerpo["frames_procesados"] == len(cruda)
+        assert cuerpo["seña"] in cliente.app.state.modelo_dinamico.clases
+        assert timestamps == [i * 67 for i in range(len(cruda))]   # round(1000 / 15)
+        if modo == "lstm":
+            assert cuerpo["motivo"] != "modelo_sin_seña"
+
+
+def test_clasificar_frames_aplica_las_barreras(cliente, monkeypatch):
+    cruda = secuencia_sintetica(0, 0, np.random.default_rng(0))
+    cruda.presencia_manos[: int(len(cruda) * 0.8)] = 0.0       # casi sin mano
+    deteccion_desde(monkeypatch, cruda)
+    r = cliente.post("/clasificar_frames", json={"frames": [_jpeg_b64()] * len(cruda)})
+    assert r.json()["motivo"] == "sin_mano" and r.json()["es_seña"] is False
+
+    quieta = secuencia_sintetica(0, 0, np.random.default_rng(0))
+    quieta.pose[:] = quieta.pose[0]                             # muñecas sin moverse
+    deteccion_desde(monkeypatch, quieta)
+    r = cliente.post("/clasificar_frames", json={"frames": [_jpeg_b64()] * len(quieta)})
+    assert r.json()["motivo"] == "poco_movimiento"
+
+
 def test_sin_arrancar_no_hay_modelo_dinamico():
     # Sin lifespan (TestClient fuera de `with`) no hay modelos cargados: 503.
     r = TestClient(server.crear_app()).post("/clasificar_secuencia", json={"frames": [[0.0] * 527]})

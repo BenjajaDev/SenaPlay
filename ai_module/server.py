@@ -39,16 +39,10 @@ from inferencia import barreras, entrada
 from inferencia.ajustes import Ajustes, AjustesInvalidos, cargar_ajustes
 from inferencia.modelos import cargar_modelo_dinamico
 from inferencia.puerto import ModeloDinamico
+from preprocessing import extraction
+from preprocessing.extraction import SecuenciaCruda
 from scripts.extract_landmarks import _extraer_video
-from scripts.holistic_pipeline import (
-    POSE_MUÑECA_DER,
-    POSE_MUÑECA_IZQ,
-    SLICE_POSE,
-    crear_detector_holistic,
-    detectar_frame,
-    presencia_manos,
-    secuencia_a_matriz,
-)
+from scripts.holistic_pipeline import POSE_MUÑECA_DER, POSE_MUÑECA_IZQ, SLICE_POSE
 
 logger = logging.getLogger("senaplay.ia")
 
@@ -346,8 +340,8 @@ def _movimiento_muñecas(matriz: np.ndarray) -> float | None:
 def clasificar_tramo_movimiento(req: TramoMovimiento, request: Request):
     """
     Clasifica con el modelo dinámico un tramo de movimiento capturado en vivo
-    como cuadros JPEG. Usa el mismo pipeline holístico que generó el dataset
-    de entrenamiento. `es_seña` es False cuando el modelo responde su clase de
+    como cuadros JPEG. Los pasa por MediaPipe con los parámetros con que se
+    extrajo el dataset del modelo activo (preprocessing.extraction). `es_seña` es False cuando el modelo responde su clase de
     rechazo («ninguna», si la tiene) o casi no hubo mano en cuadro: la app lo trata
     como "no era una seña con movimiento" y sigue con el modelo estático.
     """
@@ -357,23 +351,32 @@ def clasificar_tramo_movimiento(req: TramoMovimiento, request: Request):
     jpegs = entrada.validar_cuadros(req.frames, ajustes.max_cuadros_tramo, ajustes.max_bytes_cuadro)
     cuadros = entrada.decodificar_cuadros(jpegs)
 
-    config = modelo.cfg_extraccion
-    detector = crear_detector_holistic(
-        modo_video=True,
-        confianza_deteccion=config["confianza_deteccion"],
-        confianza_landmarks=config["confianza_landmarks"],
-    )
-    paso_ms = max(1, round(1000 / (req.fps or 15.0)))
-    detectados = []
-    try:
-        for cuadro in cuadros:
-            detectados.append(detectar_frame(detector, cuadro.imagen, cuadro.indice * paso_ms))
-    finally:
-        detector.close()
+    cruda = extraction.extraer_cuadros(cuadros, req.fps, modelo.cfg_extraccion)
+    return _respuesta_cruda(modelo, cruda)
 
-    con_mano = sum(1 for f in detectados if any(presencia_manos(f)))
-    stats = {"frames": len(detectados), "ratio_con_mano": round(con_mano / len(detectados), 3)}
-    return _respuesta_dinamica(modelo, secuencia_a_matriz(detectados), stats)
+
+def _respuesta_cruda(modelo: ModeloDinamico, cruda: SecuenciaCruda) -> dict:
+    """
+    Respuesta común de los endpoints dinámicos: mejor clase + alternativas, y
+    si el tramo cuenta como seña dinámica (`es_seña`, con `motivo` si no). Las
+    barreras se calculan sobre los landmarks crudos (inferencia/barreras.py).
+    """
+    ranking = modelo.ranking(cruda)
+    seña, confianza = ranking[0]
+    evaluacion = barreras.evaluar(cruda, seña, modelo.clase_rechazo)
+    movimiento = evaluacion.movimiento_muñeca
+    return {
+        "seña": seña,
+        "confianza": round(float(confianza), 4),
+        "es_seña": evaluacion.es_seña,
+        "motivo": evaluacion.motivo,
+        "alternativas": [
+            {"seña": s, "confianza": round(float(p), 4)} for s, p in ranking[1:3]
+        ],
+        "movimiento_muñeca": None if movimiento is None else round(movimiento, 3),
+        "frames_procesados": len(cruda),
+        "ratio_con_mano": evaluacion.ratio_con_mano,
+    }
 
 
 def _respuesta_dinamica(modelo, matriz: np.ndarray, stats: dict) -> dict:

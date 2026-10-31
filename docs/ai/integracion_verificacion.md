@@ -294,3 +294,48 @@ seña fue 0,167, el doble del umbral. **Antes de usar la LSTM en producción hac
 Además apareció un problema que afecta a ambos modelos y es previo a esta integración: los clips
 de la pantalla «Señas dinámicas» no se recortan a la seña y, en algunos casos, se procesan solo 3
 o 4 cuadros.
+
+## 3. Latencia del servidor (fase 4)
+
+Para el pendiente de latencia de la sección 4.3.5 de la tesis. **No incluye la red ni el
+teléfono:** son tiempos dentro del servidor.
+
+| | |
+|---|---|
+| Script | `ai_module/scripts/medir_latencia.py`, corrido sobre `832ca2b` con el árbol limpio |
+| Entorno | `ai_module/.venv`: Python 3.11.15, `requirements-server.txt` de `3a28e44`. Notebook con procesador Intel (Family 6 Model 186, 12 núcleos lógicos), enchufado; Metro y el navegador abiertos. `pip freeze` en `entorno_latencia.json` |
+| Hilos | torch 1, OpenCV 1, OMP/MKL/OpenBLAS 1. MediaPipe (XNNPACK) maneja sus propios hilos y no se limitó |
+| Entrada | tramo de 30 cuadros JPEG de 480 × 360, calidad 70, a 15 fps: como los del visor, pero **sintéticos y sin personas** |
+| Repeticiones | 20 de calentamiento + 200 mediciones por modelo |
+| Salidas | `docs/tesis/resultados_ia/integracion/latencia_servidor.csv` (crudo) y `latencia_servidor_resumen.csv` |
+
+Mediana y p95, en ms, por tramo de 30 cuadros:
+
+| Etapa | TCN legada (mediana / p95) | LSTM exportada (mediana / p95) |
+|---|---|---|
+| Decodificación (base64 + JPEG) | 93,0 / 199,1 | 101,2 / 220,6 |
+| Crear el detector de MediaPipe | 382,6 / 606,8 | 422,9 / 839,4 |
+| MediaPipe, 30 cuadros | 1692,1 / 2706,4 | 1874,7 / 2894,6 |
+| Modelo (features + red) | 16,1 / 45,8 | 10,4 / 25,0 |
+| **Total de la petición** | **2307,5 / 3187,0** | **2642,8 / 5619,4** |
+
+- **MediaPipe domina:** crear el detector más detectar los 30 cuadros es el 90 % (TCN) y el 87 %
+  (LSTM) de la mediana del total. La detección por cuadro fue de 56,4 ms (TCN) y 62,5 ms (LSTM)
+  en mediana. La diferencia entre modelos en esa etapa no viene del modelo, porque MediaPipe es
+  el mismo en ambos: refleja la variación del equipo entre una corrida y otra.
+- **El modelo es menos del 1 % del total** (16 ms la TCN legada y 10 ms la LSTM). Estas cifras
+  incluyen calcular las features desde la secuencia cruda; por eso son mayores que las de la
+  tabla de la comparación (solo la red, batch 1). Además, la TCN legada (T = 60, FeatureSpec
+  1.0) no es la TCN de la comparación.
+- **Crear el detector en cada petición** cuesta unos 0,4 s por tramo. Reutilizarlo bajaría la
+  latencia, pero el modo VIDEO de MediaPipe exige timestamps crecientes por detector, y las
+  peticiones concurrentes necesitarían un detector por hilo. No está en el alcance de este
+  trabajo.
+- **Es una cota inferior.** Sin personas, MediaPipe no corre los modelos de landmarks de mano ni
+  de cara. Con cuadros reales del teléfono (§2.3), MediaPipe tomó de 347 a 4438 ms por tramo
+  de 9 a 34 cuadros.
+- **Valores atípicos.** Dos peticiones de la LSTM (repeticiones 145 y 146) dieron 83,6 s y 18,0 s
+  de total. En esas mismas repeticiones, las etapas medidas por separado fueron normales
+  (MediaPipe 1,3 s y 2,2 s), así que se interpretan como una pausa del equipo. Quedan en el CSV
+  crudo, y la mediana y el p95 no dependen de ellas. La media de la LSTM (3334 ms) sí sube por
+  esos dos valores: no usarla.

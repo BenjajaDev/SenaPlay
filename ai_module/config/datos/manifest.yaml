@@ -1,0 +1,26 @@
+# Configuración del manifiesto de videos (data/manifest.py).
+# Rutas relativas a ai_module/.
+rutas:
+  videos: data/raw_videos                  # data/raw_videos/<clase>/[<signer>/]<video>
+  landmarks: data/processed_landmarks      # .npz crudos por video (mismo árbol que videos)
+  manifiesto: data/manifest.csv
+  signers: data/signers.csv                # opcional: lo completa el autor (ver plantilla)
+  plantilla_signers: data/signers_template.csv
+  clases: config/datos/classes.yaml
+  preprocesamiento: config/preprocesamiento/features.yaml   # sección `extraccion`
+
+extensiones: [.mp4, .mov]                  # sin distinguir mayúsculas
+
+# Se descarta un video si MediaPipe no detecta ninguna mano en más de esta
+# fracción de los frames muestreados.
+descarte:
+  max_ratio_sin_manos: 0.30
+  min_frames: 8                            # menos frames útiles que esto → descartado
+
+lote_por_defecto: lote_00
+
+# Cómo se deduce el signer_id si no está en signers.csv (en este orden):
+#   1. carpeta intermedia: data/raw_videos/<clase>/<signer>/<video>
+#   2. nombre de archivo con este patrón (grupos con nombre `clase` y `signer`)
+# Si un video no calza con ninguno, se genera la plantilla y el script se detiene.
+patron_nombre: '^(?P<clase>.+?)_(?P<signer>.+?)_(?P<numero>\d+)$'

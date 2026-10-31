@@ -1,0 +1,10 @@
+# GRU (models/gru.py), misma configuración que la LSTM.
+arquitectura: gru
+descripcion: "GRU bidireccional, 2 capas, 64 unidades ocultas"
+proyeccion: 64
+oculto: 64
+capas: 2
+bidireccional: true       # justo frente a la TCN no causal; ver ablaciones/causal.yaml
+dropout: 0.3
+pooling: media            # media | ultimo
+cabeza_oculta: null

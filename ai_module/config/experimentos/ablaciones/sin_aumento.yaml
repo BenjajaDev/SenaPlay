@@ -1,0 +1,6 @@
+# Ablación: sin aumento de datos.
+hereda: config/experimentos/comparacion_temporal.yaml
+nombre: ablacion_sin_aumento
+aumento:
+  archivo: config/preprocesamiento/aumento.yaml
+  ajustes: {activo: false}

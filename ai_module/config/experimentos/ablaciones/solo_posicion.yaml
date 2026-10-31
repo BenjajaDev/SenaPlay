@@ -1,0 +1,7 @@
+# Ablación de features: solo el bloque de posición (sin velocidad ni aceleración).
+hereda: config/experimentos/comparacion_temporal.yaml
+nombre: ablacion_solo_posicion
+preprocesamiento:
+  archivo: config/preprocesamiento/features.yaml
+  ajustes:
+    bloques_temporales: {posicion: true, velocidad: false, aceleracion: false}

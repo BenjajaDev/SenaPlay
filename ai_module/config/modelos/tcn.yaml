@@ -1,0 +1,11 @@
+# TCN: bloques residuales de convolución 1D dilatada (models/tcn.py).
+arquitectura: tcn
+descripcion: "TCN, 4 bloques residuales, kernel 3, dilataciones 1-2-4-8"
+proyeccion: 64            # Linear(F → 64) por frame, compartida con LSTM y GRU
+canales: [80, 80, 80, 80]  # ajustado para que los parámetros queden del orden de LSTM/GRU
+kernel_size: 3
+dilataciones: [1, 2, 4, 8]
+dropout: 0.3
+causal: false             # true = convolución causal (ver ablaciones/causal.yaml)
+pooling: media            # media | ultimo
+cabeza_oculta: null

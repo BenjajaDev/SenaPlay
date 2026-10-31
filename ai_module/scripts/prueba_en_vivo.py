@@ -14,9 +14,12 @@ ya llama:
     mediapipe       creación del detector + detectar_frame de cada cuadro
     modelo          ranking del modelo dinámico (features + red)
     resto           barreras, armado de la respuesta, archivo temporal y FastAPI
+                    (incluido parsear el JSON)
 
-`total` va desde que el servidor recibe la petición hasta que termina de
-responder: no incluye la red ni el teléfono.
+`duracion_ms` va desde que llega el ÚLTIMO trozo del cuerpo hasta que el
+servidor termina de responder: no incluye la red ni el teléfono. El tiempo
+entre los encabezados y el último trozo (la subida del cuerpo por la red, más
+lo que tarde uvicorn en leerlo) va aparte, en `recepcion_cuerpo_ms`.
 
 Los marcadores de caso (scripts/marcar.py) se escriben en el mismo JSONL; el
 resumen asigna cada respuesta al último marcador anterior al INICIO de la
@@ -102,7 +105,16 @@ def envolver(app, ruta: str):
         etapas: dict[str, float] = {}
         _etapas.set(etapas)   # anyio copia el contexto al hilo del endpoint
         inicio_reloj, inicio = time.time(), time.perf_counter()
-        estado = {"status": None, "cuerpo": b""}
+        estado = {"status": None, "cuerpo": b"", "cuerpo_completo": None}
+
+        async def recibir():
+            # El cuerpo (cuadros o video en base64) sigue llegando por la red
+            # después de los encabezados: el tiempo del servidor se cuenta
+            # desde que llega el último trozo.
+            mensaje = await receive()
+            if mensaje["type"] == "http.request" and not mensaje.get("more_body", False):
+                estado["cuerpo_completo"] = estado["cuerpo_completo"] or time.perf_counter()
+            return mensaje
 
         async def enviar(mensaje):
             if mensaje["type"] == "http.response.start":
@@ -111,8 +123,11 @@ def envolver(app, ruta: str):
                 estado["cuerpo"] += mensaje.get("body", b"")
             await send(mensaje)
 
-        await app(scope, receive, enviar)
-        total = (time.perf_counter() - inicio) * 1000
+        await app(scope, recibir, enviar)
+        fin = time.perf_counter()
+        cuerpo_completo = estado["cuerpo_completo"] or inicio
+        recepcion = (cuerpo_completo - inicio) * 1000
+        total = (fin - cuerpo_completo) * 1000
         video = etapas.pop("_extraer_video", None)
         if video is not None:
             etapas["decodificacion"] = etapas.get("decodificacion", 0.0) + video - etapas.get("mediapipe", 0.0)
@@ -123,7 +138,7 @@ def envolver(app, ruta: str):
             respuesta = None
         escribir({"tipo": "respuesta", "inicio": inicio_reloj, "hora": _hora(inicio_reloj),
                   "ruta": scope["path"], "status": estado["status"], "respuesta": respuesta,
-                  "duracion_ms": round(total, 1),
+                  "duracion_ms": round(total, 1), "recepcion_cuerpo_ms": round(recepcion, 1),
                   "etapas_ms": {k: round(v, 1) for k, v in etapas.items()}}, ruta)
 
     return con_registro
@@ -168,8 +183,8 @@ def resumen(ruta: str) -> str:
             lineas += ["Sin peticiones al modelo dinámico.", ""]
             continue
         lineas += ["| Hora | Ruta | Status | Seña | Confianza | es_seña | Motivo | Alternativas | "
-                   "Cuadros | Ratio mano | Movimiento | Total ms | Decodif. | MediaPipe | Modelo | Resto |",
-                   "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+                   "Cuadros | Ratio mano | Movimiento | Total ms | Decodif. | MediaPipe | Modelo | Resto | Recepción ms |",
+                   "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
         for r in peticiones:
             c = r["respuesta"] if isinstance(r["respuesta"], dict) else {}
             e = r["etapas_ms"]
@@ -180,7 +195,7 @@ def resumen(ruta: str) -> str:
                 f"{c.get('motivo') or '—'} | {alternativas} | {c.get('frames_procesados', '')} | "
                 f"{c.get('ratio_con_mano', '')} | {c.get('movimiento_muñeca', '')} | {r['duracion_ms']} | "
                 f"{e.get('decodificacion', '')} | {e.get('mediapipe', '')} | {e.get('modelo', '')} | "
-                f"{e.get('resto', '')} |")
+                f"{e.get('resto', '')} | {r.get('recepcion_cuerpo_ms', '')} |")
         lineas.append("")
     return "\n".join(lineas)
 

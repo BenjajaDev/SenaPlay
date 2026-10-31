@@ -64,6 +64,7 @@ def test_registra_respuesta_y_etapas_sin_el_cuerpo(registro, monkeypatch, tmp_pa
         etapas = fila["etapas_ms"]
         assert set(etapas) == {"decodificacion", "mediapipe", "modelo", "resto"}
         assert etapas["modelo"] > 0 and fila["duracion_ms"] > 0
+        assert fila["recepcion_cuerpo_ms"] >= 0
         assert sum(etapas.values()) == pytest.approx(fila["duracion_ms"], abs=0.5)
 
     tabla = prueba_en_vivo.resumen(str(registro))

@@ -231,3 +231,66 @@ Observaciones:
 - **Latencia de servidor:** de 0,4 a 5,0 s por tramo (de 9 a 34 cuadros). MediaPipe se llevó
   entre el 82 % y el 96 % del total; el modelo LSTM, entre 3,9 y 122,9 ms. La subida del cuerpo
   fue de 0,07 a 4,7 s.
+
+### 2.4 Modo `lstm` · Señas dinámicas (beta) (`/clasificar_video`), 2026-10-31
+
+Servidor en `066df52`. «Total» es tiempo de servidor, sin la subida del clip («Recep.»). Esta
+pantalla muestra la respuesta tal cual: «La app mostró» es la seña de cada fila.
+
+| Caso | Clip | Seña | Confianza | es_seña | Motivo | Cuadros | Ratio mano | Movimiento | Total ms | Decodif. | MediaPipe | Modelo | Recep. ms | La app mostró |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Nombre | 1 | Yo | 0,7980 | sí | — | 3 | 0,333 | 0,889 | 935,0 | 276,5 | 612,1 | 19,8 | 214,1 | Yo |
+|  | 2 | Nombre | 0,8177 | no | sin_mano | 78 | 0,269 | 1,156 | 5931,8 | 210,7 | 5676,5 | 13,9 | 242,6 | Nombre |
+|  | 3 | Nombre | 0,8396 | sí | — | 76 | 0,355 | 1,182 | 3710,5 | 163,8 | 3491,6 | 43,6 | 537,4 | Nombre |
+| Presento | 1 | Presento | 0,9082 | sí | — | 76 | 0,592 | 1,643 | 5039,9 | 216,4 | 4786,0 | 22,4 | 1926,0 | Presento |
+| J | 1 | G | 0,5618 | sí | — | 73 | 0,452 | 1,139 | 4763,4 | 178,1 | 4548,9 | 25,0 | 5948,5 | G |
+|  | 2 | Nombre | 0,7300 | no | sin_mano | 74 | 0,297 | 1,372 | 4590,3 | 192,2 | 4374,4 | 13,2 | 2726,5 | Nombre |
+|  | 3 | J | 0,9716 | sí | — | 74 | 0,838 | 0,898 | 3841,8 | 179,1 | 3602,1 | 50,8 | 4800,9 | J |
+|  | 4 | J | 0,9527 | sí | — | 76 | 0,895 | 1,157 | 4292,4 | 321,1 | 3896,2 | 65,4 | 8109,1 | J |
+|  | 5 | G | 0,5411 | sí | — | 78 | 0,359 | 1,073 | 6450,9 | 212,8 | 6198,1 | 23,2 | 2820,2 | G |
+| Mano quieta | 1 | Mi | 0,8835 | **sí** | — | 3 | 1,000 | 0,167 | 801,4 | 239,8 | 468,6 | 72,2 | 323,8 | **Mi (falso positivo)** |
+| Cambio de letra | 1 | S | 0,8683 | **sí** | — | 3 | 0,667 | 0,882 | 549,1 | 164,8 | 326,6 | 13,5 | 288,3 | **S (falso positivo)** |
+| Acomodarse en la silla | 1 | Nombre | 0,8282 | no | sin_mano | 79 | 0,000 | 0,874 | 4891,6 | 166,0 | 4678,9 | 36,5 | 260,6 | Nombre |
+|  | 2 | Yo | 0,6052 | no | sin_mano | 79 | 0,000 | 0,374 | 2837,8 | 172,2 | 2640,1 | 10,2 | 252,9 | Yo |
+| Salir del cuadro | 1 | Nombre | 0,8057 | no | sin_mano | 94 | 0,021 | 1,981 | 4771,3 | 203,6 | 4484,6 | 70,4 | 284,5 | Nombre |
+
+Observaciones:
+
+- **Falsos positivos sin seña:** mano quieta (Mi, 0,88) y cambio de letra (S, 0,87) pasaron
+  como seña, con `es_seña: true`. Acomodarse y salir del cuadro los rechazó **solo** la barrera
+  `sin_mano`, porque casi no hubo mano en el cuadro (ratio 0 a 0,021). Si la mano hubiera estado a
+  la vista, nada los habría detenido.
+- **Esta pantalla muestra el resultado aunque `es_seña` sea falso** (Nombre y Yo en acomodarse y
+  salir del cuadro). Así lo diseñó la app, que la usa como herramienta para probar el modelo.
+- **Señas reales:** Nombre 2 de 3 (un clip correcto quedó rechazado por `sin_mano`, ratio 0,269),
+  Presento 1 de 1 y J 2 de 5 (los otros dieron G y Nombre). La LSTM no tuvo el colapso hacia Z de
+  la TCN en esta misma pantalla (§2.2).
+- **Clips de 3 cuadros** (Nombre 1, mano quieta y cambio de letra), como los de 4 cuadros de §2.2,
+  en grabaciones de hasta 4 s. **Hipótesis no verificada:** el webm de MediaRecorder no traería la
+  tasa de cuadros, OpenCV informaría un valor alto (por ejemplo, 1000 fps) y
+  `paso = round(fps_fuente / 30)` dejaría pasar un cuadro de cada ~33. Es la misma lógica que el
+  servidor legado, así que, si se confirma, también ocurre en producción. No se puede comprobar con
+  esta prueba, porque los videos no se guardan.
+- **Latencia de servidor:** de 0,5 a 6,5 s por clip. En los clips de más de 10 cuadros, MediaPipe
+  se llevó entre el 91 % y el 96 % del total, de 33 a 80 ms por cuadro con la creación del detector
+  incluida.
+
+### 2.5 Resumen de la prueba con la app
+
+| | TCN, en vivo | TCN, dinámicas | LSTM, en vivo | LSTM, dinámicas |
+|---|---|---|---|---|
+| Nombre, Presento y J reconocidas | 3 de 3 (J tras una G mostrada) | 2 de 3 señas; 4 de 12 clips | 3 de 3 (J al décimo tramo) | 3 de 3 señas; 5 de 9 clips |
+| Respuestas sin seña aceptadas como seña | 0 de 4 tramos | 0 de 6 clips | **7 de 7 tramos** | **2 de 5 clips** (los otros 3, solo por `sin_mano`) |
+| Barrera que rechazó los casos sin seña | `modelo_sin_seña` y `sin_mano` | `modelo_sin_seña` y `sin_mano` | ninguna | solo `sin_mano` |
+
+**Conclusión para la tesis.** Con las mismas barreras deterministas, la TCN legada rechazó todos
+los casos sin seña gracias a su clase «ninguna», mientras que la LSTM, que no la tiene, los aceptó
+siempre que la mano estuvo a la vista: 7 de 7 tramos en vivo y 2 de 2 clips, con confianzas de
+0,73 a 0,97. `UMBRAL_DINAMICO = 0.6` no los detiene, porque esas confianzas lo superan.
+`poco_movimiento` tampoco lo hizo en ningún caso: el movimiento de muñeca más bajo de un caso sin
+seña fue 0,167, el doble del umbral. **Antes de usar la LSTM en producción hacen falta la clase
+«ninguna» con negativos reales (tarea 4) y recalibrar los umbrales (tarea 5).**
+
+Además apareció un problema que afecta a ambos modelos y es previo a esta integración: los clips
+de la pantalla «Señas dinámicas» no se recortan a la seña y, en algunos casos, se procesan solo 3
+o 4 cuadros.

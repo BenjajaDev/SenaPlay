@@ -1,0 +1,4 @@
+arquitectura_a,arquitectura_b,dif_f1_macro_media,dif_f1_macro_de,dif_min,dif_max,a_gana_entrenamientos,entrenamientos,a_gana_pliegues,pliegues
+TCN,LSTM,0.0423,0.1109,-0.1221,0.2074,8,15,5,5
+TCN,GRU,-0.0039,0.1024,-0.1675,0.1861,7,15,2,5
+LSTM,GRU,-0.0462,0.0883,-0.17,0.1487,4,15,1,5

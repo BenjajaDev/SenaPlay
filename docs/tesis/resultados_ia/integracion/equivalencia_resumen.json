@@ -1,0 +1,45 @@
+{
+  "fecha_utc": "2026-10-31T17:02:31+00:00",
+  "commit_referencia": "d9f6cd4",
+  "commit_candidato": "3a28e44d5c5c1a59b8f905f183d66c7467e0b6d3",
+  "modelo_dinamico": "tcn",
+  "tolerancias": {
+    "confianza": 0.0001,
+    "movimiento_muñeca": 0.001
+  },
+  "casos": 666,
+  "por_resultado": {
+    "igual": 662,
+    "diferencia_esperada": 4
+  },
+  "por_categoria": {
+    "A": {
+      "igual": 200
+    },
+    "B": {
+      "igual": 190
+    },
+    "C": {
+      "igual": 57
+    },
+    "D": {
+      "igual": 8
+    },
+    "E": {
+      "igual": 200
+    },
+    "F": {
+      "igual": 7,
+      "diferencia_esperada": 4
+    }
+  },
+  "motivos_referencia_B_C": {
+    "modelo_sin_seña": 114,
+    "sin_mano": 28,
+    "poco_movimiento": 32,
+    "ninguno": 73
+  },
+  "llamadas_ffprobe_candidato": 0,
+  "max_delta_confianza": 9.999999999998899e-05,
+  "aprobada": true
+}

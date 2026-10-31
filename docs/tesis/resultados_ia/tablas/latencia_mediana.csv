@@ -1,0 +1,4 @@
+arquitectura,media_ms,mediana_ms,p95_ms,de_ms,mediciones,calentamiento,hilos,T,F,parametros,tamano_mb
+TCN,12.812,11.672,29.51,9.156,200,20,1,30,1577,258729,1.011
+LSTM,5.588,4.169,14.43,3.746,200,20,1,30,1577,268169,1.03
+GRU,7.187,6.211,13.657,2.653,200,20,1,30,1577,226697,0.871

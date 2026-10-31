@@ -1,0 +1,40 @@
+# Evaluación del Random Forest estático (model/train_static.py) con validación
+# agrupada, para que sus cifras sean comparables con las de las señas dinámicas.
+#
+#   cd ai_module
+#   python -m training.eval_static
+#
+# El dataset de imágenes (Roboflow) no identifica al signer: los pliegues se
+# agrupan por IMAGEN FUENTE. Roboflow genera varias copias aumentadas de una
+# misma foto (train_A1_jpg.rf.<hash1>, train_A1_jpg.rf.<hash2>, …) y las reparte
+# entre train/valid/test; agruparlas evita que una copia quede en
+# entrenamiento y otra en prueba.
+nombre: estatico_rf
+
+datos:
+  imagenes: data/raw/lsch_alfabeto               # <letra>/<imagen>.jpg
+  cache: data/processed_landmarks_estaticos/landmarks_por_imagen.npz
+  confianza_deteccion: 0.6                       # igual que data/extract_landmarks.py
+
+modelo: rf                                        # rf | svm (model/train_static.construir_pipeline)
+aumento:
+  # Este n_aug lo lee SOLO training/eval_static.py (26 letras, solo Roboflow;
+  # también vía training/run_all.py). Era el valor por defecto de
+  # model/train_static.py cuando se corrió esa evaluación; hoy el defecto es 8.
+  # training/eval_static_produccion.py (21 letras, cifras de la Tabla 29 de la
+  # tesis) toma de este archivo solo `datos`: su n_aug sale de --aug, que por
+  # defecto vale N_AUG_PRODUCCION = 8, igual que el modelo de producción.
+  n_aug: 4
+
+validacion:
+  esquema: grupo_imagen_fuente
+  n_pliegues: 5
+  semilla_particion: 42
+
+latencia:
+  calentamiento: 20
+  mediciones: 200
+
+salidas:
+  directorio: results
+  dpi: 300

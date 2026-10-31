@@ -1,0 +1,175 @@
+{
+  "formato": "oratiolingo-dinamico/1",
+  "arquitectura": "lstm",
+  "hiperparametros": {
+    "proyeccion": 64,
+    "oculto": 64,
+    "capas": 2,
+    "bidireccional": true,
+    "dropout": 0.3,
+    "pooling": "media",
+    "cabeza_oculta": null
+  },
+  "clases": [
+    "G",
+    "J",
+    "Mi",
+    "Nombre",
+    "Presento",
+    "S",
+    "X",
+    "Yo",
+    "Z"
+  ],
+  "T": 30,
+  "dim_entrada": 1577,
+  "feature_spec_version": "2.0",
+  "preprocesamiento": {
+    "feature_spec_version": "2.0",
+    "extraccion": {
+      "fps_muestreo": 30,
+      "confianza_deteccion": 0.5,
+      "confianza_landmarks": 0.5
+    },
+    "partes": {
+      "pose_indices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16
+      ],
+      "cara": {
+        "grupos": [
+          "labios",
+          "ojo_izq",
+          "ojo_der",
+          "ceja_izq",
+          "ceja_der",
+          "nariz"
+        ],
+        "indices_extra": []
+      }
+    },
+    "normalizacion": {
+      "marco_manos": "local",
+      "referencia_sin_pose": "vecino"
+    },
+    "remuestreo": {
+      "T": 30
+    },
+    "bloques_temporales": {
+      "posicion": true,
+      "velocidad": true,
+      "aceleracion": true
+    }
+  },
+  "parametros": 268169,
+  "entrenamiento": {
+    "fecha": "2026-10-31T05:22:56",
+    "commit": "4794e36bc409aa5c50bb196d86561a680ad43ebf",
+    "experimento": "comparacion_temporal",
+    "semilla": 0,
+    "epoca_mejor": 34,
+    "epocas": 54,
+    "f1_validacion": 0.8211640211640211,
+    "n_videos": 233,
+    "signers": [
+      "s01",
+      "s02",
+      "s03",
+      "s04",
+      "s05",
+      "s06",
+      "s07",
+      "s08",
+      "s09",
+      "s10",
+      "s11",
+      "s12",
+      "s13",
+      "s14",
+      "s15",
+      "s16",
+      "s17",
+      "s18",
+      "s19",
+      "s20",
+      "s22",
+      "s23",
+      "s24",
+      "s25",
+      "s26",
+      "s27",
+      "s28",
+      "s29"
+    ],
+    "signers_validacion": [
+      "s03",
+      "s19",
+      "s22"
+    ],
+    "lotes": [
+      "lote_00"
+    ],
+    "protocolo": {
+      "optimizador": {
+        "nombre": "adamw",
+        "lr": 0.001,
+        "weight_decay": 0.01
+      },
+      "batch_size": 16,
+      "max_epocas": 150,
+      "paciencia": 20,
+      "pesos_clase": "auto",
+      "umbral_desbalance": 1.5,
+      "clip_grad": 1.0,
+      "hilos_torch": null
+    },
+    "aumento": {
+      "activo": true,
+      "time_warp": {
+        "activo": true,
+        "rango": [
+          0.8,
+          1.2
+        ],
+        "nodos": 4
+      },
+      "rotacion": {
+        "activo": true,
+        "max_grados": 15
+      },
+      "escala": {
+        "activo": true,
+        "rango": [
+          0.9,
+          1.1
+        ]
+      },
+      "ruido": {
+        "activo": true,
+        "sigma": 0.01
+      },
+      "espejo": {
+        "activo": false,
+        "probabilidad": 0.5
+      }
+    }
+  },
+  "seleccion": {
+    "criterio": "forzada por línea de comandos"
+  }
+}

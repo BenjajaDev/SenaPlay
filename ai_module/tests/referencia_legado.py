@@ -112,3 +112,99 @@ def remuestrear_temporal(secuencia: np.ndarray, t_objetivo: int) -> np.ndarray:
     alto = np.minimum(bajo + 1, n - 1)
     peso = (indices - bajo).reshape(-1, 1).astype(np.float32)
     return (secuencia[bajo] * (1.0 - peso) + secuencia[alto] * peso).astype(np.float32)
+
+
+# ── TCN legada (model/tcn.py de gestilingo-dev@d9f6cd4, copia literal) ──────
+# Rellena con el `padding` de Conv1d; models/tcn.py usa F.pad. Sirve para
+# verificar que el checkpoint de producción da los mismos números.
+
+import torch
+import torch.nn as nn
+
+
+class BloqueTCN(nn.Module):
+    """Dos convoluciones 1D dilatadas + BatchNorm + atajo residual (estilo ResNet)."""
+
+    def __init__(self, canales_in: int, canales_out: int, kernel_size: int = 3,
+                 dilation: int = 1, dropout: float = 0.3):
+        super().__init__()
+        padding = dilation * (kernel_size - 1) // 2  # padding "same" (kernel impar)
+
+        self.conv1 = nn.Conv1d(canales_in, canales_out, kernel_size,
+                                padding=padding, dilation=dilation)
+        self.bn1 = nn.BatchNorm1d(canales_out)
+        self.conv2 = nn.Conv1d(canales_out, canales_out, kernel_size,
+                                padding=padding, dilation=dilation)
+        self.bn2 = nn.BatchNorm1d(canales_out)
+        self.relu = nn.ReLU()
+        self.drop = nn.Dropout(dropout)
+
+        # Proyección 1×1 en el atajo cuando cambia el nº de canales entre bloques
+        self.atajo = (nn.Conv1d(canales_in, canales_out, 1)
+                      if canales_in != canales_out else nn.Identity())
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        residual = self.atajo(x)
+        h = self.relu(self.bn1(self.conv1(x)))
+        h = self.drop(h)
+        h = self.bn2(self.conv2(h))
+        return self.relu(h + residual)
+
+
+class ModeloTCNLegado(nn.Module):
+    """
+    Pila de BloqueTCN con dilatación 1, 2, 4, 8, ... (dobla por bloque),
+    seguida de average-pooling global sobre el tiempo y una cabeza densa.
+
+    `canales` controla tanto la profundidad (nº de bloques) como el ancho.
+    Con el dataset actual (25 videos/seña) conviene mantenerlo chico para no
+    sobreajustar; subir canales/bloques cuando el dataset crezca.
+    """
+
+    def __init__(self, entrada: int, clases: int,
+                 canales: tuple[int, ...] = (64, 64, 96, 96),
+                 kernel_size: int = 3, dropout: float = 0.4):
+        super().__init__()
+        bloques = []
+        canales_in = entrada
+        for i, canales_out in enumerate(canales):
+            bloques.append(BloqueTCN(canales_in, canales_out, kernel_size,
+                                      dilation=2 ** i, dropout=dropout))
+            canales_in = canales_out
+
+        self.tcn = nn.Sequential(*bloques)
+        self.pool = nn.AdaptiveAvgPool1d(1)
+        self.clasificador = nn.Sequential(
+            nn.Linear(canales_in, 64),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(64, clases),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # x: (batch, T, F) → Conv1d espera (batch, canales, T)
+        x = x.transpose(1, 2)
+        h = self.tcn(x)                    # (batch, C, T)
+        h = self.pool(h).squeeze(-1)        # (batch, C)
+        return self.clasificador(h)
+
+
+# ── Adaptación para las pruebas (no es código legado) ─────────────────────────
+
+def frames_legados(cruda) -> list[dict]:
+    """
+    SecuenciaCruda → lista de dicts como los devolvía `detectar_frame` del
+    pipeline legado: pose 0-16 y cara reducida a los 116 puntos de la 1.0.
+    """
+    from preprocessing.spec import GRUPOS_CARA_V1, indices_cara
+
+    cara_v1 = indices_cara(GRUPOS_CARA_V1)
+    frames = []
+    for t in range(len(cruda)):
+        frames.append({
+            "mano_izq": cruda.manos[t, 0] if cruda.presencia_manos[t, 0] > 0.5 else None,
+            "mano_der": cruda.manos[t, 1] if cruda.presencia_manos[t, 1] > 0.5 else None,
+            "pose_superior": cruda.pose[t, :N_POSE_SUPERIOR] if cruda.presencia_pose[t] > 0.5 else None,
+            "cara": cruda.cara[t, cara_v1] if cruda.presencia_cara[t] > 0.5 else None,
+        })
+    return frames

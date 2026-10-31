@@ -35,8 +35,8 @@ from pydantic import BaseModel, Field
 from typing import Optional
 
 from inferencia.ajustes import Ajustes, AjustesInvalidos, cargar_ajustes
-from model.predict import CLASE_SIN_SEÑA
-from scripts.dataset_config_utils import cargar_config
+from inferencia.modelos import cargar_modelo_dinamico
+from inferencia.puerto import ModeloDinamico
 from scripts.extract_landmarks import _extraer_video
 from scripts.holistic_pipeline import (
     POSE_MUÑECA_DER,
@@ -79,11 +79,6 @@ def _configurar_log() -> None:
     raiz.setLevel(logging.INFO)
 
 
-def _cargar_modelo_dinamico(ajustes: Ajustes):
-    from model.predict import ClasificadorDinamico
-    return ClasificadorDinamico(str(ajustes.ruta_modelo_dinamico))
-
-
 def _obtener_modelo_estatico(app: FastAPI):
     """Carga el clasificador estático (RandomForest) si aún no está en memoria."""
     if app.state.modelo_estatico is None:
@@ -96,7 +91,7 @@ def _obtener_modelo_estatico(app: FastAPI):
     return app.state.modelo_estatico
 
 
-def _modelo_dinamico(request: Request):
+def _modelo_dinamico(request: Request) -> ModeloDinamico:
     modelo = getattr(request.app.state, "modelo_dinamico", None)
     if modelo is None:
         raise HTTPException(503, "Modelo dinámico no disponible.")
@@ -115,9 +110,21 @@ async def _ciclo_de_vida(app: FastAPI):
     app.state.modelo_estatico = None
     # El dinámico se carga siempre al arrancar: si el archivo no corresponde al
     # modelo configurado, es mejor que el servidor no arranque.
-    app.state.modelo_dinamico = _cargar_modelo_dinamico(ajustes)
-    logger.info("Modelo dinámico activo: %s (%s)", ajustes.modelo_dinamico,
+    try:
+        modelo = cargar_modelo_dinamico(ajustes)
+    except Exception:
+        logger.critical("No se pudo cargar el modelo dinámico %r desde %s; el servidor no arranca",
+                        ajustes.modelo_dinamico, ajustes.ruta_modelo_dinamico, exc_info=True)
+        raise
+    app.state.modelo_dinamico = modelo
+    logger.info("Modelo dinámico activo: %s, %s (%s)", modelo.nombre, modelo.describir(),
                 ajustes.ruta_modelo_dinamico)
+    if modelo.clase_rechazo is None:
+        logger.warning(
+            "El modelo dinámico %r no tiene clase de rechazo: la barrera modelo_sin_seña "
+            "está desactivada y cualquier tramo con movimiento recibe alguna seña. Úsalo solo "
+            "para pruebas locales (antes de producción faltan negativos reales y recalibrar "
+            "umbrales: tareas 4 y 5 de docs/ai/pendientes_integracion.md).", modelo.nombre)
     if ajustes.precargar_modelos:
         _obtener_modelo_estatico(app)
     yield
@@ -185,11 +192,14 @@ rutas = APIRouter()
 @rutas.get("/")
 def inicio(request: Request):
     """Estado general del servidor y modelos."""
+    modelo = getattr(request.app.state, "modelo_dinamico", None)
     return {
         "app": "SeñaPlay IA de Señas",
         "modelo_estatico_listo": _obtener_modelo_estatico(request.app) is not None,
-        "modelo_dinamico_listo": getattr(request.app.state, "modelo_dinamico", None) is not None,
+        "modelo_dinamico_listo": modelo is not None,
         "total_señas": len(SEÑAS_REFERENCIA),
+        "modelo_dinamico": None if modelo is None else modelo.nombre,
+        "clases_dinamicas": [] if modelo is None else list(modelo.clases),
     }
 
 
@@ -243,8 +253,10 @@ def clasificar_seña_dinamica(req: SecuenciaMano, request: Request):
     holísticos (ver SecuenciaMano).
     """
     modelo = _modelo_dinamico(request)
-    frames = np.array(req.frames, dtype=np.float32)
-    seña, confianza = modelo.predecir(frames)
+    try:
+        seña, confianza = modelo.ranking_vectores_v1(np.array(req.frames, dtype=np.float32))[0]
+    except ValueError as e:  # filas de distinto largo, ancho ≠ 527 o secuencia vacía
+        raise HTTPException(422, str(e))
     return {"seña": seña, "confianza": round(float(confianza), 4)}
 
 
@@ -265,8 +277,7 @@ def clasificar_seña_video(req: VideoSena, request: Request):
             archivo_temp.write(base64.b64decode(req.video_base64))
             ruta_temp = archivo_temp.name
 
-        config = cargar_config()
-        cfg_extraccion = config["extraccion"]
+        cfg_extraccion = modelo.cfg_extraccion
         matriz, stats = _extraer_video(
             ruta_temp,
             fps_muestreo=cfg_extraccion["fps_muestreo"],
@@ -320,8 +331,8 @@ def clasificar_tramo_movimiento(req: TramoMovimiento, request: Request):
     """
     Clasifica con el modelo dinámico un tramo de movimiento capturado en vivo
     como cuadros JPEG. Usa el mismo pipeline holístico que generó el dataset
-    de entrenamiento. `es_seña` es False cuando el modelo responde la clase de
-    rechazo (CLASE_SIN_SEÑA) o casi no hubo mano en cuadro: la app lo trata
+    de entrenamiento. `es_seña` es False cuando el modelo responde su clase de
+    rechazo («ninguna», si la tiene) o casi no hubo mano en cuadro: la app lo trata
     como "no era una seña con movimiento" y sigue con el modelo estático.
     """
     import cv2
@@ -330,7 +341,7 @@ def clasificar_tramo_movimiento(req: TramoMovimiento, request: Request):
     if not req.frames:
         raise HTTPException(422, "El tramo no trae cuadros")
 
-    config = cargar_config()["extraccion"]
+    config = modelo.cfg_extraccion
     detector = crear_detector_holistic(
         modo_video=True,
         confianza_deteccion=config["confianza_deteccion"],
@@ -362,7 +373,7 @@ def _respuesta_dinamica(modelo, matriz: np.ndarray, stats: dict) -> dict:
     Respuesta común de los endpoints dinámicos: mejor clase + alternativas, y
     si el tramo cuenta como seña dinámica (`es_seña`, con `motivo` si no).
     """
-    ranking = modelo.probabilidades(matriz)
+    ranking = modelo.ranking_vectores_v1(matriz)
     seña, confianza = ranking[0]
     movimiento = _movimiento_muñecas(matriz)
 
@@ -371,7 +382,8 @@ def _respuesta_dinamica(modelo, matriz: np.ndarray, stats: dict) -> dict:
         motivo = "sin_mano"
     elif movimiento is not None and movimiento < MOVIMIENTO_MIN_MUÑECA:
         motivo = "poco_movimiento"
-    elif seña == CLASE_SIN_SEÑA:
+    elif modelo.clase_rechazo is not None and seña == modelo.clase_rechazo:
+        # Solo si el modelo tiene clase de rechazo: la LSTM no la tiene.
         motivo = "modelo_sin_seña"
 
     return {

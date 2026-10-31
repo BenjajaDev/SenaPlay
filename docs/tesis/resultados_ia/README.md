@@ -134,3 +134,18 @@ no hay barreras de rechazo y trae el modelo estático antiguo): ver
 | `estatico/` | `metricas.csv`, `metricas_por_clase.csv`, `metricas_por_pliegue.csv`, 4 matrices de confusión, `commit.txt`, `entorno.json` |
 | `modelo_exportado/` | `dinamico.meta.json`, `latencia_exportado_vs_tcn.csv`, `prueba_rutas_sinteticas.json`, `compatibilidad_app.md` |
 | `tablas/` | `comparacion_pareada.csv`, `por_clase.csv`, `por_senante.csv`, `latencia_mediana.csv`, `descartes.csv` |
+
+## Integración con la app (`integracion/`)
+
+Generado el 2026-10-31 en la rama `feat/integracion-pipeline`, que une este pipeline con
+`gestilingo-dev`. Detalle e interpretación en `docs/ai/integracion_verificacion.md`.
+
+| Archivo | Qué es | Script | Commit |
+|---|---|---|---|
+| `equivalencia.csv`, `equivalencia_resumen.json`, `entorno_equivalencia.json` | El servidor nuevo con `MODELO_DINAMICO=tcn` frente al de producción (`gestilingo-dev@d9f6cd4`), en 666 casos sintéticos: 662 iguales, 4 diferencias aprobadas, ninguna distinta | `scripts/verificar_equivalencia.py` | `3a28e44` |
+| `latencia_servidor.csv`, `latencia_servidor_resumen.csv`, `entorno_latencia.json` | Latencia de `/clasificar_frames` por etapa (decodificación, detector, MediaPipe, modelo y total), 30 cuadros sintéticos, 200 mediciones por modelo. **No incluye la red ni el teléfono**; MediaPipe sin personas es una cota inferior | `scripts/medir_latencia.py` | `832ca2b` |
+
+Python 3.11.15, `requirements-server.txt` de `3a28e44` (mediapipe 0.10.35, scikit-learn 1.9.0,
+torch 2.14.0 CPU). Las mediciones con cuadros reales del teléfono están en
+`docs/ai/integracion_verificacion.md` §2 y no tienen archivo aquí: el registro se borró después
+de pasarlo al documento.

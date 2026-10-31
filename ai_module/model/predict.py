@@ -3,19 +3,32 @@ Módulo de inferencia (predicción) para señas estáticas y dinámicas.
 
 ClasificadorEstatico  → modelo scikit-learn (RandomForest/SVM) guardado en .pkl.
                         Recibe 21 landmarks CRUDOS de MediaPipe (x,y,z ~0-1).
-ClasificadorDinamico  → TCN de PyTorch (model/tcn.py) guardado en .pt.
-                        Recibe una secuencia YA VECTORIZADA por
-                        scripts/holistic_pipeline.frame_a_vector (T, 527) —
-                        NO landmarks crudos. Incluye la clase CLASE_SIN_SEÑA
-                        (ver scripts/generar_negativos.py) para rechazar
-                        tramos de movimiento que no son una seña dinámica.
+ClasificadorDinamico  → TCN, LSTM o GRU de PyTorch (models/), según el meta
+                        del modelo exportado. Recibe landmarks crudos
+                        (SecuenciaCruda: /clasificar_frames, /clasificar_video)
+                        o vectores de 527 valores en formato 1.0
+                        (/clasificar_secuencia).
+  TCNLegado           → adaptador de la TCN de producción (con «ninguna»).
+  LSTMExportado       → adaptador de la LSTM exportada (sin clase de rechazo).
 """
 
-import numpy as np
-import joblib
-import os
+from __future__ import annotations
 
-# Clase de rechazo del modelo dinámico: "esto no es una seña con movimiento".
+import logging
+import os
+from collections.abc import Mapping
+from typing import TYPE_CHECKING
+
+import joblib
+import numpy as np
+
+if TYPE_CHECKING:
+    from preprocessing.extraction import SecuenciaCruda
+    from preprocessing.spec import FeatureSpec
+
+logger = logging.getLogger("senaplay.ia.modelos")
+
+# Clase de rechazo del modelo dinámico legado: "esto no es una seña con movimiento".
 CLASE_SIN_SEÑA = "ninguna"
 
 
@@ -35,7 +48,7 @@ class ClasificadorEstatico:
         payload = joblib.load(ruta_modelo)
         self._pipeline = payload["pipeline"]
         self._etiquetas = payload["etiquetas"]  # lista de nombres de señas
-        print(f"[ClasificadorEstatico] Cargado. Clases: {self._etiquetas}")
+        logger.info("Modelo estático cargado. Clases: %s", self._etiquetas)
 
     def _extraer_caracteristicas(self, landmarks: np.ndarray) -> np.ndarray:
         """
@@ -66,54 +79,139 @@ class ClasificadorEstatico:
 
 # ── Clasificador dinámico (señas con movimiento) ──────────────────────────────
 
+class ModeloInvalido(ValueError):
+    """El checkpoint no es el modelo que dice la configuración."""
+
+
 class ClasificadorDinamico:
     """
-    Carga el TCN entrenado con scripts/train_model.py y lo usa para predecir
-    señas dinámicas a partir de una secuencia YA VECTORIZADA (ver
-    scripts/holistic_pipeline.frame_a_vector), no de landmarks crudos.
+    Carga el modelo dinámico exportado por training/select_model.py
+    (models_saved/dinamico.pt + dinamico.meta.json) o el TCN legado de
+    scripts/train_model.py. La arquitectura (TCN, LSTM o GRU) y el
+    preprocesamiento se reconstruyen desde el meta; el preprocesamiento es el
+    mismo módulo compartido que usó el entrenamiento (preprocessing/).
+
+    Implementa el puerto `inferencia.puerto.ModeloDinamico`. El servidor usa
+    los adaptadores `TCNLegado` y `LSTMExportado`, que además verifican que el
+    archivo sea el modelo esperado.
     """
+
+    nombre: str = ""
 
     def __init__(self, ruta_modelo: str):
         if not os.path.exists(ruta_modelo):
             raise FileNotFoundError(f"Modelo dinámico no encontrado en: {ruta_modelo}")
 
-        import torch
-        payload = torch.load(ruta_modelo, map_location="cpu")
-        self._etiquetas: list[str] = payload["etiquetas"]
-        self._longitud_secuencia: int = payload["longitud_secuencia"]
-        self._entrada: int = payload["entrada"]
+        from models import checkpoint
+        from preprocessing.pipeline import Preprocesador
+        from preprocessing.spec import FeatureSpec
 
-        from model.tcn import ModeloTCN
-        self._modelo = ModeloTCN(entrada=self._entrada, clases=len(self._etiquetas))
-        self._modelo.load_state_dict(payload["estado"])
-        self._modelo.eval()
-        print(f"[ClasificadorDinamico] Cargado. Clases: {self._etiquetas}")
+        self._modelo, self.meta = checkpoint.cargar(ruta_modelo)
+        self._etiquetas: list[str] = list(self.meta["clases"])
+        spec = FeatureSpec.desde_config(self.meta["preprocesamiento"])
+        self._preprocesador = Preprocesador(spec)
+        self._longitud_secuencia = spec.T
 
-    def _ajustar_longitud(self, secuencia: np.ndarray) -> np.ndarray:
-        """Interpola/trunca la secuencia (T, F) a la longitud que espera el modelo."""
-        from scripts.holistic_pipeline import remuestrear_temporal
-        return remuestrear_temporal(secuencia, self._longitud_secuencia)
+    @property
+    def spec(self) -> FeatureSpec:
+        return self._preprocesador.spec
 
-    def probabilidades(self, secuencia_features: np.ndarray) -> list[tuple[str, float]]:
-        """
-        Todas las clases con su probabilidad, de mayor a menor.
+    @property
+    def clases(self) -> tuple[str, ...]:
+        return tuple(self._etiquetas)
 
-        secuencia_features: array (T, entrada) ya producido por
-        scripts.holistic_pipeline.frame_a_vector / secuencia_a_matriz para
-        cada frame de la seña (NO landmarks crudos de mano).
-        """
+    @property
+    def clase_rechazo(self) -> str | None:
+        """Clase que significa «no es una seña dinámica», o None si el modelo no tiene."""
+        return CLASE_SIN_SEÑA if CLASE_SIN_SEÑA in self._etiquetas else None
+
+    @property
+    def cfg_extraccion(self) -> Mapping[str, float]:
+        """Parámetros de MediaPipe con los que se extrajo el dataset de entrenamiento."""
+        return dict(self._preprocesador.spec.extraccion)
+
+    def _ranking(self, entrada: np.ndarray) -> list[tuple[str, float]]:
         import torch
         import torch.nn.functional as F
 
-        secuencia = self._ajustar_longitud(secuencia_features)
-        tensor = torch.tensor(secuencia, dtype=torch.float32).unsqueeze(0)  # (1, T, entrada)
-
+        tensor = torch.from_numpy(entrada).unsqueeze(0)  # (1, T, dim_entrada)
         with torch.no_grad():
-            probs = F.softmax(self._modelo(tensor), dim=-1)[0].tolist()
+            probabilidades = F.softmax(self._modelo(tensor), dim=-1)[0].tolist()
+        # sorted es estable: ante un empate gana la clase de menor índice, igual que argmax.
+        return sorted(zip(self._etiquetas, probabilidades), key=lambda par: -par[1])
 
-        return sorted(zip(self._etiquetas, probs), key=lambda par: -par[1])
+    def ranking(self, cruda: SecuenciaCruda) -> list[tuple[str, float]]:
+        """Todas las clases con su probabilidad, de mayor a menor (/clasificar_frames y _video)."""
+        return self._ranking(self._preprocesador.desde_cruda(cruda))
 
-    def predecir(self, secuencia_features: np.ndarray) -> tuple[str, float]:
-        """Devuelve (nombre_seña, confianza) de la clase más probable."""
-        nombre, confianza = self.probabilidades(secuencia_features)[0]
-        return nombre, float(confianza)
+    def ranking_vectores_v1(self, matriz: np.ndarray) -> list[tuple[str, float]]:
+        """
+        Igual que `ranking`, desde vectores (N, 527) en formato 1.0 (el contrato
+        de /clasificar_secuencia). Lanza ValueError si la matriz no tiene esa
+        forma o si el modelo usa features que no se derivan de ese formato.
+        """
+        matriz = np.asarray(matriz, dtype=np.float32)
+        if matriz.ndim != 2 or len(matriz) == 0 or matriz.shape[1] != self.spec.dim_base:
+            raise ValueError(f"Se esperaba una matriz (N, {self.spec.dim_base}) con N ≥ 1; "
+                             f"llegó {matriz.shape}")
+        return self._ranking(self._preprocesador.desde_vectores_v1(matriz))
+
+    def describir(self) -> str:
+        return (f"{self.meta['arquitectura'].upper()} (features {self.spec.version}, "
+                f"T={self.spec.T}, entrada {self.spec.dim_entrada}). Clases: {self._etiquetas}")
+
+    def _exigir(self, condicion: bool, problema: str) -> None:
+        if not condicion:
+            raise ModeloInvalido(f"El archivo no es el modelo «{self.nombre}» esperado: {problema}")
+
+
+class TCNLegado(ClasificadorDinamico):
+    """
+    TCN de scripts/train_model.py (data/models/dinamico_tcn.pt), la de
+    producción: FeatureSpec 1.0 (527 valores, T = 60) y clase de rechazo
+    «ninguna». Los parámetros de MediaPipe salen de config/dataset_config.yaml,
+    la misma fuente que usaba el servidor para este modelo.
+    """
+
+    nombre = "tcn"
+
+    def __init__(self, ruta_modelo: str, cfg_extraccion: Mapping[str, float]):
+        super().__init__(ruta_modelo)
+        self._exigir(self.meta["arquitectura"] == "tcn",
+                     f"arquitectura {self.meta['arquitectura']!r}, no 'tcn'")
+        self._exigir(self.spec.version == "1.0", f"features {self.spec.version}, no 1.0")
+        self._exigir(CLASE_SIN_SEÑA in self._etiquetas,
+                     f"no tiene la clase de rechazo {CLASE_SIN_SEÑA!r}")
+        self._cfg_extraccion = {clave: cfg_extraccion[clave] for clave in
+                                ("fps_muestreo", "confianza_deteccion", "confianza_landmarks")}
+
+    @property
+    def clase_rechazo(self) -> str:
+        return CLASE_SIN_SEÑA
+
+    @property
+    def cfg_extraccion(self) -> Mapping[str, float]:
+        return dict(self._cfg_extraccion)
+
+
+class LSTMExportado(ClasificadorDinamico):
+    """
+    LSTM exportada por training/select_model.py (models_saved/dinamico.pt):
+    FeatureSpec 2.0 (1577 valores, T = 30), 9 clases y SIN clase de rechazo.
+    Solo para pruebas locales: sin «ninguna», la barrera modelo_sin_seña no
+    existe y cualquier tramo con movimiento recibe alguna seña.
+    """
+
+    nombre = "lstm"
+
+    def __init__(self, ruta_modelo: str):
+        super().__init__(ruta_modelo)
+        self._exigir(self.meta["arquitectura"] == "lstm",
+                     f"arquitectura {self.meta['arquitectura']!r}, no 'lstm'")
+        self._exigir(self.spec.version == "2.0", f"features {self.spec.version}, no 2.0")
+        self._exigir(CLASE_SIN_SEÑA not in self._etiquetas,
+                     f"trae la clase {CLASE_SIN_SEÑA!r}, que este adaptador no contempla")
+
+    @property
+    def clase_rechazo(self) -> None:
+        return None

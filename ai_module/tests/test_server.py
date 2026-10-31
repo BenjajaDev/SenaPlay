@@ -23,7 +23,7 @@ from preprocessing.spec import FeatureSpec
 from tests.sintetico import secuencia_sintetica
 
 CLAVES_ESTADO = {"app", "modelo_estatico_listo", "modelo_dinamico_listo", "total_señas",
-                 "modelo_dinamico", "clases_dinamicas"}
+                 "modelo_dinamico", "clases_dinamicas", "barreras_activas"}
 CLAVES_DINAMICA = {"seña", "confianza", "es_seña", "motivo", "alternativas",
                    "movimiento_muñeca", "frames_procesados", "ratio_con_mano"}
 MOTIVOS = {None, "sin_mano", "poco_movimiento", "modelo_sin_seña"}
@@ -50,6 +50,8 @@ def test_estado(cliente, modo):
     assert set(r) == CLAVES_ESTADO
     assert r["modelo_dinamico_listo"] is True and r["modelo_dinamico"] == modo
     assert ("ninguna" in r["clases_dinamicas"]) is (modo == "tcn")
+    assert r["barreras_activas"] == {"sin_mano": True, "poco_movimiento": True,
+                                     "modelo_sin_seña": modo == "tcn"}
 
 
 def test_clasificar_secuencia_mantiene_el_contrato(cliente):

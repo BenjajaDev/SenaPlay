@@ -189,6 +189,51 @@ class ModeloTCNLegado(nn.Module):
         return self.clasificador(h)
 
 
+# ── Barreras de server.py de gestilingo-dev@d9f6cd4 ───────────────────────────
+# _movimiento_muñecas es copia literal; las otras dos reproducen el código en
+# línea de /clasificar_frames y _respuesta_dinamica.
+
+SLICE_POSE = slice(128, 128 + N_POSE_SUPERIOR * 3)
+POSE_MUÑECA_IZQ = 15
+POSE_MUÑECA_DER = 16
+RATIO_MIN_CON_MANO = 0.3
+MOVIMIENTO_MIN_MUÑECA = 0.08
+RATIO_MIN_CON_POSE = 0.5
+
+
+def _movimiento_muñecas(matriz: np.ndarray) -> float | None:
+    """
+    Rango máximo (x/y) recorrido por la muñeca más activa en el marco corporal,
+    o None si la pose casi no se detectó (cuadro muy cerrado sobre la cara).
+    """
+    T = len(matriz)
+    pose = matriz[:, SLICE_POSE].reshape(T, -1, 3)
+    con_pose = np.abs(pose).sum(axis=(1, 2)) > 0
+    if T == 0 or con_pose.mean() < RATIO_MIN_CON_POSE:
+        return None
+    muñecas = pose[con_pose][:, [POSE_MUÑECA_IZQ, POSE_MUÑECA_DER], :2]  # (T', 2, 2)
+    return float(np.ptp(muñecas, axis=0).max())
+
+
+def ratio_con_mano_legado(detectados: list[dict]) -> float:
+    """El cálculo de /clasificar_frames (con_mano / len, redondeado a 3)."""
+    con_mano = sum(1 for f in detectados
+                   if f.get("mano_izq") is not None or f.get("mano_der") is not None)
+    return round(con_mano / len(detectados), 3)
+
+
+def motivo_legado(seña: str, matriz: np.ndarray, ratio: float) -> str | None:
+    """Las condiciones de _respuesta_dinamica, en el mismo orden."""
+    movimiento = _movimiento_muñecas(matriz)
+    if ratio < RATIO_MIN_CON_MANO:
+        return "sin_mano"
+    if movimiento is not None and movimiento < MOVIMIENTO_MIN_MUÑECA:
+        return "poco_movimiento"
+    if seña == "ninguna":
+        return "modelo_sin_seña"
+    return None
+
+
 # ── Adaptación para las pruebas (no es código legado) ─────────────────────────
 
 def frames_legados(cruda) -> list[dict]:

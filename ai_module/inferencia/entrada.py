@@ -16,7 +16,7 @@ from __future__ import annotations
 import base64
 import binascii
 from collections.abc import Callable
-from dataclasses import dataclass
+from typing import NamedTuple
 
 import numpy as np
 from fastapi import HTTPException
@@ -48,8 +48,7 @@ def _b64(datos: str, que: str) -> bytes:
         raise EntradaInvalida(422, f"{que} no es base64 válido") from None
 
 
-@dataclass(frozen=True)
-class Cuadro:
+class Cuadro(NamedTuple):
     indice: int          # posición en el tramo: fija el timestamp para MediaPipe
     imagen: np.ndarray   # BGR
 

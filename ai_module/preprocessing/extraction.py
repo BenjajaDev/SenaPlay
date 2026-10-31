@@ -18,6 +18,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -170,6 +171,23 @@ def frames_a_secuencia(frames: list[dict], fps_muestreo: float, info: dict | Non
             seq.presencia_cara[t] = 1.0
     seq.info = dict(info or {})
     return seq
+
+
+def extraer_cuadros(cuadros: Sequence[tuple[int, np.ndarray]], fps: float,
+                    cfg_extraccion: Mapping[str, float]) -> SecuenciaCruda:
+    """
+    Landmarks crudos de cuadros sueltos (los JPEG que manda el visor en
+    /clasificar_frames). Cada cuadro es (índice en el tramo, imagen BGR): el
+    índice fija el timestamp, así un cuadro que no se pudo decodificar igual
+    deja su hueco, como en el servidor legado.
+    """
+    paso_ms = max(1, round(1000 / fps))
+    detector = crear_detector(dict(cfg_extraccion), modo_video=True)
+    try:
+        frames = [detectar_frame(detector, imagen, indice * paso_ms) for indice, imagen in cuadros]
+    finally:
+        detector.close()
+    return frames_a_secuencia(frames, fps, {"origen": "cuadros", "fps_fuente": fps})
 
 
 def metadatos_video(ruta_video: str) -> dict:

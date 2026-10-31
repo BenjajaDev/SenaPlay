@@ -1,7 +1,7 @@
 {
-  "fecha_utc": "2026-10-31T15:50:01+00:00",
+  "fecha_utc": "2026-10-31T17:02:31+00:00",
   "commit_referencia": "d9f6cd4",
-  "commit_candidato": "43cf91ea1d5db14d3a7a93280a8f82c0580bc43c",
+  "commit_candidato": "3a28e44d5c5c1a59b8f905f183d66c7467e0b6d3",
   "modelo_dinamico": "tcn",
   "tolerancias": {
     "confianza": 0.0001,

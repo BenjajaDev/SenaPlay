@@ -13,9 +13,16 @@ aprobadas en el diseño y ninguno difiere.
 | | |
 |---|---|
 | Referencia | `gestilingo-dev@d9f6cd4` (`ai_module/` extraído con `git archive`) |
-| Candidato | `feat/integracion-pipeline@43cf91e`, árbol limpio |
+| Candidato | `feat/integracion-pipeline@3a28e44`, árbol limpio |
 | Script | `ai_module/scripts/verificar_equivalencia.py` (commit `de54114`) |
-| Entorno | el mismo `ai_module/.venv` para los dos árboles: Python 3.11.15, `requirements-server.txt`. Detalle en `entorno_equivalencia.json` |
+| Entorno | el mismo `ai_module/.venv` para los dos árboles: Python 3.11.15, `requirements-server.txt` de `3a28e44` (mediapipe 0.10.35, scikit-learn 1.9.0, numpy 2.3.5, torch 2.14.0 CPU, opencv-contrib 5.0.0.93). `pip freeze` en `entorno_equivalencia.json` |
+
+**Corridas.** La primera (`43cf91e`, mediapipe 1.0.1 y scikit-learn 1.9.1) y la vigente
+(`3a28e44`, con las versiones fijadas a las de los modelos) dieron el mismo resultado. Como los
+dos árboles corren siempre con el mismo entorno, esta prueba compara **código**: no mide qué
+cambia en la TCN de producción al pasar de mediapipe 1.0.1 a 0.10.35. Eso solo se ve con
+personas reales, en la prueba con la app (§2), porque las imágenes sintéticas de D no tienen
+manos.
 | Datos | sintéticos, con semillas fijas; ninguna persona |
 | Salidas | [`docs/tesis/resultados_ia/integracion/`](../tesis/resultados_ia/integracion/): `equivalencia.csv`, `equivalencia_resumen.json` y `entorno_equivalencia.json` |
 
@@ -39,14 +46,15 @@ habría informado 0,088 y 0,262; por eso el servidor calcula `con_mano / L`.
 **`ffprobe`.** El candidato no lo ejecutó ninguna vez en las 60 peticiones a
 `/clasificar_video`.
 
-**Diferencias de confianza.** El máximo es 1e-4 y se da solo en 2 casos de E (`/clasificar`).
+**Diferencias de confianza.** El máximo es 1e-4 y se da solo en casos de E (`/clasificar`):
+3 en la corrida vigente (E_102, E_146 y E_149) y 2 en la primera (E_127 y E_139).
 No las produce la integración: el Random Forest del estático predice con `n_jobs=-1` y suma
 las probabilidades de los árboles en paralelo, en un orden que cambia entre corridas. En esos
 casos la probabilidad cae justo en el borde del redondeo a 4 decimales; en E_102, por
 ejemplo, es exactamente 0,42525. Según el orden de la suma queda en 0,42524999… o en
 0,4252500…01. Prueba local: con `n_jobs=-1` salen 3 valores distintos en 200 repeticiones, y con
-`n_jobs=1`, uno solo. Pasa igual en producción y lo confirma que, en la corrida de prueba
-anterior (commit `de54114`), los casos afectados fueron otros (E_102 y E_146). En las rutas
+`n_jobs=1`, uno solo. Pasa igual en producción, y lo confirma que cada corrida afecta casos
+distintos. En las rutas
 dinámicas (A a D), la diferencia de confianza fue 0 en todos los casos.
 
 **Diferencias esperadas** (§1.3 del diseño, solo con entradas que la app no manda):

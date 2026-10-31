@@ -1,0 +1,34 @@
+# Especificación del vector de features (preprocessing/spec.py → FeatureSpec).
+# Detalle índice a índice: docs/ai/feature_spec.md
+feature_spec_version: "2.0"
+
+# Igual que el pipeline legado (config/dataset_config.yaml → extraccion).
+extraccion:
+  fps_muestreo: 30
+  confianza_deteccion: 0.5
+  confianza_landmarks: 0.5
+
+partes:
+  pose_indices: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]  # torso superior
+  cara:
+    # Grupos disponibles: labios, ojo_izq, ojo_der, ceja_izq, ceja_der, nariz, ovalo.
+    # Los seis de abajo son los 116 puntos del pipeline legado.
+    grupos: [labios, ojo_izq, ojo_der, ceja_izq, ceja_der, nariz]
+    indices_extra: []
+
+normalizacion:
+  # local:    forma de cada mano centrada en su muñeca (versión 1.0).
+  # corporal: manos en el marco de hombros, como la pose y la cara.
+  marco_manos: local
+  # Si falta la pose en un frame: vecino = marco del frame con pose más cercano;
+  # neutral = centro de imagen y escala 1 (versión 1.0).
+  referencia_sin_pose: vecino
+
+remuestreo:
+  T: 30
+
+# Cada bloque se puede apagar para la ablación.
+bloques_temporales:
+  posicion: true
+  velocidad: true
+  aceleracion: true

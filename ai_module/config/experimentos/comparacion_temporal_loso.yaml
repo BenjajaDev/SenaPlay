@@ -1,0 +1,4 @@
+# Igual que el experimento principal, con Leave-One-Signer-Out (equivale a --loso).
+hereda: config/experimentos/comparacion_temporal.yaml
+validacion:
+  esquema: loso

@@ -176,3 +176,58 @@ Observaciones:
   si fue la lectura del webm.
 - **MediaPipe:** de 3,2 a 11,7 s por clip de 72 a 79 cuadros. Excluyendo los clips de 4 cuadros,
   va de 42 a 148 ms por cuadro, con la creación del detector incluida.
+
+### 2.3 Modo `lstm` · Traducción en vivo (`/clasificar_frames`), 2026-10-31
+
+Servidor en `066df52` (medición corregida). Arrancó con la advertencia de que el modelo no tiene
+clase de rechazo, y `GET /` informó `barreras_activas.modelo_sin_seña: false`. «Total» es tiempo
+de servidor, sin la subida del cuerpo, que va en «Recep.». La columna «¿Se muestra?» aplica la
+regla de la app (`es_seña` y confianza ≥ `UMBRAL_DINAMICO = 0.6`, `signCamera.js:125`). Quien hizo
+las señas lo resumió así: «la S salta todo el rato».
+
+| Caso | Tramo | Seña | Confianza | es_seña | Motivo | Ratio mano | Movimiento | Total ms | Decodif. | MediaPipe | Modelo | Recep. ms | ¿Se muestra? |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Nombre | 1 | Yo | 0,7588 | sí | — | 0,800 | 0,753 | 5001,9 | 167,4 | 4449,5 | 122,9 | 120,6 | sí |
+|  | 2 | Nombre | 0,8748 | sí | — | 1,000 | 0,606 | 783,7 | 16,7 | 709,7 | 4,5 | 4660,5 | sí |
+| Presento | 1 | Presento | 0,9944 | sí | — | 0,929 | 1,286 | 2396,9 | 60,5 | 2214,0 | 18,6 | 1377,0 | sí |
+| J | 1 | S | 0,3319 | sí | — | 0,882 | 0,849 | 4385,4 | 85,0 | 4125,4 | 28,9 | 72,8 | no |
+|  | 2 | S | 0,6645 | sí | — | 0,905 | 0,715 | 749,4 | 19,1 | 679,3 | 4,4 | 828,4 | sí |
+|  | 3 | Z | 0,3113 | sí | — | 0,895 | 0,244 | 866,6 | 21,6 | 776,0 | 17,6 | 554,6 | no |
+|  | 4 | X | 0,4290 | sí | — | 0,875 | 0,800 | 873,2 | 15,6 | 787,6 | 6,1 | 468,9 | no |
+|  | 5 | S | 0,3653 | sí | — | 0,875 | 1,128 | 965,6 | 19,7 | 873,6 | 6,7 | 328,4 | no |
+|  | 6 | S | 0,5382 | sí | — | 0,889 | 0,298 | 401,7 | 9,7 | 347,4 | 3,9 | 222,3 | no |
+|  | 7 | S | 0,6518 | sí | — | 0,875 | 0,820 | 672,6 | 17,9 | 579,8 | 4,8 | 773,7 | sí |
+|  | 8 | S | 0,6409 | sí | — | 0,905 | 0,956 | 1134,3 | 16,4 | 1036,2 | 8,4 | 673,7 | sí |
+|  | 9 | S | 0,7377 | sí | — | 1,000 | 0,797 | 1720,0 | 24,2 | 1605,1 | 9,1 | 1228,7 | sí |
+|  | 10 | J | 0,9760 | sí | — | 1,000 | 0,463 | 1646,5 | 25,2 | 1478,5 | 18,0 | 993,2 | sí |
+| Mano quieta | 1 | Presento | 0,9273 | sí | — | 1,000 | 0,209 | 3523,1 | 103,1 | 3244,9 | 53,9 | 227,7 | **sí (falso positivo)** |
+|  | 2 | J | 0,9671 | sí | — | 1,000 | 0,325 | 4221,2 | 42,5 | 4062,8 | 13,9 | 172,6 | **sí (falso positivo)** |
+|  | 3 | J | 0,9426 | sí | — | 1,000 | 0,218 | 2468,6 | 27,8 | 2369,9 | 14,4 | 1521,0 | **sí (falso positivo)** |
+| Cambio de letra (A → B) | 1 | S | 0,7288 | sí | — | 1,000 | 0,459 | 1094,0 | 12,7 | 898,2 | 71,9 | 1016,9 | **sí (falso positivo)** |
+|  | 2 | S | 0,9476 | sí | — | 1,000 | 0,219 | 963,2 | 15,3 | 826,8 | 47,3 | 191,1 | **sí (falso positivo)** |
+|  | 3 | S | 0,9536 | sí | — | 0,970 | 0,525 | 2515,4 | 50,2 | 2389,6 | 10,1 | 235,6 | **sí (falso positivo)** |
+|  | 4 | Presento | 0,8731 | sí | — | 1,000 | 0,180 | 4777,3 | 157,3 | 4438,2 | 53,2 | 209,1 | **sí (falso positivo)** |
+| Acomodarse en la silla | 0 | — | — | — | — | — | — | — | — | — | — | — | (el visor no mandó tramos) |
+| Salir del cuadro | 0 | — | — | — | — | — | — | — | — | — | — | — | (el visor no mandó tramos) |
+
+Observaciones:
+
+- **Falsos positivos sin seña: 7 de 7.** Los tramos de mano quieta (3) y de cambio de letra (4)
+  recibieron una seña con confianza de 0,73 a 0,97 y la app los habría mostrado todos. Con la TCN,
+  esos mismos casos se rechazaron todos (§2.1): por `sin_mano` en mano quieta y por
+  `modelo_sin_seña` en el cambio de letra. Sin una clase «ninguna», las barreras deterministas no
+  bastan: aquí el ratio de mano fue 0,97–1,0 y el movimiento de muñeca 0,18–0,53, todo sobre
+  los umbrales (0,3 y 0,08).
+- **El cambio de letra se confunde con S en 3 de 4 tramos**, y la S también fue la respuesta
+  más frecuente al intentar J (7 de 10). En esta prueba, la S fue el destino más común de lo que
+  el modelo no distingue; por eso la persona la ve una y otra vez («la S salta todo el rato»).
+  Con estos datos no se puede saber por qué es la S.
+- **J:** 10 tramos para lograr una J (0,98). Antes salieron 7 S, 1 Z y 1 X; 4 de esos tramos (S)
+  superaron 0,6 y se mostraron. Con la TCN, J salió al segundo tramo (§2.1).
+- **Nombre y Presento** se reconocieron (Nombre al segundo tramo; el primero dio Yo 0,76, que
+  también se mostró).
+- **Acomodarse y salir del cuadro:** en esta corrida el visor no mandó tramos, así que no hay
+  dato del modelo para esos dos casos.
+- **Latencia de servidor:** de 0,4 a 5,0 s por tramo (de 9 a 34 cuadros). MediaPipe se llevó
+  entre el 82 % y el 96 % del total; el modelo LSTM, entre 3,9 y 122,9 ms. La subida del cuerpo
+  fue de 0,07 a 4,7 s.

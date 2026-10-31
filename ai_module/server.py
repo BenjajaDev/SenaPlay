@@ -34,6 +34,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import Optional
 
+from inferencia import barreras
 from inferencia.ajustes import Ajustes, AjustesInvalidos, cargar_ajustes
 from inferencia.modelos import cargar_modelo_dinamico
 from inferencia.puerto import ModeloDinamico
@@ -200,6 +201,8 @@ def inicio(request: Request):
         "total_señas": len(SEÑAS_REFERENCIA),
         "modelo_dinamico": None if modelo is None else modelo.nombre,
         "clases_dinamicas": [] if modelo is None else list(modelo.clases),
+        # En modo lstm, modelo_sin_seña es false: ese modelo no tiene clase de rechazo.
+        "barreras_activas": None if modelo is None else barreras.barreras_activas(modelo.clase_rechazo),
     }
 
 

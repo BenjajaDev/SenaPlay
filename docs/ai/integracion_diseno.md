@@ -374,8 +374,11 @@ Los modelos quedan en `app.state`, no en variables globales del módulo. Las pru
 
 ### 4.1 Montaje
 
-- **Referencia:** un worktree desacoplado (`git worktree add --detach <scratchpad>/ref d9f6cd4`).
-  No se modifica.
+- **Referencia:** `ai_module/` de `d9f6cd4`, extraído con
+  `git archive d9f6cd4 ai_module | tar -x -C <dir_ref>`. No se modifica. *(En la
+  implementación, el worktree desacoplado que se planeó primero no se pudo crear: Windows
+  rechaza las rutas largas de `.claude/skills/` dentro del scratchpad. `git archive` extrae solo
+  `ai_module/`, que es lo único que hace falta, y el commit queda anotado en `COMMIT`.)*
 - **Candidato:** `feat/integracion-pipeline` (HEAD), con `MODELO_DINAMICO=tcn`.
 - **El mismo intérprete y el mismo entorno para los dos**, así que torch, numpy y MediaPipe no
   explican ninguna diferencia.

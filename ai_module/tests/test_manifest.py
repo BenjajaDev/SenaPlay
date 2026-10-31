@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from common.rutas import relativa
 from data.manifest import SignersSinResolver, generar_manifiesto
 from preprocessing.extraction import SecuenciaCruda
 
@@ -85,8 +86,8 @@ def test_descarte_por_frames_sin_manos_y_lotes(tmp_path):
 def test_signers_csv_tiene_prioridad(tmp_path):
     _video(tmp_path, "X/X_ana_01.mp4")
     cfg = _cfg(tmp_path)
-    video_path = os.path.relpath(tmp_path / "raw" / "X" / "X_ana_01.mp4",
-                                 os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    # Misma forma que la clave del manifiesto (relativa a ai_module/, con '/' también en Windows)
+    video_path = relativa(str(tmp_path / "raw" / "X" / "X_ana_01.mp4"))
     pd.DataFrame([{"video_path": video_path, "sign_class": "X", "signer_id": "p07",
                    "session_id": "s2", "device": "iPhone 13"}]).to_csv(tmp_path / "signers.csv",
                                                                      index=False)

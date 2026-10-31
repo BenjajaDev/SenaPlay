@@ -36,5 +36,6 @@ requests==2.33.1
 pytest==9.1.1
 httpx==0.28.1
 
-# Solo para data/download_datasets.py (descarga del alfabeto desde Roboflow)
-roboflow==1.5.1
+# roboflow (solo para data/download_datasets.py) no va aquí: exige numpy<2.4 y
+# choca con el numpy fijado arriba. Si necesitas descargar el alfabeto, instálalo
+# en un entorno aparte:  pip install roboflow==1.5.1

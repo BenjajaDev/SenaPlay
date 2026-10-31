@@ -20,7 +20,6 @@ SeñaPlay es una plataforma para aprender **Lengua de Señas Chilena (LSCh)**, c
 7. [Sistema de diseño](07-design-system.md): tokens, degradés, componentes, accesibilidad y movimiento.
 8. [Configuración remota](08-configuracion-remota.md): claves, flags y guía operativa.
 9. [Guía de desarrollo](09-guia-desarrollo.md): instalación, scripts, pruebas y convenciones.
-10. [Capturas de pantalla](10-capturas.md): capturas automáticas con Maestro en modo claro y oscuro (tesis y documentación).
 
 Los diagramas usan sintaxis **Mermaid**; GitHub y la mayoría de los editores los muestran directamente. Además, `scripts/checkMermaid.cjs` valida que todos compilen.
 

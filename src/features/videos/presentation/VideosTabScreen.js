@@ -131,7 +131,6 @@ export default function VideosTabScreen({ onScrollToTop }) {
           {filtered.map((video, index) => (
             <StaggerItem key={video.id} index={index}>
               <Card
-                testID="video-tarjeta"
                 padding="md"
                 onPress={() => openVideo(video)}
                 accessibilityLabel={`${video.title}, ${video.category}${video.durationSeconds ? `, ${formatDuration(video.durationSeconds)}` : ''}${video.captionsUrl ? ', con subtítulos' : ''}`}

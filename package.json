@@ -11,8 +11,7 @@
     "build:preview": "eas build --profile preview --platform android",
     "test": "jest",
     "verify:bundle": "expo export --platform android --output-dir .expo-export-check && node -e \"require('fs').rmSync('.expo-export-check',{recursive:true,force:true})\"",
-    "test:sql": "scripts/testMigrations.sh",
-    "capturas": "scripts/capturas.sh"
+    "test:sql": "scripts/testMigrations.sh"
   },
   "dependencies": {
     "@expo-google-fonts/poppins": "^0.4.1",

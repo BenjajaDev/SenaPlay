@@ -65,6 +65,3 @@ ai_module/data/models/*
 # `python data/download_datasets.py --dataset lsch-kaggle`; sus landmarks sí van.
 ai_module/data/raw/lsch_kaggle/
 .expo-export-check/
-
-# Capturas generadas con scripts/capturas.sh (se adjuntan a la tesis, no al repo)
-capturas/

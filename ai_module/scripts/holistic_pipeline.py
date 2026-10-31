@@ -23,7 +23,7 @@ import numpy as np
 from preprocessing import extraction
 from preprocessing.augmentation import permutacion_espejo_pose
 from preprocessing.extraction import frames_a_secuencia
-from preprocessing.normalization import a_matriz_base, normalizar
+from preprocessing.normalization import _forma_local, a_matriz_base, normalizar
 from preprocessing.resampling import remuestrear
 from preprocessing.spec import (
     GRUPOS_CARA_V1, MANO_BASE_MEDIO, MANO_MUNECA, N_CARA_TOTAL, N_MANO, N_POSE_TOTAL,
@@ -104,6 +104,16 @@ def secuencia_a_matriz(frames: list[dict]) -> np.ndarray:
 
 def frame_a_vector(frame: dict) -> np.ndarray:
     return secuencia_a_matriz([frame])[0]
+
+
+def _normalizar_forma_mano(mano: np.ndarray) -> np.ndarray:
+    """
+    Forma de UNA mano (21×3) centrada en la muñeca y escalada por muñeca→base
+    del dedo medio, aplanada a 63 valores. API legada que usa
+    scripts/generar_negativos.py; es el mismo marco local de la versión 1.0.
+    """
+    manos = np.asarray(mano, dtype=np.float32)[None, None]   # (1, 1, 21, 3)
+    return _forma_local(manos)[0, 0].reshape(-1).astype(np.float32)
 
 
 def presencia_manos(frame: dict) -> tuple[bool, bool]:

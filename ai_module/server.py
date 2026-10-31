@@ -10,6 +10,10 @@ Ofrece:
 Cómo iniciar:
     uvicorn server:app --host 0.0.0.0 --port 8000 --reload
 
+La configuración (modelo dinámico activo, rutas de los modelos y límites de
+entrada) se lee del entorno y se valida al arrancar: ver inferencia/ajustes.py.
+Si no es válida, el servidor no arranca y dice por qué.
+
 En producción corre en Hugging Face Spaces con el Dockerfile de esta carpeta
 (ver docs/05-despliegue.md).
 
@@ -19,16 +23,18 @@ conecte al servidor a través de la red local (WiFi compartida).
 
 import base64
 import json
+import logging
 import os
 import tempfile
 from contextlib import asynccontextmanager
 
 import numpy as np
-from fastapi import FastAPI, HTTPException
+from fastapi import APIRouter, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import Optional
 
+from inferencia.ajustes import Ajustes, AjustesInvalidos, cargar_ajustes
 from model.predict import CLASE_SIN_SEÑA
 from scripts.dataset_config_utils import cargar_config
 from scripts.extract_landmarks import _extraer_video
@@ -42,26 +48,7 @@ from scripts.holistic_pipeline import (
     secuencia_a_matriz,
 )
 
-@asynccontextmanager
-async def _ciclo_de_vida(_app):
-    # En el despliegue (PRECARGAR_MODELOS=1, ver Dockerfile) los modelos se
-    # cargan al arrancar: si no, la primera seña de cada arranque espera varios
-    # segundos y la app la da por perdida (timeout de 2,5 s del estático).
-    if os.environ.get("PRECARGAR_MODELOS") == "1":
-        _obtener_modelo_estatico()
-        _obtener_modelo_dinamico()
-    yield
-
-
-app = FastAPI(title="SeñaPlay IA de Señas", version="0.3.0", lifespan=_ciclo_de_vida)
-
-# Permitir peticiones desde cualquier origen (WebView de React Native incluida)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+logger = logging.getLogger("senaplay.ia")
 
 # ── Carga inicial de datos de referencia ──────────────────────────────────────
 
@@ -76,35 +63,64 @@ with open(_RUTA_REFERENCIA, "r", encoding="utf-8") as _archivo:
         if not clave.startswith("_")
     }
 
-# Los modelos se cargan solo cuando se necesitan para no bloquear el arranque
-_modelo_estatico = None
-_modelo_dinamico = None
+
+def _configurar_log() -> None:
+    """
+    Uvicorn configura sus propios loggers, no el raíz: sin esto, los avisos de
+    arranque de `senaplay.*` no se verían. Si el raíz ya tiene handlers (pytest,
+    otro servidor), se respetan.
+    """
+    raiz = logging.getLogger("senaplay")
+    if raiz.handlers or logging.getLogger().handlers:
+        return
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(levelname)s:     %(name)s - %(message)s"))
+    raiz.addHandler(handler)
+    raiz.setLevel(logging.INFO)
 
 
-def _obtener_modelo_estatico():
+def _cargar_modelo_dinamico(ajustes: Ajustes):
+    from model.predict import ClasificadorDinamico
+    return ClasificadorDinamico(str(ajustes.ruta_modelo_dinamico))
+
+
+def _obtener_modelo_estatico(app: FastAPI):
     """Carga el clasificador estático (RandomForest) si aún no está en memoria."""
-    global _modelo_estatico
-    if _modelo_estatico is None:
+    if app.state.modelo_estatico is None:
         try:
             from model.predict import ClasificadorEstatico
-            ruta = os.path.join(_DIRECTORIO, "models_saved", "estatico.pkl")
-            _modelo_estatico = ClasificadorEstatico(ruta)
-        except Exception as e:
-            print(f"[IA] No se pudo cargar el modelo estático: {e}")
-    return _modelo_estatico
+            app.state.modelo_estatico = ClasificadorEstatico(
+                str(app.state.ajustes.ruta_modelo_estatico))
+        except Exception:
+            logger.exception("No se pudo cargar el modelo estático")
+    return app.state.modelo_estatico
 
 
-def _obtener_modelo_dinamico():
-    """Carga el clasificador dinámico (TCN) si aún no está en memoria."""
-    global _modelo_dinamico
-    if _modelo_dinamico is None:
-        try:
-            from model.predict import ClasificadorDinamico
-            ruta = os.path.join(_DIRECTORIO, "data", "models", "dinamico_tcn.pt")
-            _modelo_dinamico = ClasificadorDinamico(ruta)
-        except Exception as e:
-            print(f"[IA] No se pudo cargar el modelo dinámico: {e}")
-    return _modelo_dinamico
+def _modelo_dinamico(request: Request):
+    modelo = getattr(request.app.state, "modelo_dinamico", None)
+    if modelo is None:
+        raise HTTPException(503, "Modelo dinámico no disponible.")
+    return modelo
+
+
+@asynccontextmanager
+async def _ciclo_de_vida(app: FastAPI):
+    _configurar_log()
+    try:
+        ajustes = app.state.ajustes_fijos or cargar_ajustes()
+    except AjustesInvalidos as error:
+        logger.critical("%s", error)
+        raise
+    app.state.ajustes = ajustes
+    app.state.modelo_estatico = None
+    # El dinámico se carga siempre al arrancar: si el archivo no corresponde al
+    # modelo configurado, es mejor que el servidor no arranque.
+    app.state.modelo_dinamico = _cargar_modelo_dinamico(ajustes)
+    logger.info("Modelo dinámico activo: %s (%s)", ajustes.modelo_dinamico,
+                ajustes.ruta_modelo_dinamico)
+    if ajustes.precargar_modelos:
+        _obtener_modelo_estatico(app)
+    yield
 
 
 # ── Esquemas de entrada/salida (Pydantic) ─────────────────────────────────────
@@ -116,11 +132,10 @@ class FrameMano(BaseModel):
 
 
 class SecuenciaMano(BaseModel):
-    # Para señas con movimiento: N frames YA VECTORIZADOS con
-    # scripts.holistic_pipeline.frame_a_vector (manos + pose superior + cara
-    # reducida, 527 valores/frame) — NO landmarks crudos de mano. La app
-    # todavía no arma este vector en vivo (ver ai_module/README.md); este
-    # endpoint queda listo para cuando el WebView capture holístico también.
+    # Para señas con movimiento: N frames YA VECTORIZADOS en el formato 1.0
+    # (manos + pose superior + cara reducida, 527 valores/frame; ver
+    # docs/ai/feature_spec.md) — NO landmarks crudos de mano. La app todavía no
+    # arma este vector en vivo (ver ai_module/README.md).
     frames: list[list[float]]
     fps: Optional[float] = 15.0  # Cuadros por segundo de la captura
 
@@ -128,8 +143,8 @@ class SecuenciaMano(BaseModel):
 class VideoSena(BaseModel):
     # Clip corto grabado en el WebView (MediaRecorder) con la misma cámara que
     # ya usa el visor de manos. Se procesa con el mismo pipeline Python que
-    # generó el dataset de entrenamiento (holistic_pipeline / extract_landmarks),
-    # así que no hay riesgo de desajuste entre captura en vivo y entrenamiento.
+    # generó el dataset de entrenamiento, así que no hay riesgo de desajuste
+    # entre captura en vivo y entrenamiento.
     video_base64: str
     mime: str = "video/webm"
 
@@ -164,18 +179,21 @@ HUESOS_POR_DEDO = {
 
 # ── Rutas del servidor ────────────────────────────────────────────────────────
 
-@app.get("/")
-def inicio():
+rutas = APIRouter()
+
+
+@rutas.get("/")
+def inicio(request: Request):
     """Estado general del servidor y modelos."""
     return {
         "app": "SeñaPlay IA de Señas",
-        "modelo_estatico_listo": _obtener_modelo_estatico() is not None,
-        "modelo_dinamico_listo": _obtener_modelo_dinamico() is not None,
+        "modelo_estatico_listo": _obtener_modelo_estatico(request.app) is not None,
+        "modelo_dinamico_listo": getattr(request.app.state, "modelo_dinamico", None) is not None,
         "total_señas": len(SEÑAS_REFERENCIA),
     }
 
 
-@app.get("/señas")
+@rutas.get("/señas")
 def listar_señas():
     """Lista todas las señas disponibles con sus metadatos (sin landmarks)."""
     return [
@@ -190,7 +208,7 @@ def listar_señas():
     ]
 
 
-@app.get("/seña/{seña_id}")
+@rutas.get("/seña/{seña_id}")
 def obtener_seña(seña_id: str):
     """Devuelve una seña con todos sus landmarks de referencia."""
     if seña_id not in SEÑAS_REFERENCIA:
@@ -198,14 +216,14 @@ def obtener_seña(seña_id: str):
     return SEÑAS_REFERENCIA[seña_id]
 
 
-@app.post("/clasificar")
-def clasificar_seña_estatica(req: FrameMano):
+@rutas.post("/clasificar")
+def clasificar_seña_estatica(req: FrameMano, request: Request):
     """
     Clasifica una seña estática a partir de 21 landmarks CRUDOS de MediaPipe.
     (A diferencia de /comparar, que usa poses de referencia en coordenadas world.)
     Requiere haber entrenado el modelo: python model/train_static.py
     """
-    modelo = _obtener_modelo_estatico()
+    modelo = _obtener_modelo_estatico(request.app)
     if modelo is None:
         raise HTTPException(
             503,
@@ -218,41 +236,27 @@ def clasificar_seña_estatica(req: FrameMano):
     return {"seña": seña, "confianza": round(float(confianza), 4)}
 
 
-@app.post("/clasificar_secuencia")
-def clasificar_seña_dinamica(req: SecuenciaMano):
+@rutas.post("/clasificar_secuencia")
+def clasificar_seña_dinamica(req: SecuenciaMano, request: Request):
     """
     Clasifica una seña con movimiento a partir de una secuencia de vectores
-    holísticos (ver SecuenciaMano). Requiere haber entrenado el modelo:
-    python scripts/train_model.py
+    holísticos (ver SecuenciaMano).
     """
-    modelo = _obtener_modelo_dinamico()
-    if modelo is None:
-        raise HTTPException(
-            503,
-            "Modelo dinámico no disponible. "
-            "Primero entrénalo ejecutando: python scripts/train_model.py"
-        )
-
+    modelo = _modelo_dinamico(request)
     frames = np.array(req.frames, dtype=np.float32)
     seña, confianza = modelo.predecir(frames)
     return {"seña": seña, "confianza": round(float(confianza), 4)}
 
 
-@app.post("/clasificar_video")
-def clasificar_seña_video(req: VideoSena):
+@rutas.post("/clasificar_video")
+def clasificar_seña_video(req: VideoSena, request: Request):
     """
     Clasifica una seña con movimiento a partir de un clip de video (grabado en
     el WebView). Extrae los landmarks holísticos con el mismo pipeline que
     generó el dataset de entrenamiento (scripts.extract_landmarks) y clasifica
-    con el modelo dinámico. Requiere haberlo entrenado: python scripts/train_model.py
+    con el modelo dinámico.
     """
-    modelo = _obtener_modelo_dinamico()
-    if modelo is None:
-        raise HTTPException(
-            503,
-            "Modelo dinámico no disponible. "
-            "Primero entrénalo ejecutando: python scripts/train_model.py"
-        )
+    modelo = _modelo_dinamico(request)
 
     sufijo = ".webm" if "webm" in req.mime else ".mp4"
     ruta_temp = None
@@ -311,8 +315,8 @@ def _movimiento_muñecas(matriz: np.ndarray) -> float | None:
     return float(np.ptp(muñecas, axis=0).max())
 
 
-@app.post("/clasificar_frames")
-def clasificar_tramo_movimiento(req: TramoMovimiento):
+@rutas.post("/clasificar_frames")
+def clasificar_tramo_movimiento(req: TramoMovimiento, request: Request):
     """
     Clasifica con el modelo dinámico un tramo de movimiento capturado en vivo
     como cuadros JPEG. Usa el mismo pipeline holístico que generó el dataset
@@ -322,9 +326,7 @@ def clasificar_tramo_movimiento(req: TramoMovimiento):
     """
     import cv2
 
-    modelo = _obtener_modelo_dinamico()
-    if modelo is None:
-        raise HTTPException(503, "Modelo dinámico no disponible.")
+    modelo = _modelo_dinamico(request)
     if not req.frames:
         raise HTTPException(422, "El tramo no trae cuadros")
 
@@ -386,7 +388,7 @@ def _respuesta_dinamica(modelo, matriz: np.ndarray, stats: dict) -> dict:
     }
 
 
-@app.post("/comparar")
+@rutas.post("/comparar")
 def comparar_con_referencia(req: SolicitudComparacion):
     """
     Compara los landmarks actuales del usuario con la pose de referencia de una seña.
@@ -405,6 +407,30 @@ def comparar_con_referencia(req: SolicitudComparacion):
         raise HTTPException(422, "Se esperan exactamente 21 landmarks con [x, y, z] cada uno")
 
     return _calcular_similitud(landmarks_usuario, landmarks_referencia)
+
+
+# ── Aplicación ────────────────────────────────────────────────────────────────
+
+def crear_app(ajustes: Ajustes | None = None) -> FastAPI:
+    """
+    Arma la aplicación. Sin `ajustes`, se leen del entorno al arrancar; las
+    pruebas pasan los suyos.
+    """
+    aplicacion = FastAPI(title="SeñaPlay IA de Señas", version="0.4.0",
+                         lifespan=_ciclo_de_vida)
+    aplicacion.state.ajustes_fijos = ajustes
+    # Permitir peticiones desde cualquier origen (WebView de React Native incluida)
+    aplicacion.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    aplicacion.include_router(rutas)
+    return aplicacion
+
+
+app = crear_app()
 
 
 # ── Funciones de cálculo de similitud ─────────────────────────────────────────

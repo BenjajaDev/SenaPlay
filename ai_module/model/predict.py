@@ -156,20 +156,6 @@ class ClasificadorDinamico:
                              f"llegó {matriz.shape}")
         return self._ranking(self._preprocesador.desde_vectores_v1(matriz))
 
-    def probabilidades(self, secuencia_features: np.ndarray) -> list[tuple[str, float]]:
-        """API legada de server.py: igual que `ranking_vectores_v1`."""
-        return self.ranking_vectores_v1(secuencia_features)
-
-    def predecir(self, secuencia_features: np.ndarray) -> tuple[str, float]:
-        """(nombre, confianza) de la clase más probable, desde vectores (N, 527)."""
-        nombre, confianza = self.ranking_vectores_v1(secuencia_features)[0]
-        return nombre, float(confianza)
-
-    def predecir_cruda(self, secuencia: SecuenciaCruda) -> tuple[str, float]:
-        """(nombre, confianza) de la clase más probable, desde una SecuenciaCruda."""
-        nombre, confianza = self.ranking(secuencia)[0]
-        return nombre, float(confianza)
-
     def describir(self) -> str:
         return (f"{self.meta['arquitectura'].upper()} (features {self.spec.version}, "
                 f"T={self.spec.T}, entrada {self.spec.dim_entrada}). Clases: {self._etiquetas}")

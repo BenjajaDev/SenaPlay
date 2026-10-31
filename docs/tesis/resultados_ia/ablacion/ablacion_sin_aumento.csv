@@ -1,0 +1,4 @@
+arquitectura,f1_macro_con_aumento_media,f1_macro_con_aumento_de,f1_macro_sin_aumento_media,f1_macro_sin_aumento_de,accuracy_con_aumento_media,accuracy_sin_aumento_media,dif_con_menos_sin_media,dif_de,dif_min,dif_max,con_gana_entrenamientos,entrenamientos,con_gana_pliegues,pliegues,epocas_mejor_media_con,epocas_mejor_media_sin
+TCN,0.6272,0.0773,0.6562,0.0722,0.6481,0.6672,-0.029,0.0696,-0.1077,0.1077,4,15,2,5,34.6667,42.9333
+LSTM,0.585,0.095,0.5654,0.0645,0.6057,0.5786,0.0196,0.0809,-0.0634,0.1978,7,15,3,5,41.1333,38.5333
+GRU,0.6312,0.0661,0.607,0.0617,0.6421,0.6258,0.0242,0.0752,-0.07,0.1751,8,15,4,5,41.8667,27.0

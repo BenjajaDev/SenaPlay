@@ -103,8 +103,11 @@ def cargar_signers(ruta: str) -> dict[str, dict]:
     faltan = {"video_path", "signer_id"} - set(df.columns)
     if faltan:
         raise ValueError(f"{ruta} no tiene las columnas {sorted(faltan)}")
-    return {fila["video_path"]: fila for fila in df.to_dict("records")
-            if fila.get("signer_id", "").strip()}
+    # La clave del manifiesto siempre usa '/'. Un signers.csv escrito a mano en
+    # Windows puede traer '\'; sin normalizar, la fila no calza y el señante se
+    # tomaría en silencio del nombre del archivo.
+    return {fila["video_path"].replace("\\", "/"): fila
+            for fila in df.to_dict("records") if fila.get("signer_id", "").strip()}
 
 
 def resolver_signer(video: Video, signers: dict[str, dict], patron: re.Pattern) -> dict | None:

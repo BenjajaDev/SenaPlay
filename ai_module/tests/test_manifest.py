@@ -94,3 +94,16 @@ def test_signers_csv_tiene_prioridad(tmp_path):
     df = generar_manifiesto(cfg, extractor=_extractor(1.0), verbose=False)
     assert df.loc[0, ["signer_id", "session_id", "device"]].tolist() == ["p07", "s2", "iPhone 13"]
     assert np.isclose(float(df.loc[0, "duration_s"]), 0.667)
+
+
+def test_signers_csv_con_barras_invertidas(tmp_path):
+    # signers.csv escrito a mano en Windows: «raw\X\X_ana_01.mp4». Debe calzar con la
+    # clave del manifiesto (siempre con '/') y no caer al señante del nombre («ana»).
+    _video(tmp_path, "X/X_ana_01.mp4")
+    cfg = _cfg(tmp_path)
+    video_path = relativa(str(tmp_path / "raw" / "X" / "X_ana_01.mp4"))
+    pd.DataFrame([{"video_path": video_path.replace("/", "\\"), "sign_class": "X",
+                   "signer_id": "p07", "session_id": "s2", "device": ""}]
+                 ).to_csv(tmp_path / "signers.csv", index=False)
+    df = generar_manifiesto(cfg, extractor=_extractor(1.0), verbose=False)
+    assert df.loc[0, "signer_id"] == "p07"

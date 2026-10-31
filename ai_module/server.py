@@ -21,7 +21,6 @@ Usar 0.0.0.0 en lugar de localhost permite que el celular
 conecte al servidor a través de la red local (WiFi compartida).
 """
 
-import base64
 import json
 import logging
 import os
@@ -39,10 +38,14 @@ from inferencia import barreras, entrada
 from inferencia.ajustes import Ajustes, AjustesInvalidos, cargar_ajustes
 from inferencia.modelos import cargar_modelo_dinamico
 from inferencia.puerto import ModeloDinamico
+from inferencia.respuestas import (
+    RespuestaDinamica,
+    RespuestaEstatica,
+    respuesta_dinamica,
+    respuesta_estatica,
+)
 from preprocessing import extraction
 from preprocessing.extraction import SecuenciaCruda
-from scripts.extract_landmarks import _extraer_video
-from scripts.holistic_pipeline import POSE_MUÑECA_DER, POSE_MUÑECA_IZQ, SLICE_POSE
 
 logger = logging.getLogger("senaplay.ia")
 
@@ -225,7 +228,7 @@ def obtener_seña(seña_id: str):
     return SEÑAS_REFERENCIA[seña_id]
 
 
-@rutas.post("/clasificar")
+@rutas.post("/clasificar", response_model=RespuestaEstatica)
 def clasificar_seña_estatica(req: FrameMano, request: Request):
     """
     Clasifica una seña estática a partir de 21 landmarks CRUDOS de MediaPipe.
@@ -246,15 +249,15 @@ def clasificar_seña_estatica(req: FrameMano, request: Request):
         landmarks = None
     if landmarks is None or landmarks.shape != (21, 3):
         raise HTTPException(422, "Se esperan exactamente 21 landmarks con [x, y, z] cada uno")
-    seña, confianza = modelo.predecir(landmarks)
-    return {"seña": seña, "confianza": round(float(confianza), 4)}
+    return respuesta_estatica(*modelo.predecir(landmarks))
 
 
-@rutas.post("/clasificar_secuencia")
+@rutas.post("/clasificar_secuencia", response_model=RespuestaEstatica)
 def clasificar_seña_dinamica(req: SecuenciaMano, request: Request):
     """
     Clasifica una seña con movimiento a partir de una secuencia de vectores
-    holísticos (ver SecuenciaMano).
+    holísticos en formato 1.0 (ver SecuenciaMano). Sin barreras de rechazo:
+    con vectores ya normalizados no hay landmarks crudos para calcularlas.
     """
     modelo = _modelo_dinamico(request)
     maximo = request.app.state.ajustes.max_cuadros_tramo
@@ -264,34 +267,32 @@ def clasificar_seña_dinamica(req: SecuenciaMano, request: Request):
         seña, confianza = modelo.ranking_vectores_v1(np.array(req.frames, dtype=np.float32))[0]
     except ValueError as e:  # filas de distinto largo, ancho ≠ 527 o secuencia vacía
         raise HTTPException(422, str(e))
-    return {"seña": seña, "confianza": round(float(confianza), 4)}
+    return respuesta_estatica(seña, confianza)
 
 
-@rutas.post("/clasificar_video")
+@rutas.post("/clasificar_video", response_model=RespuestaDinamica)
 def clasificar_seña_video(req: VideoSena, request: Request):
     """
     Clasifica una seña con movimiento a partir de un clip de video (grabado en
-    el WebView). Extrae los landmarks holísticos con el mismo pipeline que
-    generó el dataset de entrenamiento (scripts.extract_landmarks) y clasifica
-    con el modelo dinámico.
+    el WebView). Extrae los landmarks con el mismo módulo que generó el dataset
+    de entrenamiento (preprocessing.extraction), con los parámetros de MediaPipe
+    del modelo activo, y responde igual que /clasificar_frames.
     """
     modelo = _modelo_dinamico(request)
+    ajustes = request.app.state.ajustes
 
-    datos, sufijo = entrada.validar_video(req.video_base64, req.mime,
-                                          request.app.state.ajustes.max_bytes_video)
+    datos, sufijo = entrada.validar_video(req.video_base64, req.mime, ajustes.max_bytes_video)
     ruta_temp = None
     try:
         with tempfile.NamedTemporaryFile(suffix=sufijo, delete=False) as archivo_temp:
             archivo_temp.write(datos)
             ruta_temp = archivo_temp.name
-
-        cfg_extraccion = modelo.cfg_extraccion
-        matriz, stats = _extraer_video(
-            ruta_temp,
-            fps_muestreo=cfg_extraccion["fps_muestreo"],
-            confianza_deteccion=cfg_extraccion["confianza_deteccion"],
-            confianza_landmarks=cfg_extraccion["confianza_landmarks"],
-        )
+        # Sin ffprobe: no se ejecuta un programa externo sobre un archivo del cliente.
+        cruda = extraction.extraer_video(ruta_temp, modelo.cfg_extraccion, con_dispositivo=False,
+                                         max_cuadros=ajustes.max_cuadros_video)
+    except extraction.DemasiadosCuadros as error:
+        raise entrada.EntradaInvalida(
+            413, f"El video tiene más de {error.maximo} cuadros; el máximo es {error.maximo}")
     except Exception:
         # El detalle (que puede traer la ruta del archivo temporal) va al log, no al cliente.
         logger.warning("No se pudo procesar el video", exc_info=True)
@@ -300,50 +301,23 @@ def clasificar_seña_video(req: VideoSena, request: Request):
         if ruta_temp and os.path.exists(ruta_temp):
             os.remove(ruta_temp)
 
-    if matriz.shape[0] == 0:
+    if len(cruda) == 0:
         raise HTTPException(422, "No se detectaron frames válidos en el video")
 
-    return _respuesta_dinamica(modelo, matriz, stats)
+    return _respuesta_dinamica(modelo, cruda)
 
 
-# Por debajo de esta fracción de cuadros con mano, el tramo no se clasifica:
-# el TCN rellenaría la seña con ceros y respondería cualquier cosa.
-RATIO_MIN_CON_MANO = 0.3
-
-# Desplazamiento mínimo de la muñeca más activa (en anchos de hombro, marco
-# corporal de holistic_pipeline) para considerar el tramo una seña dinámica.
-# En el dataset real el mínimo es ~0.09 (J/G) y la mediana 0.3–1.0; la mano
-# quieta o un cambio entre letras estáticas quedan bajo ~0.05. Es una barrera
-# determinista que complementa a la clase "ninguna" del TCN, que con un
-# dataset tan chico todavía deja pasar parte de esos tramos.
-MOVIMIENTO_MIN_MUÑECA = 0.08
-# Si la pose (hombros) se ve en menos de esta fracción de cuadros, no hay marco
-# corporal fiable para medir el desplazamiento y decide solo el TCN.
-RATIO_MIN_CON_POSE = 0.5
-
-
-def _movimiento_muñecas(matriz: np.ndarray) -> float | None:
-    """
-    Rango máximo (x/y) recorrido por la muñeca más activa en el marco corporal,
-    o None si la pose casi no se detectó (cuadro muy cerrado sobre la cara).
-    """
-    T = len(matriz)
-    pose = matriz[:, SLICE_POSE].reshape(T, -1, 3)
-    con_pose = np.abs(pose).sum(axis=(1, 2)) > 0
-    if T == 0 or con_pose.mean() < RATIO_MIN_CON_POSE:
-        return None
-    muñecas = pose[con_pose][:, [POSE_MUÑECA_IZQ, POSE_MUÑECA_DER], :2]  # (T', 2, 2)
-    return float(np.ptp(muñecas, axis=0).max())
-
-
-@rutas.post("/clasificar_frames")
+@rutas.post("/clasificar_frames", response_model=RespuestaDinamica)
 def clasificar_tramo_movimiento(req: TramoMovimiento, request: Request):
     """
     Clasifica con el modelo dinámico un tramo de movimiento capturado en vivo
     como cuadros JPEG. Los pasa por MediaPipe con los parámetros con que se
-    extrajo el dataset del modelo activo (preprocessing.extraction). `es_seña` es False cuando el modelo responde su clase de
-    rechazo («ninguna», si la tiene) o casi no hubo mano en cuadro: la app lo trata
-    como "no era una seña con movimiento" y sigue con el modelo estático.
+    extrajo el dataset del modelo activo (preprocessing.extraction).
+
+    `es_seña` es False cuando el tramo no pasa una barrera (`motivo`): casi no
+    hubo mano en cuadro, la mano no se movió, o el modelo respondió su clase de
+    rechazo («ninguna», solo si la tiene). La app lo trata como "no era una
+    seña con movimiento" y sigue con el modelo estático.
     """
     modelo = _modelo_dinamico(request)
     ajustes = request.app.state.ajustes
@@ -352,63 +326,18 @@ def clasificar_tramo_movimiento(req: TramoMovimiento, request: Request):
     cuadros = entrada.decodificar_cuadros(jpegs)
 
     cruda = extraction.extraer_cuadros(cuadros, req.fps, modelo.cfg_extraccion)
-    return _respuesta_cruda(modelo, cruda)
+    return _respuesta_dinamica(modelo, cruda)
 
 
-def _respuesta_cruda(modelo: ModeloDinamico, cruda: SecuenciaCruda) -> dict:
+def _respuesta_dinamica(modelo: ModeloDinamico, cruda: SecuenciaCruda) -> RespuestaDinamica:
     """
-    Respuesta común de los endpoints dinámicos: mejor clase + alternativas, y
-    si el tramo cuenta como seña dinámica (`es_seña`, con `motivo` si no). Las
-    barreras se calculan sobre los landmarks crudos (inferencia/barreras.py).
+    Respuesta común de los endpoints dinámicos: mejor clase + las 2
+    alternativas siguientes, y las barreras de rechazo calculadas sobre los
+    landmarks crudos (inferencia/barreras.py).
     """
     ranking = modelo.ranking(cruda)
-    seña, confianza = ranking[0]
-    evaluacion = barreras.evaluar(cruda, seña, modelo.clase_rechazo)
-    movimiento = evaluacion.movimiento_muñeca
-    return {
-        "seña": seña,
-        "confianza": round(float(confianza), 4),
-        "es_seña": evaluacion.es_seña,
-        "motivo": evaluacion.motivo,
-        "alternativas": [
-            {"seña": s, "confianza": round(float(p), 4)} for s, p in ranking[1:3]
-        ],
-        "movimiento_muñeca": None if movimiento is None else round(movimiento, 3),
-        "frames_procesados": len(cruda),
-        "ratio_con_mano": evaluacion.ratio_con_mano,
-    }
-
-
-def _respuesta_dinamica(modelo, matriz: np.ndarray, stats: dict) -> dict:
-    """
-    Respuesta común de los endpoints dinámicos: mejor clase + alternativas, y
-    si el tramo cuenta como seña dinámica (`es_seña`, con `motivo` si no).
-    """
-    ranking = modelo.ranking_vectores_v1(matriz)
-    seña, confianza = ranking[0]
-    movimiento = _movimiento_muñecas(matriz)
-
-    motivo = None
-    if stats["ratio_con_mano"] < RATIO_MIN_CON_MANO:
-        motivo = "sin_mano"
-    elif movimiento is not None and movimiento < MOVIMIENTO_MIN_MUÑECA:
-        motivo = "poco_movimiento"
-    elif modelo.clase_rechazo is not None and seña == modelo.clase_rechazo:
-        # Solo si el modelo tiene clase de rechazo: la LSTM no la tiene.
-        motivo = "modelo_sin_seña"
-
-    return {
-        "seña": seña,
-        "confianza": round(float(confianza), 4),
-        "es_seña": motivo is None,
-        "motivo": motivo,
-        "alternativas": [
-            {"seña": s, "confianza": round(float(p), 4)} for s, p in ranking[1:3]
-        ],
-        "movimiento_muñeca": None if movimiento is None else round(movimiento, 3),
-        "frames_procesados": stats["frames"],
-        "ratio_con_mano": stats["ratio_con_mano"],
-    }
+    evaluacion = barreras.evaluar(cruda, ranking[0][0], modelo.clase_rechazo)
+    return respuesta_dinamica(ranking, evaluacion, len(cruda))
 
 
 @rutas.post("/comparar")

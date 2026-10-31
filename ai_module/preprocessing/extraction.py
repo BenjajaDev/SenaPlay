@@ -190,8 +190,20 @@ def extraer_cuadros(cuadros: Sequence[tuple[int, np.ndarray]], fps: float,
     return frames_a_secuencia(frames, fps, {"origen": "cuadros", "fps_fuente": fps})
 
 
-def metadatos_video(ruta_video: str) -> dict:
-    """fps, número de frames y duración según OpenCV, más el dispositivo si ffprobe lo informa."""
+class DemasiadosCuadros(ValueError):
+    """El video tiene más cuadros muestreados que `max_cuadros`; la extracción se cortó."""
+
+    def __init__(self, maximo: int):
+        super().__init__(f"El video tiene más de {maximo} cuadros muestreados")
+        self.maximo = maximo
+
+
+def metadatos_video(ruta_video: str, con_dispositivo: bool = True) -> dict:
+    """
+    fps, número de frames y duración según OpenCV, más el dispositivo si
+    ffprobe lo informa. Con `con_dispositivo=False` no se ejecuta ffprobe (el
+    servidor no lo corre sobre archivos que mandan los clientes).
+    """
     import cv2
 
     cap = cv2.VideoCapture(ruta_video)
@@ -204,7 +216,7 @@ def metadatos_video(ruta_video: str) -> dict:
         "fps_fuente": round(fps, 3),
         "n_frames_fuente": n_frames,
         "duracion_s": round(n_frames / fps, 3) if fps > 0 else 0.0,
-        "dispositivo": _dispositivo_ffprobe(ruta_video),
+        "dispositivo": _dispositivo_ffprobe(ruta_video) if con_dispositivo else "",
     }
 
 
@@ -224,22 +236,29 @@ def _dispositivo_ffprobe(ruta_video: str) -> str:
     return " ".join(p for p in (marca, modelo) if p).strip()
 
 
-def extraer_video(ruta_video: str, cfg_extraccion: dict) -> SecuenciaCruda:
+def extraer_video(ruta_video: str, cfg_extraccion: Mapping[str, float],
+                  con_dispositivo: bool = True, max_cuadros: int | None = None) -> SecuenciaCruda:
     """
     Recorre el video completo y devuelve sus landmarks crudos. Igual que el
     pipeline legado: si el video tiene más fps que `fps_muestreo` se saltan
     frames intermedios (paso = round(fps_fuente / fps_muestreo)).
+
+    `con_dispositivo=False` evita ffprobe (ver `metadatos_video`). Con
+    `max_cuadros`, lanza DemasiadosCuadros en cuanto el video pasa ese número
+    de cuadros muestreados, sin procesar el resto: así un video largo no
+    consume CPU de MediaPipe más allá del tope. Los valores por defecto dejan
+    la extracción del dataset como estaba.
     """
     import cv2
 
     fps_muestreo = float(cfg_extraccion.get("fps_muestreo", 30))
-    info = metadatos_video(ruta_video)
+    info = metadatos_video(ruta_video, con_dispositivo=con_dispositivo)
     cap = cv2.VideoCapture(ruta_video)
     fps_fuente = info["fps_fuente"] or fps_muestreo
     paso = max(1, round(fps_fuente / fps_muestreo))
     paso_ms = int(1000 / fps_muestreo)
 
-    detector = crear_detector(cfg_extraccion, modo_video=True)
+    detector = crear_detector(dict(cfg_extraccion), modo_video=True)
     frames, indice, ts_ms, leidos = [], 0, 0, 0
     try:
         while True:
@@ -248,6 +267,8 @@ def extraer_video(ruta_video: str, cfg_extraccion: dict) -> SecuenciaCruda:
                 break
             leidos += 1
             if indice % paso == 0:
+                if max_cuadros is not None and len(frames) >= max_cuadros:
+                    raise DemasiadosCuadros(max_cuadros)
                 frames.append(detectar_frame(detector, frame, ts_ms))
                 ts_ms += paso_ms
             indice += 1

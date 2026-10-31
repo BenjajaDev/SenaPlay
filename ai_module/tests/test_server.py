@@ -71,29 +71,70 @@ def test_clasificar_secuencia_forma_invalida_da_422(cliente, frames):
     assert isinstance(r.json()["detail"], str)
 
 
-def _video_sintetico(monkeypatch, semilla: int):
-    seq = secuencia_sintetica(semilla % 6, semilla % 5, np.random.default_rng(semilla))
-    matriz = a_matriz_base(normalizar(seq, FeatureSpec.v1()))
-    stats = {"frames": len(seq), "ratio_con_mano": round(1 - seq.ratio_sin_manos(), 3)}
-    monkeypatch.setattr(server, "_extraer_video", lambda ruta, **_: (matriz, stats))
-    return seq, stats
+def mp4_b64(directorio, cuadros: int, fps: float = 30.0) -> str:
+    """MP4 sintético (gris, sin personas) codificado en base64."""
+    import cv2
+
+    ruta = str(directorio / f"sintetico_{cuadros}_{fps:g}.mp4")
+    escritor = cv2.VideoWriter(ruta, cv2.VideoWriter_fourcc(*"mp4v"), fps, (64, 48))
+    for i in range(cuadros):
+        escritor.write(np.full((48, 64, 3), (i * 7) % 255, np.uint8))
+    escritor.release()
+    with open(ruta, "rb") as f:
+        return base64.b64encode(f.read()).decode()
 
 
-def test_clasificar_video_mantiene_el_contrato(cliente, modo, monkeypatch):
-    for semilla in range(6):
-        seq, stats = _video_sintetico(monkeypatch, semilla)
-        video = base64.b64encode(b"no es un video real").decode()
-        r = cliente.post("/clasificar_video", json={"video_base64": video, "mime": "video/webm"})
-        assert r.status_code == 200
+@pytest.fixture
+def sin_ffprobe(monkeypatch):
+    """Falla si el servidor intenta ejecutar ffprobe sobre el video del cliente."""
+    import preprocessing.extraction as extraction
+
+    def _prohibido(_ruta):
+        raise AssertionError("el servidor no debe ejecutar ffprobe")
+
+    monkeypatch.setattr(extraction, "_dispositivo_ffprobe", _prohibido)
+
+
+def test_clasificar_video_mantiene_el_contrato(cliente, modo, monkeypatch, tmp_path, sin_ffprobe):
+    from inferencia.barreras import ratio_con_mano
+
+    for semilla in range(4):
+        seq = secuencia_sintetica(semilla % 6, semilla % 5, np.random.default_rng(semilla))
+        deteccion_desde(monkeypatch, seq)
+        video = mp4_b64(tmp_path, len(seq))
+        r = cliente.post("/clasificar_video", json={"video_base64": video, "mime": "video/mp4"})
+        assert r.status_code == 200, r.text
         cuerpo = r.json()
         assert set(cuerpo) == CLAVES_DINAMICA
         assert cuerpo["motivo"] in MOTIVOS and cuerpo["es_seña"] == (cuerpo["motivo"] is None)
         assert len(cuerpo["alternativas"]) == 2
         assert all(set(a) == {"seña", "confianza"} for a in cuerpo["alternativas"])
         assert cuerpo["frames_procesados"] == len(seq)
-        assert cuerpo["ratio_con_mano"] == stats["ratio_con_mano"]
+        assert cuerpo["ratio_con_mano"] == ratio_con_mano(seq)
         if modo == "lstm":
             assert cuerpo["motivo"] != "modelo_sin_seña"
+
+
+def test_video_sobre_el_tope_de_cuadros_da_413(monkeypatch, tmp_path, sin_ffprobe):
+    seq = secuencia_sintetica(0, 0, np.random.default_rng(0))
+    timestamps = deteccion_desde(monkeypatch, seq)
+    video = mp4_b64(tmp_path, 20)
+    with TestClient(server.crear_app(cargar_ajustes(max_cuadros_video=10))) as c:
+        r = c.post("/clasificar_video", json={"video_base64": video, "mime": "video/mp4"})
+        assert r.status_code == 413
+        assert r.json() == {"detail": "El video tiene más de 10 cuadros; el máximo es 10"}
+        assert len(timestamps) == 10            # se cortó: MediaPipe no vio el resto
+        timestamps.clear()
+        r = c.post("/clasificar_video", json={"video_base64": mp4_b64(tmp_path, 10), "mime": "video/mp4"})
+        assert r.status_code == 200 and r.json()["frames_procesados"] == 10
+
+
+def test_video_a_60_fps_se_submuestrea(cliente, monkeypatch, tmp_path, sin_ffprobe):
+    seq = secuencia_sintetica(1, 1, np.random.default_rng(1))
+    deteccion_desde(monkeypatch, seq)
+    r = cliente.post("/clasificar_video", json={"video_base64": mp4_b64(tmp_path, 40, fps=60),
+                                                "mime": "video/mp4"})
+    assert r.status_code == 200 and r.json()["frames_procesados"] == 20   # paso 2
 
 
 def _jpeg_b64() -> str:

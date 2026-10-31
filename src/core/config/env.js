@@ -12,7 +12,7 @@ export const env = Object.freeze({
   supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://zjpsvtufseqbpfavepap.supabase.co',
   supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_XU2l9g-EZf9qNN3AI_gBQQ_FGVJu2n_',
   // Servidor de IA (ai_module/server.py). En desarrollo es la IP LAN del PC.
-  aiServerUrl: process.env.EXPO_PUBLIC_AI_SERVER_URL || 'http://192.168.1.5:8000',
+  aiServerUrl: process.env.EXPO_PUBLIC_AI_SERVER_URL || 'http://192.168.1.12:8000',
   appVersion: appJson.expo.version,
   storagePrefix: 'senaplay',
 });

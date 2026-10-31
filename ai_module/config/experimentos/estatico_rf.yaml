@@ -18,7 +18,13 @@ datos:
 
 modelo: rf                                        # rf | svm (model/train_static.construir_pipeline)
 aumento:
-  n_aug: 4                                        # igual que el valor por defecto de train_static.py
+  # Este n_aug lo lee SOLO training/eval_static.py (26 letras, solo Roboflow;
+  # también vía training/run_all.py). Era el valor por defecto de
+  # model/train_static.py cuando se corrió esa evaluación; hoy el defecto es 8.
+  # training/eval_static_produccion.py (21 letras, cifras de la Tabla 29 de la
+  # tesis) toma de este archivo solo `datos`: su n_aug sale de --aug, que por
+  # defecto vale N_AUG_PRODUCCION = 8, igual que el modelo de producción.
+  n_aug: 4
 
 validacion:
   esquema: grupo_imagen_fuente

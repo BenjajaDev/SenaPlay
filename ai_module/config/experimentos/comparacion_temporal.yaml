@@ -1,0 +1,49 @@
+# Experimento principal del Capítulo IV: TCN vs LSTM vs GRU en señas dinámicas,
+# con validación independiente del señante.
+#
+#   cd ai_module
+#   python -m training.run_all --experimento config/experimentos/comparacion_temporal.yaml
+nombre: comparacion_temporal
+
+datos:
+  manifiesto: data/manifest.csv
+  config_manifiesto: config/datos/manifest.yaml   # de aquí sale la ruta de los .npz
+  clases: null          # null = todas las clases `dynamic` con estado ok del manifiesto
+  min_muestras_clase: 5
+
+preprocesamiento: config/preprocesamiento/features.yaml
+aumento: config/preprocesamiento/aumento.yaml
+modelos:
+  - config/modelos/tcn.yaml
+  - config/modelos/lstm.yaml
+  - config/modelos/gru.yaml
+
+validacion:
+  esquema: kfold          # kfold (StratifiedGroupKFold) | loso (Leave-One-Signer-Out, también con --loso)
+  n_pliegues: 5
+  n_signers_validacion: 3 # signers del entrenamiento reservados para la detención temprana
+  semilla_particion: 42   # las mismas particiones para las tres arquitecturas y todas las semillas
+
+entrenamiento:
+  semillas: [0, 1, 2]
+  optimizador:
+    nombre: adamw
+    lr: 0.001
+    weight_decay: 0.01
+  batch_size: 16
+  max_epocas: 150
+  paciencia: 20           # épocas sin mejorar el F1 macro de validación
+  pesos_clase: auto       # auto (si max/min > umbral) | siempre | nunca
+  umbral_desbalance: 1.5
+  clip_grad: 1.0
+  hilos_torch: null       # null = valor por defecto de PyTorch
+
+latencia:
+  calentamiento: 20
+  mediciones: 200
+  hilos: 1                # CPU, batch 1: medición comparable entre arquitecturas
+  semilla: 0
+
+salidas:
+  directorio: results
+  dpi: 300

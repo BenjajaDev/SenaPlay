@@ -64,4 +64,14 @@ ai_module/data/models/*
 # Fotos de Kaggle (91 MB, licencia no declarada): se bajan con
 # `python data/download_datasets.py --dataset lsch-kaggle`; sus landmarks sí van.
 ai_module/data/raw/lsch_kaggle/
+# Manifiesto, señantes y resultados: contienen nombres de videos (datos de personas).
+# Las evidencias agregadas para la tesis se copian a docs/tesis/resultados_ia/.
+ai_module/data/manifest.csv
+ai_module/data/signers.csv
+ai_module/data/signers_template.csv
+ai_module/results/
+# Entorno virtual: sus .py marcarían cada corrida como -dirty en commit.txt
+ai_module/.venv/
 .expo-export-check/
+# ai_module: respaldos automáticos del modelo dinámico exportado
+ai_module/models_saved/historial/

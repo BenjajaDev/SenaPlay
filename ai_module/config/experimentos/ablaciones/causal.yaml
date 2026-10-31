@@ -1,0 +1,8 @@
+# Ablación de arquitectura: TCN causal y LSTM/GRU unidireccionales, con el
+# último paso temporal como resumen (escenario de clasificación en línea).
+hereda: config/experimentos/comparacion_temporal.yaml
+nombre: ablacion_causal
+ajustes_modelos:
+  tcn: {causal: true, pooling: ultimo}
+  lstm: {bidireccional: false, pooling: ultimo}
+  gru: {bidireccional: false, pooling: ultimo}

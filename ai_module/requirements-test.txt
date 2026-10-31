@@ -1,0 +1,20 @@
+# Entorno de pruebas del servidor: las versiones del despliegue
+# (requirements-server.txt) más lo que piden pytest y las pruebas de
+# entrenamiento. Así `pytest` corre contra las mismas versiones que sirve
+# Hugging Face.
+#
+#   uv venv --python 3.11 .venv
+#   uv pip install --python .venv/Scripts/python.exe \
+#       --index-strategy unsafe-best-match \
+#       --extra-index-url https://download.pytorch.org/whl/cpu -r requirements-test.txt
+#
+# No agregar opencv-python: requirements-server.txt ya trae opencv-contrib-python
+# y las dos proveen cv2.
+-r requirements-server.txt
+pytest==9.1.1
+httpx==0.28.1
+pandas==3.0.6
+matplotlib==3.11.2
+tqdm==4.70.1
+# pip: `python -m pip freeze` para entorno.json (uv no lo instala en el venv).
+pip==26.2.2

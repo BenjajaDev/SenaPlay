@@ -587,3 +587,37 @@
 .photo-picker__preview { width: 96px; height: 96px; border-radius: var(--radius-xl); object-fit: cover; background: var(--color-surface-sunken); display: grid; place-items: center; color: var(--color-text-muted); flex-shrink: 0; }
 .chip-input { display: flex; flex-wrap: wrap; gap: 6px; }
 .json-preview { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; white-space: pre-wrap; background: var(--color-surface-sunken); border-radius: var(--radius-md); padding: var(--space-3); max-height: 160px; overflow: auto; }
+
+/* ── Señas en video: lista y editor de clips ───────────────────── */
+.clip-editor { display: grid; gap: var(--space-4); grid-template-columns: minmax(0, 3fr) minmax(280px, 2fr); align-items: start; }
+@media (max-width: 960px) { .clip-editor { grid-template-columns: 1fr; } }
+.clip-editor__step { font-size: 16px; }
+
+.crop-stage { position: relative; width: 100%; max-height: 70vh; overflow: hidden; border-radius: var(--radius-md); background: var(--color-surface-sunken); touch-action: none; user-select: none; }
+.crop-stage__video { display: block; width: 100%; height: 100%; object-fit: fill; }
+/* Fuera del cuadro el video se oscurece: se ve qué queda dentro del clip. */
+.crop-box { position: absolute; box-sizing: border-box; border: 2px solid var(--color-primary); box-shadow: 0 0 0 9999px var(--color-scrim); cursor: move; }
+.crop-box:focus-visible { outline: 3px solid var(--color-focus-ring); outline-offset: 2px; }
+.crop-handle { position: absolute; right: -9px; bottom: -9px; width: 18px; height: 18px; border-radius: var(--radius-pill); background: var(--color-primary); border: 2px solid var(--color-surface-raised); cursor: nwse-resize; }
+.crop-guide { position: absolute; inset: 0 8%; pointer-events: none; border-left: 1px dashed var(--color-on-header); border-right: 1px dashed var(--color-on-header); }
+.crop-guide__head,
+.crop-guide__waist { position: absolute; left: 0; right: 0; border-top: 1px dashed var(--color-on-header); }
+.crop-guide__head { top: 6%; }
+.crop-guide__waist { top: 90%; }
+
+.timeline__track { position: relative; height: 10px; border-radius: var(--radius-pill); background: var(--color-surface-sunken); }
+.timeline__range { position: absolute; top: 0; bottom: 0; border-radius: var(--radius-pill); background: var(--color-primary-soft); border: 1px solid var(--color-primary); }
+.timeline__marker { position: absolute; top: -3px; width: 2px; height: 16px; background: var(--color-text-primary); transform: translateX(-1px); }
+.timeline__marker--key { background: var(--color-gold-deep); width: 4px; transform: translateX(-2px); }
+.timeline__slider input[type='range'] { width: 100%; accent-color: var(--color-primary); }
+
+.clip-preview { position: relative; overflow: hidden; border-radius: var(--radius-lg); background: var(--color-surface-sunken); }
+.clip-preview video { position: absolute; top: 0; left: 0; transform-origin: 0 0; max-width: none; }
+.clip-progress { width: 100%; height: 10px; accent-color: var(--color-primary); }
+.field__hint--warning { color: var(--color-warning-text); }
+
+.clip-item { display: flex; gap: var(--space-3); align-items: flex-start; padding-top: var(--space-2); border-top: 1px solid var(--color-border); }
+.clip-item__poster { flex: none; width: 72px; height: 72px; padding: 0; border: 0; border-radius: var(--radius-md); overflow: hidden; background: var(--color-surface-sunken); cursor: pointer; }
+.clip-item__poster img { width: 100%; height: 100%; object-fit: cover; }
+.clip-item__poster:focus-visible { outline: 3px solid var(--color-focus-ring); outline-offset: 2px; }
+.clip-watch { width: min(100%, 480px); aspect-ratio: 1; border-radius: var(--radius-lg); background: var(--color-surface-sunken); }

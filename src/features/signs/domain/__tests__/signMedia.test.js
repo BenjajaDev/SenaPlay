@@ -1,3 +1,4 @@
+import { MVP_CLIP_CATALOG } from '../clipCatalog';
 import { groupClipsByKey, isPlayableClip, isValidSignKey, resolveSignMedia, toSignKey } from '../signMedia';
 
 const clip = (overrides = {}) => ({
@@ -101,5 +102,14 @@ describe('resolveSignMedia', () => {
   test('sin clip ni foto muestra el placeholder con la clave en mayúsculas', () => {
     expect(resolveSignMedia({ signKey: 'tos' })).toEqual({ kind: 'placeholder', label: 'TOS' });
     expect(resolveSignMedia({ signKey: 'tos', label: '' })).toEqual({ kind: 'placeholder', label: '' });
+  });
+});
+
+describe('MVP_CLIP_CATALOG', () => {
+  test('tiene las 31 glosas del catálogo sanitario, cada una con clave válida y única', () => {
+    const keys = MVP_CLIP_CATALOG.map((entry) => toSignKey(entry.gloss));
+    expect(MVP_CLIP_CATALOG).toHaveLength(31);
+    expect(keys.every(isValidSignKey)).toBe(true);
+    expect(new Set(keys).size).toBe(31);
   });
 });

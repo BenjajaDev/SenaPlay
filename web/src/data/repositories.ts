@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ExerciseFactory, toUserMessage } from '@/lib/domain';
+import { ExerciseFactory, isValidSignKey, SIGN_CLIP_LIMITS, toSignKey, toUserMessage, validateClipEdit, type ClipEdit } from '@/lib/domain';
 import { builtinSignSlide, isSafeImageUrl } from '@/lib/signs';
 import { cleanSocials } from '@/lib/social';
 import type {
@@ -24,6 +24,10 @@ import type {
   Role,
   SectionItem,
   SectionKey,
+  SignClip,
+  SignClipLicense,
+  SignClipRow,
+  SignClipStatus,
   SignSlide,
   SiteIconKey,
   TeamMember,
@@ -188,6 +192,160 @@ export function createMediaRepository(client: SupabaseClient) {
     async remove(item: MediaItem) {
       await run(client.from('media').delete().eq('id', item.id), 'No se pudo eliminar el recurso.');
       await client.storage.from(MEDIA_BUCKET).remove([item.storage_path]);
+    },
+  };
+}
+
+// ── Señas en video ───────────────────────────────────────────────────
+export const SIGN_CLIPS_BUCKET = 'sign-clips';
+
+/** Archivos ya exportados por el editor (ver features/admin/content/signClips). */
+export type ExportedClip = { video: Blob; poster: Blob; durationMs: number; size: number };
+
+export type NewSignClip = ExportedClip & {
+  gloss: string;
+  variant: number;
+  region: string;
+  signerAlias: string;
+  consentRef: string;
+  license: SignClipLicense;
+  edit: ClipEdit;
+};
+
+/** Siguiente variante libre de una seña (1 si no tiene clips). */
+export function nextVariant(clips: Pick<SignClipRow, 'sign_key' | 'variant'>[], signKey: string) {
+  const used = clips.filter((clip) => clip.sign_key === signKey).map((clip) => clip.variant);
+  return used.length ? Math.max(...used) + 1 : 1;
+}
+
+/**
+ * Revisa los archivos exportados antes de subirlos. La base de datos y el
+ * bucket repiten estos límites; aquí se avisa antes y en español.
+ */
+export function checkExportedClip(clip: ExportedClip, edit: ClipEdit) {
+  if (!validateClipEdit(edit).valid) throw new RepositoryError('El encuadre o el tramo no son válidos: revísalos en el editor.');
+  if (clip.video.type !== 'video/mp4') throw new RepositoryError('El video exportado debe ser MP4.');
+  if (clip.poster.type !== 'image/webp') throw new RepositoryError('La imagen fija debe ser WebP.');
+  if (clip.video.size > SIGN_CLIP_LIMITS.maxVideoBytes) throw new RepositoryError('El video supera 1,5 MB: acorta el tramo.');
+  if (clip.durationMs < SIGN_CLIP_LIMITS.minDurationMs || clip.durationMs > SIGN_CLIP_LIMITS.maxDurationMs) {
+    throw new RepositoryError('El clip debe durar entre 0,5 y 6 segundos.');
+  }
+}
+
+export function createSignClipsRepository(client: SupabaseClient) {
+  const bucket = () => client.storage.from(SIGN_CLIPS_BUCKET);
+  const withUrls = (row: SignClipRow): SignClip => ({
+    ...row,
+    video_url: bucket().getPublicUrl(row.video_path).data.publicUrl,
+    poster_url: bucket().getPublicUrl(row.poster_path).data.publicUrl,
+  });
+
+  /** Sube video e imagen; si algo falla, borra lo que alcanzó a subir. */
+  const uploadFiles = async (signKey: string, variant: number, clip: ExportedClip) => {
+    const id = crypto.randomUUID();
+    const paths = { video: `${signKey}/${variant}-${id}.mp4`, poster: `${signKey}/${variant}-${id}.webp` };
+    const uploaded: string[] = [];
+    try {
+      for (const [path, file] of [
+        [paths.video, clip.video],
+        [paths.poster, clip.poster],
+      ] as const) {
+        const { error } = await bucket().upload(path, file, { contentType: file.type, upsert: false });
+        if (error) throw new RepositoryError(toUserMessage(error, 'No se pudo subir el clip.'));
+        uploaded.push(path);
+      }
+      return paths;
+    } catch (error) {
+      if (uploaded.length) await bucket().remove(uploaded);
+      throw error;
+    }
+  };
+
+  return {
+    async list(): Promise<SignClip[]> {
+      const rows = await run<SignClipRow[]>(
+        client.from('sign_clips').select('*').order('sign_key').order('variant'),
+        'No se pudieron cargar los clips.',
+      );
+      return (rows || []).map(withUrls);
+    },
+
+    /** Sube un clip nuevo como borrador. */
+    async create(input: NewSignClip): Promise<void> {
+      const signKey = toSignKey(input.gloss);
+      if (!isValidSignKey(signKey)) throw new RepositoryError('La glosa no tiene letras válidas.');
+      if (!input.signerAlias.trim()) throw new RepositoryError('Indica quién seña (seudónimo).');
+      if (!input.consentRef.trim()) throw new RepositoryError('Falta la referencia al consentimiento firmado.');
+      checkExportedClip(input, input.edit);
+
+      const paths = await uploadFiles(signKey, input.variant, input);
+      try {
+        await run(
+          client.from('sign_clips').insert({
+            sign_key: signKey,
+            gloss: input.gloss.trim(),
+            variant: input.variant,
+            region: input.region.trim() || 'general',
+            video_path: paths.video,
+            poster_path: paths.poster,
+            duration_ms: Math.round(input.durationMs),
+            width: input.size,
+            height: input.size,
+            size_bytes: input.video.size,
+            signer_alias: input.signerAlias.trim(),
+            consent_ref: input.consentRef.trim(),
+            license: input.license,
+            edit_params: input.edit,
+          }),
+          'No se pudo registrar el clip.',
+        );
+      } catch (error) {
+        await bucket().remove([paths.video, paths.poster]);
+        throw error;
+      }
+    },
+
+    /** Reemplaza video, imagen y encuadre. La base de datos lo devuelve a borrador. */
+    async replaceMedia(clip: SignClipRow, exported: ExportedClip, edit: ClipEdit): Promise<void> {
+      checkExportedClip(exported, edit);
+      const paths = await uploadFiles(clip.sign_key, clip.variant, exported);
+      try {
+        await run(
+          client
+            .from('sign_clips')
+            .update({
+              video_path: paths.video,
+              poster_path: paths.poster,
+              duration_ms: Math.round(exported.durationMs),
+              width: exported.size,
+              height: exported.size,
+              size_bytes: exported.video.size,
+              edit_params: edit,
+            })
+            .eq('id', clip.id),
+          'No se pudo reemplazar el clip.',
+        );
+      } catch (error) {
+        await bucket().remove([paths.video, paths.poster]);
+        throw error;
+      }
+      await bucket().remove([clip.video_path, clip.poster_path]);
+    },
+
+    async setStatus(id: string, status: SignClipStatus, notes?: string): Promise<void> {
+      if (status === 'rejected' && !notes?.trim()) throw new RepositoryError('Explica por qué se rechaza el clip.');
+      const patch: Partial<SignClipRow> = { validation_status: status };
+      if (notes !== undefined) patch.validation_notes = notes.trim() || null;
+      await run(client.from('sign_clips').update(patch).eq('id', id), 'No se pudo cambiar el estado del clip.');
+    },
+
+    async setPublished(id: string, published: boolean): Promise<void> {
+      await run(client.from('sign_clips').update({ published }).eq('id', id), 'No se pudo cambiar la publicación del clip.');
+    },
+
+    async remove(clip: SignClipRow): Promise<void> {
+      await run(client.from('sign_clips').delete().eq('id', clip.id), 'No se pudo eliminar el clip.');
+      await bucket().remove([clip.video_path, clip.poster_path]);
     },
   };
 }
@@ -728,6 +886,7 @@ export function createStatsRepository(client: SupabaseClient) {
 export type Repositories = {
   content: ReturnType<typeof createContentRepository>;
   media: ReturnType<typeof createMediaRepository>;
+  signClips: ReturnType<typeof createSignClipsRepository>;
   config: ReturnType<typeof createConfigRepository>;
   users: ReturnType<typeof createUsersRepository>;
   account: ReturnType<typeof createAccountRepository>;
@@ -740,6 +899,7 @@ export function createRepositories(client: SupabaseClient): Repositories {
   return {
     content: createContentRepository(client),
     media: createMediaRepository(client),
+    signClips: createSignClipsRepository(client),
     config: createConfigRepository(client),
     users: createUsersRepository(client),
     account: createAccountRepository(client),

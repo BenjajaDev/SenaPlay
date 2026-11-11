@@ -1,5 +1,6 @@
 import {
   BookOpen,
+  Clapperboard,
   Film,
   Flag,
   HeartHandshake,
@@ -43,6 +44,7 @@ const SECTIONS: { label: string; items: NavItem[] }[] = [
       { to: '/admin/levels', label: 'Niveles y ejercicios', icon: Layers },
       { to: '/admin/dictionary', label: 'Diccionario', icon: Type },
       { to: '/admin/vocabulary', label: 'Vocabulario', icon: BookOpen },
+      { to: '/admin/sign-clips', label: 'Señas en video', icon: Clapperboard },
       { to: '/admin/media', label: 'Medios', icon: Film },
     ],
   },

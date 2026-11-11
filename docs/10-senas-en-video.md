@@ -1,6 +1,6 @@
 # Señas en video (clips con movimiento)
 
-**Estado:** decisiones aprobadas (sección 9). Fase 2 implementada: migración `20261111000100_sign_clips.sql`, dominio (`signs/domain/signMedia.js` y `clipEdit.js`), `SignClipsRepository` y flag `signs.clips`. Pendientes: Fases 3 y 4.
+**Estado:** decisiones aprobadas (sección 9). Fases 2 y 3 implementadas: migración `20261111000100_sign_clips.sql`, dominio (`signs/domain/`), `SignClipsRepository`, flag `signs.clips`, reproductor `SignClip` en la app y página «Señas en video» con el editor en el panel. Pendientes: aplicar la migración en Supabase, generar el dev client con `expo-video`, el aviso en el editor de niveles (sección 7) y la Fase 4.
 
 **Problema.** `SignImage` muestra fotos fijas. Sirve para el alfabeto estático, pero no para las señas del catálogo sanitario (`docs/ai/catalogo_sanitario_propuesto.md`): DOLOR, AYUDA, DESDE o AYER se definen por su movimiento. Hay que mostrarlas en video dentro de los niveles, el diccionario y los juegos, sin romper tres reglas del proyecto:
 
@@ -211,28 +211,28 @@ Reproductor: **`expo-video` (`~57.0.5`)**. Es un módulo nativo, así que exige 
 
 ```
 ┌──────────────────────────┐
+│ ▣ Con movimiento         │  ← insignia: icono + texto (texto desde 160 px)
 │                          │
 │   imagen fija (WebP)     │  ← lo que se ve al entrar: nada se mueve
-│         ▶                │  ← botón «Ver seña» (≥ 44 px)
+│          ( ▶ )           │  ← botón «Ver la seña…» de 56 px
 │                          │
-│ ⟳ con movimiento         │  ← insignia: icono + texto
 └──────────────────────────┘
-  [ 1× | 0,5× ]   [ ⟲ Repetir ]
+     [ Lento ]  [ Repetir ]     ← fuera de la caja: no tapan la mano
 ```
 
-| Aspecto | Comportamiento |
+| Aspecto | Comportamiento implementado |
 |---|---|
-| Inicio | Muestra la imagen fija. **Nunca se reproduce solo**, tampoco al volver a la pantalla. |
-| Reproducir | Al tocar, reproduce una vez sin audio y vuelve a la imagen fija. |
-| Velocidad | `SegmentedControl` 1× / 0,5×. La preferencia se guarda con `jsonStorage` (`storageKey('signClip', 'v1', userId)`). |
-| Repetir | Interruptor de bucle, apagado por defecto. Se apaga al salir de la seña. |
-| Movimiento reducido | Con `useReducedMotion()` se reproduce igual (el video es el contenido, no decoración), pero el bucle no se ofrece y la transición imagen-video es instantánea. |
-| Tamaños | **≥ 160 px** (enunciado del ejercicio, `SignDetailModal`): reproductor completo. **< 160 px** (fichas de emparejar, memoria, `SignStrip`): solo la imagen fija y la insignia; mantener presionado (el mismo gesto de la pista en `OptionTile`) abre el reproductor en un diálogo. Así nunca hay varios videos a la vez en una grilla. |
-| Accesibilidad | `accessibilityRole="button"`, etiqueta «Seña DOLOR, video de 3 segundos», `accessibilityState={{ busy }}` mientras carga, y `announce('Reproduciendo seña DOLOR')`. La descripción textual (`how_to`) se ofrece como alternativa. |
-| Carga | Skeleton del tamaño de la caja; sin spinner sin texto. |
-| Error | Vuelve a la imagen fija con aviso «No se pudo cargar el video» y botón «Reintentar». Sin imagen fija, muestra el placeholder actual. La respuesta del ejercicio nunca queda bloqueada. |
+| Inicio | Muestra la imagen fija. **Nunca se reproduce solo**, tampoco al volver a la pantalla. El video no se descarga hasta el primer toque. |
+| Reproducir | Al tocar, reproduce una vez sin audio y vuelve a la imagen fija. Tocar mientras corre lo detiene. |
+| Velocidad | Chip «Lento» (0,5×). Es una preferencia del dispositivo, compartida por todos los clips (`useSlowMotion`, `storageKey('signClip.slowMotion', 'v1')`). |
+| Repetir | Chip de bucle, apagado por defecto y propio de cada clip. |
+| Movimiento reducido | Con `useReducedMotion()` el video se reproduce igual (es el contenido, no un adorno), pero «Repetir» no se ofrece. El cambio imagen-video es instantáneo en todos los casos: el componente no agrega animaciones. |
+| Tamaños | **≥ 120 px** (`CLIP_PLAYER_MIN_SIZE`: enunciados, quiz, `SignDetailModal`): reproductor. **< 120 px** (emparejar, memoria, grillas del diccionario): solo la imagen fija con un icono de video; el clip se ve al abrir el detalle. Se descartó abrirlo con mantener presionado porque ese gesto ya es la pista. Así nunca hay varios videos a la vez en una grilla. |
+| Accesibilidad | Botón «Ver la seña DOLOR en movimiento» / «Detener la seña DOLOR», pista «Video de 2,8 segundos, sin sonido», `accessibilityState={{ busy }}` al cargar. El nombre es la glosa del clip, no la abreviatura del placeholder. Con caja chica: imagen «Seña de DOLOR, con movimiento». |
+| Carga | Indicador dentro del botón de reproducir mientras se descarga. |
+| Error | Vuelve a la imagen fija, muestra «No se pudo cargar el video. Toca para reintentar.» (icono y texto), lo anuncia al lector de pantalla y el botón pasa a reintentar. La respuesta del ejercicio nunca queda bloqueada. |
 | Sin conexión | `useCaching: true` de `expo-video`: un clip ya visto queda disponible. Precargar los clips del nivel al entrar queda como mejora posterior. |
-| Tokens | Solo `theme.*`; insignia y controles con componentes de `shared/ui`. Revisar en modo claro y oscuro. |
+| Tokens | Solo `theme.*` y `Chip`/`AppText` de `shared/ui`. |
 
 `SignImage` no cambia su API: por dentro llama a `resolveSignMedia` y, si el resultado es `clip`, delega en `SignClip` (o en la imagen fija con insignia, si la caja es chica). Las pantallas que ya usan `SignImage` (ejercicios, diccionario, juegos, progreso) reciben los clips sin cambios.
 
@@ -242,7 +242,7 @@ Reproductor: **`expo-video` (`~57.0.5`)**. Es un módulo nativo, así que exige 
 
 **No hacen falta tipos de ejercicio nuevos.** `word-meaning` («¿Qué significa esta seña?»), `true-false` con `sign` y `recognition` ya reciben claves de seña: basta con que el nivel use `dolor` en vez de una letra. Si después se necesita un ejercicio «mira el video y elige la seña correcta entre imágenes», se agrega con la receta de `senaplay-frontend`.
 
-El editor de niveles del panel debería avisar cuando un ejercicio usa una clave sin clip publicado ni foto: es un aviso, no un bloqueo, porque se muestra el placeholder.
+**Pendiente:** el editor de niveles del panel debería avisar cuando un ejercicio usa una clave sin clip publicado ni foto. Es un aviso, no un bloqueo, porque se muestra el placeholder.
 
 ---
 

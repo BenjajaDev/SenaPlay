@@ -70,6 +70,8 @@ flowchart LR
 | Feedback | `Dialog` (base), `ConfirmDialog`, `MessageDialog` (con presets), `Toast`, `BottomSheet`, `FeedbackProvider` → `confirm()`, `runBlocking()`, `notify()`, `showMessage()` |
 | Movimiento | `FadeInView`, `StaggerItem`, `animations` (`shake`, `pulse`, `popIn`, `fadeTo`, `breathe`) |
 
+Las señas se muestran siempre con `SignImage` (`features/signs/presentation`): elige clip, foto o placeholder. Si hay clip, `SignClip` muestra la imagen fija y reproduce solo al tocar, sin sonido, con «Lento» y «Repetir». Detalle en [10](10-senas-en-video.md).
+
 ## 7.5 Accesibilidad
 
 - **Feedback multimodal:** cada resultado combina color, icono, texto, vibración (`haptics`) y anuncio al lector de pantalla (`announce`). La app no depende del audio.

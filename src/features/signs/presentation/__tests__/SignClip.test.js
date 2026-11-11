@@ -113,6 +113,51 @@ describe('SignClip', () => {
     announce.mockRestore();
   });
 
+  test('con red lenta el botón queda ocupado y no acepta otro toque', async () => {
+    await render(wrap(<SignClip clip={DOLOR} label="DOLOR" size={190} />));
+    let finishDownload;
+    lastPlayer().replaceAsync.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishDownload = resolve;
+        }),
+    );
+    await act(async () => {
+      fireEvent.press(playButton());
+    });
+
+    expect(playButton().props.accessibilityState).toEqual(expect.objectContaining({ busy: true, disabled: true }));
+    await act(async () => {
+      fireEvent.press(playButton());
+    });
+    expect(lastPlayer().replaceAsync).toHaveBeenCalledTimes(1);
+
+    await act(async () => finishDownload());
+    expect(lastPlayer().play).toHaveBeenCalledTimes(1);
+  });
+
+  test('si la seña cambia mientras descarga, no reproduce el video anterior', async () => {
+    const TOS = { ...DOLOR, id: 'c2', signKey: 'tos', gloss: 'TOS', videoUrl: 'https://storage.test/sign-clips/tos/1-a.mp4' };
+    const view = await render(wrap(<SignClip clip={DOLOR} label="DOLOR" size={190} />));
+    let finishDownload;
+    lastPlayer().replaceAsync.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishDownload = resolve;
+        }),
+    );
+    await act(async () => {
+      fireEvent.press(playButton());
+    });
+    await view.rerender(wrap(<SignClip clip={TOS} label="TOS" size={190} />));
+    await act(async () => finishDownload());
+
+    expect(lastPlayer().play).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Ver la seña TOS en movimiento' }).props.accessibilityState).toEqual(
+      expect.objectContaining({ busy: false }),
+    );
+  });
+
   test('en una caja chica solo muestra la imagen fija con «con movimiento», sin reproductor', async () => {
     await render(wrap(<SignClip clip={DOLOR} label="DOLOR" size={72} />));
     expect(screen.getByRole('image', { name: 'Seña de DOLOR, con movimiento' })).toBeTruthy();

@@ -14,6 +14,13 @@ export const SIGN_CLIP_LIMITS = Object.freeze({
   maxVideoBytes: 1500000,
 });
 
+/**
+ * Claves con foto empaquetada en la app (signs/data/local/signAssets.js).
+ * Se repiten aquí porque el panel no puede importar los PNG; una prueba
+ * compara ambas listas para que no diverjan.
+ */
+export const PHOTO_SIGN_KEYS = Object.freeze([...'abcdefghijklmnopqrstuvwxyz'.split(''), 'ñ', 'n~']);
+
 const SIGN_KEY_PATTERN = /^[a-z0-9ñ~]+(-[a-z0-9ñ~]+)*$/;
 const HTTP_URL_PATTERN = /^https?:\/\/[^\s"'<>]+$/i;
 
@@ -85,4 +92,16 @@ export function resolveSignMedia({ signKey, clipsByKey = {}, stills = [], clipsE
   if (Array.isArray(stills) && stills.length > 0) return { kind: 'still', sources: stills };
   const text = label !== undefined ? label : String(signKey ?? '').toLocaleUpperCase('es');
   return { kind: 'placeholder', label: text };
+}
+
+/**
+ * Señas de la lista que no tienen clip publicado ni foto: en la app se verán
+ * como placeholder. Sirve para avisar en el editor de niveles (no bloquea).
+ * Devuelve las claves tal como vienen, sin repetir.
+ */
+export function missingSignMedia(signKeys, { clipKeys = [], photoKeys = PHOTO_SIGN_KEYS } = {}) {
+  const clips = new Set(clipKeys);
+  const photos = new Set(photoKeys);
+  const keys = (Array.isArray(signKeys) ? signKeys : []).map((key) => String(key ?? '').trim()).filter(Boolean);
+  return [...new Set(keys)].filter((key) => !clips.has(toSignKey(key)) && !photos.has(key.toLocaleLowerCase('es')));
 }

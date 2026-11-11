@@ -56,6 +56,9 @@ const SIGN_IMAGES = {
   // uno: [require('../../assets/signs/uno.png')],
 };
 
+/** Claves con foto. El dominio repite la lista (PHOTO_SIGN_KEYS) y una prueba las compara. */
+export const SIGN_IMAGE_KEYS = Object.freeze(Object.keys(SIGN_IMAGES));
+
 /** Normaliza una clave de seña al formato del registro. */
 export function normalizeSignKey(value) {
   return String(value || '').trim().toLocaleLowerCase('es');

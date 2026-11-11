@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useRepositories } from '@/data/RepositoriesProvider';
 import type { ExerciseDraft, Level } from '@/data/types';
 import { LEVEL_CATEGORIES } from '@/lib/domain';
+import { useResource } from '@/lib/useResource';
 import { Button, Card, EmptyState, PageHeader, SelectField, SkeletonRows, Switch, TextArea, TextField, useFeedback } from '@/ui';
 import { ExerciseEditor } from './ExerciseEditor';
 
@@ -18,7 +19,7 @@ export function LevelEditorPage() {
   const params = useParams();
   const [search] = useSearchParams();
   const navigate = useNavigate();
-  const { content } = useRepositories();
+  const { content, signClips } = useRepositories();
   const { confirm, notify } = useFeedback();
   const isNew = params.id === undefined;
 
@@ -56,6 +57,12 @@ export function LevelEditorPage() {
   }, [dirty]);
 
   const validation = useMemo(() => content.validateExercises(exercises), [content, exercises]);
+  // Solo para avisar de señas sin material: si no cargan, no se avisa nada.
+  const clips = useResource(() => signClips.list(), [signClips]);
+  const clipKeys = useMemo(
+    () => (clips.data ? clips.data.filter((clip) => clip.published).map((clip) => clip.sign_key) : null),
+    [clips.data],
+  );
   const invalidCount = validation.filter((item) => !item.valid).length;
   const levelErrors = { title: level.title.trim() ? null : 'El nivel necesita un título.', id: level.id > 0 ? null : 'Usa un número positivo.' };
 
@@ -163,6 +170,7 @@ export function LevelEditorPage() {
               index={index}
               total={exercises.length}
               error={validation[index]?.error || null}
+              clipKeys={clipKeys}
               onChange={(next) => updateExercises((prev) => prev.map((item, i) => (i === index ? next : item)))}
               onMove={(direction) => move(index, direction)}
               onDuplicate={() => updateExercises((prev) => [...prev.slice(0, index + 1), structuredClone(exercise), ...prev.slice(index + 1)])}

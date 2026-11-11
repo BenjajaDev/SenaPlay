@@ -94,3 +94,4 @@ export const moveCrop = clipEdit.moveCrop as (crop: CropSquare, dx: number, dy: 
 export const resizeCrop = clipEdit.resizeCrop as (crop: CropSquare, delta: number, source: ClipSource) => CropSquare;
 export const snapToFrame = clipEdit.snapToFrame as (ms: number, frameRate?: number) => number;
 export const validateClipEdit = clipEdit.validateClipEdit as (edit: ClipEdit) => ClipEditValidation;
+export const missingSignMedia = signMedia.missingSignMedia as (signKeys: unknown, options?: { clipKeys?: string[] }) => string[];

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ExportedClip } from '@/data/repositories';
 import type { ClipEdit, ClipSource } from '@/lib/domain';
-import { checkExportSupport, exportClip, isCanceled, loadMediabunny, readSource, type ExportHandle } from './clipExport';
+import { checkExportSupport, ClipExportError, exportClip, isCanceled, loadMediabunny, readSource, type ExportHandle } from './clipExport';
 
 type Mediabunny = Awaited<ReturnType<typeof loadMediabunny>>;
 
@@ -44,7 +44,10 @@ export function useClipExport(file: File | null) {
     if (!mb || !file || unsupported) return undefined;
     readSource(mb, file)
       .then((value) => mounted && setSource(value))
-      .catch(() => mounted && setSourceError('No se pudo leer el video. Prueba con un MP4, MOV o WebM.'));
+      .catch((error: unknown) => {
+        if (!mounted) return;
+        setSourceError(error instanceof ClipExportError ? error.message : 'No se pudo leer el video. Prueba con un MP4, MOV o WebM.');
+      });
     return () => {
       mounted = false;
     };

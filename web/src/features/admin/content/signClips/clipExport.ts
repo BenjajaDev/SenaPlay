@@ -54,12 +54,25 @@ export async function checkExportSupport(mb: Mediabunny): Promise<string | null>
 
 const openInput = (mb: Mediabunny, file: Blob) => new mb.Input({ source: new mb.BlobSource(file), formats: mb.ALL_FORMATS });
 
+/**
+ * Mensaje cuando el navegador no puede leer el video. El caso común es HEVC,
+ * el formato por defecto del iPhone: Chrome solo lo decodifica si el equipo
+ * tiene soporte de hardware, y muchos Windows y Linux no lo tienen.
+ */
+export function undecodableMessage(codec: string | null) {
+  if (codec === 'hevc') {
+    return 'Este video está en HEVC (el formato habitual del iPhone) y este navegador no puede leerlo. Grábalo en el iPhone con Ajustes > Cámara > Formatos > «Más compatible», o edítalo con Chrome en un Mac, que sí lo lee.';
+  }
+  return 'Este navegador no puede leer el formato de este video. Prueba con un MP4 grabado en «Más compatible» (H.264).';
+}
+
 /** Tamaño (ya rotado, como se ve) y duración del video original. */
 export async function readSource(mb: Mediabunny, file: Blob): Promise<ClipSource> {
   const input = openInput(mb, file);
   try {
     const track = await input.getPrimaryVideoTrack();
     if (!track) throw new ClipExportError('El archivo no tiene una pista de video.');
+    if (!(await track.canDecode())) throw new ClipExportError(undecodableMessage(track.codec));
     const seconds = await input.computeDuration();
     return { width: track.displayWidth, height: track.displayHeight, durationMs: Math.round(seconds * 1000) };
   } finally {

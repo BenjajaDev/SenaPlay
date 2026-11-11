@@ -38,6 +38,7 @@ export const DEFAULT_FLAGS = Object.freeze({
   'videos.enabled': true,
   'feedback.haptics': true,
   'levels.celebration': true,
+  'signs.clips': true,
 });
 
 /** Compara versiones semver simples ('1.2.10' > '1.2.9'). */

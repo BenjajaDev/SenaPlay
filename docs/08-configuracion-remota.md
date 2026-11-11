@@ -46,6 +46,7 @@ Si Supabase no responde se usa la última configuración guardada. Si no existe 
 | `videos.enabled` | pestaña Videos |
 | `feedback.haptics` | vibración global (se combina con la preferencia del usuario) |
 | `levels.celebration` | confeti al completar un nivel |
+| `signs.clips` | señas en video; apagado, la app vuelve a las fotos fijas (ver [10](10-senas-en-video.md)) |
 | `events.*` | eventos temporales: se crean desde el panel con fechas de inicio y fin |
 
 **Evaluación** (`evaluateFlags`): `enabled` **y** dentro de la ventana `[starts_at, ends_at]` **y** `rolloutBucket(key, userId) < rollout_percentage`. El bucket es un hash FNV‑1a estable, así que el mismo usuario siempre cae en el mismo grupo.

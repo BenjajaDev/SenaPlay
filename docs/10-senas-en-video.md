@@ -1,6 +1,6 @@
 # Señas en video (clips con movimiento)
 
-**Estado:** Fase 1, diseño. Propuesta sin implementar; espera aprobación de las decisiones de la sección 9.
+**Estado:** decisiones aprobadas (sección 9). Fase 2 implementada: migración `20261111000100_sign_clips.sql`, dominio (`signs/domain/signMedia.js` y `clipEdit.js`), `SignClipsRepository` y flag `signs.clips`. Pendientes: Fases 3 y 4.
 
 **Problema.** `SignImage` muestra fotos fijas. Sirve para el alfabeto estático, pero no para las señas del catálogo sanitario (`docs/ai/catalogo_sanitario_propuesto.md`): DOLOR, AYUDA, DESDE o AYER se definen por su movimiento. Hay que mostrarlas en video dentro de los niveles, el diccionario y los juegos, sin romper tres reglas del proyecto:
 
@@ -39,8 +39,8 @@ erDiagram
         text gloss "DOLOR, MÉDICO / DOCTOR"
         smallint variant "1, 2… por seña"
         text region "general | biobio | …"
-        text video_path "sign-clips/<clave>/<variante>-<uuid>.mp4"
-        text poster_path "sign-clips/<clave>/<variante>-<uuid>.webp"
+        text video_path "<clave>/<variante>-<uuid>.mp4 (dentro del bucket)"
+        text poster_path "<clave>/<variante>-<uuid>.webp (dentro del bucket)"
         int duration_ms
         int width
         int height
@@ -65,7 +65,7 @@ Restricciones (todas en la migración, no solo en el panel):
 - `check (sign_key ~ '^[a-z0-9ñ~]+(-[a-z0-9ñ~]+)*$')`.
 - `check (duration_ms between 500 and 6000)`, `check (size_bytes <= 1500000)` y `check (width = height)`.
 - `check (not published or validation_status = 'validated')`: nada sin validar llega a la app.
-- Disparador `before update`: solo `is_admin()` puede pasar a `validated` o `rejected` y publicar; al validar se rellenan `validated_by = auth.uid()` y `validated_at = now()`. El staff sube y edita borradores.
+- Disparador `guard_sign_clip` (`before insert or update`): solo `is_admin()` puede validar, rechazar o publicar; el staff sube borradores, los envía a revisión y puede despublicar. Al validar se rellenan `validated_by = auth.uid()` y `validated_at = now()`. Si cambia el video, la imagen, el encuadre o la clave de un clip validado o rechazado, vuelve a borrador y se despublica. Como `guard_profile_role`, no aplica al SQL Editor ni al service role.
 - `edit_params` guarda cómo se exportó el clip: `{ source: { width, height, durationMs }, crop: { left, top, size }, trim: { startMs, endMs }, keyFrameMs }`. Sirve para auditar un clip publicado y para volver a exportarlo con el mismo encuadre si se cambian los parámetros de codificación.
 - `consent_ref` es obligatorio. El documento firmado **no** va al bucket público: el video muestra la cara de una persona y es un dato personal. La tabla guarda solo la referencia.
 
@@ -74,7 +74,7 @@ Restricciones (todas en la migración, no solo en el panel):
 | Operación | Política |
 |---|---|
 | `select` | `published or is_staff()` |
-| `insert`, `update` | `is_staff()` (el disparador restringe validar y publicar a `is_admin()`) |
+| `insert`, `update` | `is_staff()` (el disparador restringe validar, rechazar y publicar a `is_admin()`) |
 | `delete` | `is_admin()` |
 
 **Clave canónica (`sign_key`).** Es la glosa en minúsculas, sin tildes (la ñ se conserva), con guiones entre palabras y sin la parte después de `/`: MÉDICO / DOCTOR → `medico`, SÍ → `si`, DESDE / HACE → `desde`. La genera una función pura `toSignKey(gloss)` en el dominio, que también usarán el panel y los niveles. Es compatible con las claves que existen hoy (`a`…`z`, `ñ`, `n~`), y al quitar las tildes evita que `médico` y `medico` se tomen por señas distintas. Debe coincidir con `sign_class` de la IA pasada a minúsculas, para que un clip y una clase del modelo hablen de la misma seña.
@@ -256,7 +256,9 @@ El editor de niveles del panel debería avisar cuando un ejercicio usa una clave
 
 ---
 
-## 9. Decisiones que necesitan aprobación
+## 9. Decisiones (aprobadas el 11-11-2026)
+
+Se aprobaron las seis tal como se proponen; en la 6 se eligió no guardar el video original.
 
 1. **`expo-video` y un dev client nuevo.** La alternativa sin recompilar es reutilizar el `WebView` de `videoPlayerHtml.js`: funciona y admite 0,5×, pero carga una página por clip, no tiene caché offline controlable y en gama baja arranca más lento. Recomiendo `expo-video`.
 2. **Tabla `sign_clips` aparte de `media`.** Recomendada por las razones de la sección 2.

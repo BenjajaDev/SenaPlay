@@ -16,22 +16,14 @@
 
 | Decisión | Elegido | Descartado y por qué |
 |---|---|---|
-| Contenedor | **MP4 H.264**, `yuv420p`, sin audio, `+faststart` | **GIF:** se reproduce solo y en bucle, `Image` no lo pausa, 256 colores manchan la piel y pesa de 5 a 10 veces más. **WebM/AV1:** soporte desigual en iOS. |
+| Contenedor | **MP4 H.264**, sin audio | **GIF:** se reproduce solo y en bucle, `Image` no lo pausa, 256 colores manchan la piel y pesa de 5 a 10 veces más. **WebM/AV1:** soporte desigual en iOS. |
 | Imagen fija | **WebP** del cuadro clave (la configuración de la mano en su punto más claro), no el primer cuadro | El primer cuadro suele mostrar las manos en reposo y no identifica la seña. |
 | Encuadre | **Cuadrado 1:1, 480 × 480**, de la cintura hacia arriba, con codos y cara dentro | Coincide con la caja cuadrada de `SignImage`; la cara es parte de la seña (preguntas y negación). |
 | Fotogramas | 30 fps | 60 fps duplica el peso; con 0,5× sigue siendo legible. |
 | Duración | De 0,5 a 6 s; se recorta la pausa inicial y final | — |
 | Peso | ≤ 1,5 MB el video (objetivo 300 a 600 KB) y ≤ 150 KB la imagen | Lo exige el bucket; ver la sección 3. |
 
-Parámetros de referencia (los fija el script de la sección 5):
-
-```bash
-ffmpeg -ss <inicio> -to <fin> -i <crudo> -vf "crop=<lado>:<lado>:<x>:<y>,scale=480:480,fps=30" -c:v libx264 -profile:v main -crf 26 -preset slow -pix_fmt yuv420p -an -movflags +faststart <clave>-<variante>.mp4
-```
-
-```bash
-ffmpeg -ss <cuadro_clave> -i <clave>-<variante>.mp4 -frames:v 1 -c:v libwebp -quality 80 <clave>-<variante>.webp
-```
+Estos valores no los elige quien edita: el editor del panel (sección 5) los aplica siempre igual al exportar. Quien edita decide solo el encuadre, el tramo y el cuadro clave.
 
 ---
 
@@ -61,6 +53,7 @@ erDiagram
         timestamptz validated_at
         text validation_notes
         boolean published
+        jsonb edit_params "recorte, tramo y cuadro clave usados al exportar"
         int sort_order
     }
     AUTH_USERS ||--o{ SIGN_CLIPS : "valida"
@@ -73,6 +66,7 @@ Restricciones (todas en la migración, no solo en el panel):
 - `check (duration_ms between 500 and 6000)`, `check (size_bytes <= 1500000)` y `check (width = height)`.
 - `check (not published or validation_status = 'validated')`: nada sin validar llega a la app.
 - Disparador `before update`: solo `is_admin()` puede pasar a `validated` o `rejected` y publicar; al validar se rellenan `validated_by = auth.uid()` y `validated_at = now()`. El staff sube y edita borradores.
+- `edit_params` guarda cómo se exportó el clip: `{ source: { width, height, durationMs }, crop: { left, top, size }, trim: { startMs, endMs }, keyFrameMs }`. Sirve para auditar un clip publicado y para volver a exportarlo con el mismo encuadre si se cambian los parámetros de codificación.
 - `consent_ref` es obligatorio. El documento firmado **no** va al bucket público: el video muestra la cara de una persona y es un dato personal. La tabla guarda solo la referencia.
 
 **RLS**
@@ -138,29 +132,76 @@ Sigue el patrón `createCachedResource` de `MediaRepository`: lee de Supabase, g
 
 ---
 
-## 5. Flujo de carga (panel web)
+## 5. Editor de clips en el panel
+
+Todo el flujo ocurre en el panel: quien sube un video lo encuadra, lo corta en el tiempo, elige la imagen fija y exporta, sin instalar nada. El archivo original nunca sale del computador; al bucket solo llegan el MP4 y la imagen ya procesados.
 
 ```mermaid
 flowchart LR
-    A[Grabación cruda] --> B["scripts/encodeSignClip.cjs<br/>recorta, codifica y extrae el cuadro clave"]
-    B --> C["clave-variante.mp4<br/>clave-variante.webp<br/>clave-variante.json"]
-    C --> D["Panel: Señas en video<br/>valida y sube como borrador"]
-    D --> E{Admin revisa}
-    E -- validada --> F[Publicar con confirm]
-    E -- rechazada --> D
-    F --> G[App: listClips]
+    A["Video original<br/>(celular o cámara)"] --> B[1. Elegir archivo]
+    B --> C[2. Encuadrar]
+    C --> D[3. Cortar el tramo]
+    D --> E[4. Elegir imagen fija]
+    E --> F[5. Vista previa]
+    F --> G["6. Exportar y subir<br/>como borrador"]
+    G --> H{Admin revisa}
+    H -- validada --> I[Publicar con confirm]
+    H -- rechazada --> C
 ```
 
-**Script local `scripts/encodeSignClip.cjs`.** Recibe los argumentos `--in`, `--gloss`, `--variant`, `--start`, `--end`, `--key-frame` y `--crop`. Usa el `ffmpeg` y el `ffprobe` del sistema con `execFile`, sin shell, para que una ruta no se pueda interpretar como comando. Escribe el `.mp4`, el `.webp` y un `.json` con duración, tamaño y dimensiones. La construcción de los argumentos de ffmpeg es una función pura con pruebas.
+### 5.1 Pasos
 
-**Codificación en el navegador: descartada para el MVP.** `@ffmpeg/ffmpeg` (ffmpeg compilado a WebAssembly) pesa unos 30 MB, es lento sin hilos (que exigen cabeceras COOP/COEP en el hosting) y lo usaría una sola persona. Se puede retomar si el equipo de grabación crece.
+| Paso | Qué hace la persona | Detalles |
+|---|---|---|
+| 1. Elegir archivo | Arrastra o elige el video (MP4, MOV o WebM, hasta 200 MB) y la glosa del catálogo; la variante se sugiere sola (la siguiente libre). | El archivo se abre en local con `URL.createObjectURL`; no se sube. Los videos verticales del celular se muestran derechos: `mediabunny` respeta la rotación del archivo. |
+| 2. Encuadrar | Mueve y escala un **cuadro 1:1** sobre el video. | Encima se dibuja una guía de signado que se puede ocultar: margen sobre la cabeza, línea de cintura y márgenes laterales para los codos. Si el lado del recorte queda bajo 480 px del original, aparece un aviso («se verá borroso»), sin bloquear. El encuadre inicial es el cuadrado más grande centrado. |
+| 3. Cortar el tramo | Ajusta inicio y fin en una línea de tiempo con dos tiradores; avanza cuadro a cuadro. | El tramo elegido se repite en bucle en la vista del editor para revisarlo. La duración se valida entre 0,5 y 6 s, con el error junto a la línea de tiempo. |
+| 4. Elegir imagen fija | Va al cuadro donde la mano se ve mejor y toca «Usar este cuadro». | Por defecto propone el punto medio del tramo. Muestra una miniatura con el recorte ya aplicado. |
+| 5. Vista previa | Ve el clip tal como saldrá en la app: caja de 240 px, imagen fija, 1× / 0,5×. | Usa el mismo recorte en vivo (CSS sobre el `<video>`), sin exportar todavía. |
+| 6. Exportar y subir | Toca «Exportar y subir como borrador». | Barra de progreso con texto («Convirtiendo… 45 %», «Subiendo…») y botón Cancelar. Si el MP4 supera 1,5 MB, se reintenta una vez con menor calidad y se avisa; si aún no cabe, se pide acortar el tramo. Termina con un toast y el clip aparece en la lista como borrador. |
 
-**Página `web/src/features/admin/content/SignClipsPage.tsx`:**
+Salir del editor con cambios sin exportar pide `confirm`. Validar, rechazar (con nota obligatoria) y publicar también pasan por `confirm`.
 
-- Muestra las 31 glosas del catálogo como lista de avance, con estado sin clip, borrador, en revisión, validada o publicada. El estado se indica con icono y texto, no solo con color.
-- Al subir, valida en el navegador antes de enviar: tipo MIME, peso, que el video sea cuadrado y dure de 0,5 a 6 s (leído con `HTMLVideoElement.loadedmetadata`), que haya imagen fija y que `consent_ref` no esté vacío. Los errores aparecen junto a cada campo.
-- Validar, rechazar (con nota obligatoria) y publicar pasan por `useFeedback().confirm`. Despublicar es inmediato y revierte con un toque.
-- Los tipos (`SignClipRow`, `SignClipStatus`) van en `web/src/lib/domain.ts`. `toSignKey` se reutiliza a través del alias `@domain`.
+### 5.2 Teclado y accesibilidad del editor
+
+- Flechas: mueven el recorte 1 px (con Mayús, 10 px). `+` y `−`: lo agrandan o achican.
+- `,` y `.`: retroceden o avanzan un cuadro. `I` y `O`: fijan el inicio y el fin del tramo en el cuadro actual. `K`: usa el cuadro actual como imagen fija.
+- El recorte y los tiradores tienen `role="slider"` con valores en texto («Inicio: 0,42 s»), así que se pueden operar sin mouse.
+- Los estados (sin clip, borrador, en revisión, validada, publicada) se muestran con icono y texto, no solo con color.
+
+### 5.3 Exportación en el navegador
+
+La hace **`mediabunny`** (versión fija `1.62.1`), con la API `Conversion`:
+
+```ts
+const conversion = await Conversion.init({
+  input: new Input({ source: new BlobSource(file), formats: ALL_FORMATS }),
+  output: new Output({ format: new Mp4OutputFormat({ fastStart: 'in-memory' }), target: new BufferTarget() }),
+  trim: { start: edit.trim.startMs / 1000, end: edit.trim.endMs / 1000 },
+  video: { crop: toCropRectangle(edit.crop), width: 480, height: 480, frameRate: 30, codec: 'avc', bitrate: QUALITY_MEDIUM },
+  audio: { discard: true },
+});
+```
+
+- Usa WebCodecs, es decir, el codificador de video del propio equipo: no descarga ffmpeg (unos 30 MB en WebAssembly) ni exige cabeceras COOP/COEP en el hosting.
+- Se carga con `import()` solo al abrir el editor, así que el resto del panel no paga su peso.
+- La imagen fija sale del mismo recorte: se dibuja el cuadro clave en un `canvas` de 480 × 480 y se exporta con `toBlob('image/webp', 0.8)`.
+- Antes de abrir el editor se comprueba que el navegador pueda codificar H.264 y exportar WebP (`canEncodeVideo('avc')` y el tipo del blob). Si no puede, el editor no se abre y lo dice: «Este navegador no puede exportar el video; usa Chrome, Edge o Firefox actualizados». Safari no exporta WebP desde `canvas`.
+- La licencia es MPL-2.0: se puede usar sin modificar en un proyecto con otra licencia.
+
+### 5.4 Estructura en `web/`
+
+```
+web/src/features/admin/content/signClips/
+  SignClipsPage.tsx        lista de las 31 glosas con su estado y acciones
+  ClipEditor.tsx           los 6 pasos; solo composición, sin lógica de video
+  CropOverlay.tsx          cuadro 1:1 movible, guía de signado y teclado
+  TrimTimeline.tsx         tiradores de inicio y fin, paso por cuadro
+  useClipExport.ts         mediabunny: exporta, informa el progreso y cancela
+  clipExport.ts            arma las opciones de Conversion y la imagen fija (sin React)
+```
+
+La geometría y las reglas van en el dominio compartido, `src/features/signs/domain/clipEdit.js` (JS puro, reutilizado vía `@domain`, con pruebas): encuadre inicial, mover y escalar el cuadrado sin salirse del video, ajustar tiempos al cuadro más cercano, y `validateClipEdit(edit)`, que devuelve los errores por campo (duración, recorte mínimo, cuadro clave dentro del tramo). El panel y el repositorio de subida usan la misma validación, y la base de datos repite los límites con `check`.
 
 ---
 
@@ -209,9 +250,9 @@ El editor de niveles del panel debería avisar cuando un ejercicio usa una clave
 
 | Fase | Entregables | Verificación |
 |---|---|---|
-| **2. Backend y core** | Migración `sign_clips` + bucket + disparador; casos RLS en `supabase/tests/10_rls_policies.sql`; `signMedia.js` (dominio); `SignClipsRepository`; registro en DI; flag `signs.clips`; `scripts/encodeSignClip.cjs` | `pnpm test`, `pnpm test:sql`, `pnpm verify:bundle` |
-| **3. Frontend y UX/UI** | `expo-video` + dev client nuevo; `SignClip`; integración en `SignImage` y `SignDetailModal`; página del panel; aviso en el editor de niveles | `pnpm test`, `cd web && pnpm typecheck && pnpm test && pnpm build`, `review-animations`, modo claro y oscuro |
-| **4. Testing y QA** | Pruebas del componente con `expo-video` simulado (no se reproduce solo, velocidad, error → imagen fija, movimiento reducido); pruebas del panel (validación de archivo, permisos por rol); prueba en un dispositivo real con red lenta | Toda la verificación de `senaplay-frontend` |
+| **2. Backend y core** | Migración `sign_clips` + bucket + disparador; casos RLS en `supabase/tests/10_rls_policies.sql`; `signMedia.js` (dominio); `SignClipsRepository`; registro en DI; flag `signs.clips`; `clipEdit.js` (geometría y validación del editor) | `pnpm test`, `pnpm test:sql`, `pnpm verify:bundle` |
+| **3. Frontend y UX/UI** | `expo-video` + dev client nuevo; `SignClip`; integración en `SignImage` y `SignDetailModal`; editor de clips del panel (`mediabunny`); aviso en el editor de niveles | `pnpm test`, `cd web && pnpm typecheck && pnpm test && pnpm build`, `review-animations`, modo claro y oscuro |
+| **4. Testing y QA** | Pruebas del componente con `expo-video` simulado (no se reproduce solo, velocidad, error → imagen fija, movimiento reducido); pruebas del panel (validación del editor, opciones de exportación, permisos por rol); exportar 5 videos reales de celular (verticales y horizontales) y revisar peso y nitidez; prueba en un dispositivo real con red lenta | Toda la verificación de `senaplay-frontend` |
 
 ---
 
@@ -221,4 +262,5 @@ El editor de niveles del panel debería avisar cuando un ejercicio usa una clave
 2. **Tabla `sign_clips` aparte de `media`.** Recomendada por las razones de la sección 2.
 3. **Clave sin tildes** (`medico`, `si`). Cambia una regla implícita: hoy `normalizeSignKey` conserva tildes.
 4. **Encuadre cuadrado 480 × 480.** Si la persona que graba necesita más espacio lateral (señas con brazos extendidos), la alternativa es 4:5, cambiando la caja de `SignImage` solo para clips.
-5. **Codificación con un script local** en vez de hacerlo en el navegador del panel.
+5. **Editor de clips en el panel con `mediabunny`.** El navegador de quien edita hace la conversión; exige Chrome, Edge o Firefox actualizados. La alternativa, ffmpeg en WebAssembly, funciona en más navegadores pero descarga unos 30 MB y es bastante más lenta.
+6. **No guardar el video original.** Con `edit_params` se sabe cómo se exportó cada clip, pero para cambiar el encuadre hay que volver a cargar el original desde el computador. La alternativa es un bucket privado `sign-clips-raw` (solo staff, hasta 200 MB por archivo): permite reeditar desde cualquier equipo, a cambio de guardar más video con la cara de la persona que seña.

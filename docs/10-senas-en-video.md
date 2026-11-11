@@ -1,6 +1,6 @@
 # Señas en video (clips con movimiento)
 
-**Estado:** decisiones aprobadas (sección 9). Fases 2 y 3 implementadas: migración `20261111000100_sign_clips.sql`, dominio (`signs/domain/`), `SignClipsRepository`, flag `signs.clips`, reproductor `SignClip` en la app y página «Señas en video» con el editor en el panel. Pendientes: aplicar la migración en Supabase, generar el dev client con `expo-video`, el aviso en el editor de niveles (sección 7) y la Fase 4.
+**Estado:** decisiones aprobadas (sección 9). Fases 2, 3 y 4 implementadas; resultados de QA en la sección 10. Pendiente fuera del repositorio: aplicar la migración en Supabase, generar el dev client con `expo-video` y probar en teléfonos reales (sección 10.3).
 
 **Problema.** `SignImage` muestra fotos fijas. Sirve para el alfabeto estático, pero no para las señas del catálogo sanitario (`docs/ai/catalogo_sanitario_propuesto.md`): DOLOR, AYUDA, DESDE o AYER se definen por su movimiento. Hay que mostrarlas en video dentro de los niveles, el diccionario y los juegos, sin romper tres reglas del proyecto:
 
@@ -227,7 +227,7 @@ Reproductor: **`expo-video` (`~57.0.5`)**. Es un módulo nativo, así que exige 
 | Velocidad | Chip «Lento» (0,5×). Es una preferencia del dispositivo, compartida por todos los clips (`useSlowMotion`, `storageKey('signClip.slowMotion', 'v1')`). |
 | Repetir | Chip de bucle, apagado por defecto y propio de cada clip. |
 | Movimiento reducido | Con `useReducedMotion()` el video se reproduce igual (es el contenido, no un adorno), pero «Repetir» no se ofrece. El cambio imagen-video es instantáneo en todos los casos: el componente no agrega animaciones. |
-| Tamaños | **≥ 120 px** (`CLIP_PLAYER_MIN_SIZE`: enunciados, quiz, `SignDetailModal`): reproductor. **< 120 px** (emparejar, memoria, grillas del diccionario): solo la imagen fija con un icono de video; el clip se ve al abrir el detalle. Se descartó abrirlo con mantener presionado porque ese gesto ya es la pista. Así nunca hay varios videos a la vez en una grilla. |
+| Tamaños | **≥ 120 px** (`CLIP_PLAYER_MIN_SIZE`: foco de los ejercicios, quiz, `SignDetailModal`): reproductor. **< 120 px**: solo la imagen fija con un icono de video, así una grilla nunca tiene varios videos a la vez. En `SignStrip`, si alguna seña tiene clip, una sola seña se muestra a 150 px y dos a 120 px, ambas con reproductor; con tres o más (frases), tocar una seña abre su clip en una hoja inferior (`SignClipSheet`). Mantener presionado sigue siendo la pista en todos los casos: en reposo, el área táctil del reproductor es solo el botón de 56 px. Sin clips, `SignStrip` conserva su tamaño de siempre. |
 | Accesibilidad | Botón «Ver la seña DOLOR en movimiento» / «Detener la seña DOLOR», pista «Video de 2,8 segundos, sin sonido», `accessibilityState={{ busy }}` al cargar. El nombre es la glosa del clip, no la abreviatura del placeholder. Con caja chica: imagen «Seña de DOLOR, con movimiento». |
 | Carga | Indicador dentro del botón de reproducir mientras se descarga. |
 | Error | Vuelve a la imagen fija, muestra «No se pudo cargar el video. Toca para reintentar.» (icono y texto), lo anuncia al lector de pantalla y el botón pasa a reintentar. La respuesta del ejercicio nunca queda bloqueada. |
@@ -242,7 +242,7 @@ Reproductor: **`expo-video` (`~57.0.5`)**. Es un módulo nativo, así que exige 
 
 **No hacen falta tipos de ejercicio nuevos.** `word-meaning` («¿Qué significa esta seña?»), `true-false` con `sign` y `recognition` ya reciben claves de seña: basta con que el nivel use `dolor` en vez de una letra. Si después se necesita un ejercicio «mira el video y elige la seña correcta entre imágenes», se agrega con la receta de `senaplay-frontend`.
 
-**Pendiente:** el editor de niveles del panel debería avisar cuando un ejercicio usa una clave sin clip publicado ni foto. Es un aviso, no un bloqueo, porque se muestra el placeholder.
+El editor de niveles del panel avisa, sin bloquear, cuando un ejercicio usa una seña sin clip publicado ni foto («Sin clip publicado ni foto: dolor, tos»), con `missingSignMedia` del dominio. La lista de fotos del dominio (`PHOTO_SIGN_KEYS`) se compara en una prueba con las fotos empaquetadas en la app.
 
 ---
 
@@ -266,3 +266,43 @@ Se aprobaron las seis tal como se proponen; en la 6 se eligió no guardar el vid
 4. **Encuadre cuadrado 480 × 480.** Si la persona que graba necesita más espacio lateral (señas con brazos extendidos), la alternativa es 4:5, cambiando la caja de `SignImage` solo para clips.
 5. **Editor de clips en el panel con `mediabunny`.** El navegador de quien edita hace la conversión; exige Chrome, Edge o Firefox actualizados. La alternativa, ffmpeg en WebAssembly, funciona en más navegadores pero descarga unos 30 MB y es bastante más lenta.
 6. **No guardar el video original.** Con `edit_params` se sabe cómo se exportó cada clip, pero para cambiar el encuadre hay que volver a cargar el original desde el computador. La alternativa es un bucket privado `sign-clips-raw` (solo staff, hasta 200 MB por archivo): permite reeditar desde cualquier equipo, a cambio de guardar más video con la cara de la persona que seña.
+
+---
+
+## 10. QA (Fase 4)
+
+### 10.1 Exportación en el navegador
+
+Exportación real con `mediabunny` en Chromium (Playwright, sin aceleración por hardware) sobre videos generados con ffmpeg para imitar los de un celular. Todas las salidas se revisaron con `ffprobe`: H.264, 480 × 480, 30 fps, sin audio, duración exacta del tramo y `moov` al inicio.
+
+| Video original | Resultado | Tiempo | MP4 |
+|---|---|---|---|
+| Vertical 1080 × 1920, H.264, 30 fps (Android) | ✓ | 2,0 s | 151 kB |
+| Horizontal con metadato de rotación 90° (iPhone «Más compatible») | ✓ se ve vertical, como en el teléfono | 2,3 s | 146 kB |
+| HEVC con rotación (iPhone por defecto) | ✕ el navegador no lo decodifica: se avisa al abrirlo, con cómo resolverlo | — | — |
+| 4K, 60 fps, 82 MB | ✓ | 18 s | 202 kB |
+| Cuadros por segundo variables | ✓ | 0,7 s | 126 kB |
+| WebM VP9 | ✓ | 0,9 s | 201 kB |
+| 40 s, 78 MB, tramo del medio | ✓ | 3,2 s | 253 kB |
+| Cancelar a mitad de la exportación | ✓ se detiene sin error | — | — |
+
+La imagen fija se comparó con el mismo recorte hecho por ffmpeg: coinciden el encuadre y el cuadro. El editor también se revisó en claro, oscuro y a 390 px de ancho (sin scroll horizontal), y el encuadre con teclado.
+
+**HEVC:** Chrome solo lo decodifica si el equipo tiene soporte de hardware (en general Mac y parte de Windows). Recomendación para quien graba: en el iPhone, Ajustes → Cámara → Formatos → «Más compatible».
+
+### 10.2 Errores encontrados y corregidos
+
+- `mediabunny` exige `fit` cuando se fijan ancho y alto: la exportación fallaba siempre. Solo apareció en la prueba con navegador real.
+- HEVC daba un mensaje engañoso («usa Chrome») después de editar. Ahora se detecta al abrir el video.
+- Con red lenta, si la seña cambiaba durante la descarga, el video anterior se reproducía en la nueva seña.
+- En `word-meaning` (el ejercicio principal para estas señas) la seña se mostraba a 72 px: solo la imagen fija, sin forma de ver el clip. Y el reproductor tapaba el gesto de la pista en `SignSpotlight`.
+
+### 10.3 Pendiente en dispositivos reales
+
+No se puede hacer desde el repositorio; requiere el dev client con `expo-video`:
+
+1. Android de gama baja y un iPhone: tocar, 0,5×, repetir, volver a la imagen y el gesto de la pista en el foco del ejercicio.
+2. Red lenta (3G en las opciones de desarrollador) y modo avión con un clip ya visto (caché).
+3. TalkBack y VoiceOver: nombres, pista del botón, anuncio de error.
+4. Exportar 5 videos reales de celular (verticales y horizontales) desde el panel y revisar peso y nitidez.
+5. `/review-animations` sobre `SignClip` (solo la puede ejecutar quien usa la sesión).

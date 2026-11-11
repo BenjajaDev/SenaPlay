@@ -1,5 +1,14 @@
 import { MVP_CLIP_CATALOG } from '../clipCatalog';
-import { groupClipsByKey, isPlayableClip, isValidSignKey, resolveSignMedia, toSignKey } from '../signMedia';
+import { SIGN_IMAGE_KEYS } from '../../data/local/signAssets';
+import {
+  groupClipsByKey,
+  isPlayableClip,
+  isValidSignKey,
+  missingSignMedia,
+  PHOTO_SIGN_KEYS,
+  resolveSignMedia,
+  toSignKey,
+} from '../signMedia';
 
 const clip = (overrides = {}) => ({
   id: 'c1',
@@ -111,5 +120,16 @@ describe('MVP_CLIP_CATALOG', () => {
     expect(MVP_CLIP_CATALOG).toHaveLength(31);
     expect(keys.every(isValidSignKey)).toBe(true);
     expect(new Set(keys).size).toBe(31);
+  });
+});
+
+describe('missingSignMedia', () => {
+  test('la lista de fotos del dominio coincide con las fotos empaquetadas en la app', () => {
+    expect([...PHOTO_SIGN_KEYS].sort()).toEqual([...SIGN_IMAGE_KEYS].sort());
+  });
+
+  test('marca solo las señas sin clip publicado ni foto, una vez cada una', () => {
+    expect(missingSignMedia(['a', 'Dolor', 'MÉDICO', 'tos', 'tos', ' '], { clipKeys: ['dolor', 'medico'] })).toEqual(['tos']);
+    expect(missingSignMedia(undefined)).toEqual([]);
   });
 });

@@ -1,6 +1,6 @@
-import { ArrowDown, ArrowUp, Copy, Lightbulb, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, Copy, ImageOff, Lightbulb, Trash2 } from 'lucide-react';
 import type { ExerciseDraft } from '@/data/types';
-import { EXERCISE_TYPES, EXERCISE_TYPE_KEYS, type FieldSpec } from '@/lib/domain';
+import { EXERCISE_TYPES, EXERCISE_TYPE_KEYS, missingSignMedia, type FieldSpec } from '@/lib/domain';
 import { Badge, Button, Card, SelectField, Switch, TextArea, TextField } from '@/ui';
 
 const FIELD_LABELS: Record<string, string> = {
@@ -15,6 +15,17 @@ const FIELD_LABELS: Record<string, string> = {
 };
 
 const LIST_HINT = 'Separadas por coma. Ej: a, b, c';
+
+/** Claves de seña que muestra un ejercicio (campos de tipo `sign` y `signs`). */
+export function exerciseSignKeys(exercise: ExerciseDraft): string[] {
+  const fields = EXERCISE_TYPES[exercise.type]?.fields || {};
+  return Object.entries(fields).flatMap(([name, spec]) => {
+    const value = exercise.payload[name];
+    if (spec.type === 'sign') return typeof value === 'string' ? [value] : [];
+    if (spec.type === 'signs') return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+    return [];
+  });
+}
 
 export const toList = (value: string) =>
   value
@@ -93,6 +104,8 @@ type Props = {
   index: number;
   total: number;
   error: string | null;
+  /** Claves con clip publicado; null mientras cargan (no se avisa nada). */
+  clipKeys: string[] | null;
   onChange: (next: ExerciseDraft) => void;
   onMove: (direction: -1 | 1) => void;
   onDuplicate: () => void;
@@ -104,8 +117,9 @@ type Props = {
  * (el mismo catálogo que usa la app), así un tipo nuevo aparece aquí sin
  * tocar el panel. El error se calcula con la ExerciseFactory compartida.
  */
-export function ExerciseEditor({ exercise, index, total, error, onChange, onMove, onDuplicate, onRemove }: Props) {
+export function ExerciseEditor({ exercise, index, total, error, clipKeys, onChange, onMove, onDuplicate, onRemove }: Props) {
   const definition = EXERCISE_TYPES[exercise.type];
+  const missing = clipKeys ? missingSignMedia(exerciseSignKeys(exercise), { clipKeys }) : [];
 
   const changeType = (type: string) => {
     // Conserva solo los campos que el tipo nuevo entiende.
@@ -169,6 +183,11 @@ export function ExerciseEditor({ exercise, index, total, error, onChange, onMove
       {error ? (
         <p className="field__error" role="alert">
           {error}
+        </p>
+      ) : null}
+      {missing.length ? (
+        <p className="row text-small field__hint--warning" style={{ gap: 6 }} role="status">
+          <ImageOff size={14} aria-hidden /> Sin clip publicado ni foto: {missing.join(', ')}. La app mostrará el nombre de la seña en su lugar.
         </p>
       ) : null}
     </Card>

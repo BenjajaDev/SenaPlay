@@ -173,3 +173,45 @@ describe('Señas en video · exportación', () => {
     });
   });
 });
+
+describe('Señas en video · editor de niveles', () => {
+  test('avisa, sin bloquear, las señas sin clip publicado ni foto', async () => {
+    const repos = fakeRepositories();
+    vi.mocked(repos.content.getLevel).mockResolvedValue({
+      id: 1,
+      title: 'Salud',
+      description: '',
+      category: 'vocabulario',
+      available: true,
+      sort_order: 1,
+      exercise_count: 2,
+      exercises: [
+        { type: 'typing', title: '', hint: '', payload: { sign: 'a', answer: 'A' } },
+        { type: 'word-meaning', title: '', hint: '', payload: { signs: ['fiebre', 'dolor', 'tos'], options: ['x', 'y'], correct: 'x' } },
+      ],
+    } as never);
+    render(
+      <RepositoriesProvider repositories={repos}>
+        <FeedbackProvider>
+          <AuthProvider>
+            <MemoryRouter initialEntries={['/admin/levels/1']}>
+              <AppRoutes />
+            </MemoryRouter>
+          </AuthProvider>
+        </FeedbackProvider>
+      </RepositoriesProvider>,
+    );
+    const warnings = await screen.findAllByText(/Sin clip publicado ni foto/);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toHaveTextContent('Sin clip publicado ni foto: dolor, tos.');
+    expect(within(screen.getByLabelText('Ejercicio 1')).queryByText(/Sin clip publicado/)).not.toBeInTheDocument();
+  });
+});
+
+describe('Señas en video · formatos', () => {
+  test('explica cómo resolver un video HEVC del iPhone que el navegador no lee', async () => {
+    const { undecodableMessage } = await import('@/features/admin/content/signClips/clipExport');
+    expect(undecodableMessage('hevc')).toMatch(/HEVC.*Más compatible/);
+    expect(undecodableMessage('vp8')).toMatch(/H\.264/);
+  });
+});

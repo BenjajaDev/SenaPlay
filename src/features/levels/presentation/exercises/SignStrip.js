@@ -1,13 +1,30 @@
+import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useAppTheme } from '../../../../shared/theme/ThemeProvider';
+import { useSignClips } from '../../../signs/presentation/SignClipsProvider';
+import SignClipSheet from '../../../signs/presentation/SignClipSheet';
 import SignImage from '../../../signs/presentation/SignImage';
+import { CLIP_PLAYER_MIN_SIZE } from '../../../signs/presentation/SignClip';
+
+// Con clips, una o dos señas se muestran grandes para que el reproductor
+// quepa en la casilla. Sin clips se mantiene el tamaño de siempre.
+const CLIP_SIZES = { 1: 150, 2: CLIP_PLAYER_MIN_SIZE };
+const DEFAULT_SIZE = 72;
 
 /**
  * Fila de señas a interpretar. Mantener presionada una seña abre su pista
- * (misma interacción en todos los ejercicios).
+ * (misma interacción en todos los ejercicios). Si una seña tiene clip y su
+ * casilla es chica (frases de tres o más señas), tocarla abre el clip en
+ * una hoja inferior: la fila nunca reproduce varios videos a la vez.
  */
-export default function SignStrip({ signs, size = 72, onHint }) {
+export default function SignStrip({ signs, size, onHint }) {
   const theme = useAppTheme();
+  const { clipFor } = useSignClips();
+  const [openClip, setOpenClip] = useState(null);
+  const clips = signs.map(clipFor);
+  const resolvedSize = size ?? (clips.some(Boolean) ? CLIP_SIZES[signs.length] ?? DEFAULT_SIZE : DEFAULT_SIZE);
+  const opensSheet = resolvedSize < CLIP_PLAYER_MIN_SIZE;
+
   return (
     <View
       style={[
@@ -19,18 +36,25 @@ export default function SignStrip({ signs, size = 72, onHint }) {
         },
       ]}
     >
-      {signs.map((sign, index) => (
-        <Pressable
-          key={`${sign}-${index}`}
-          onLongPress={() => onHint?.(sign)}
-          delayLongPress={400}
-          accessibilityRole="imagebutton"
-          accessibilityLabel={`Seña ${index + 1} de ${signs.length}`}
-          accessibilityHint="Mantén presionado para ver una pista"
-        >
-          <SignImage signKey={sign} size={size} rounded={theme.radius.md} />
-        </Pressable>
-      ))}
+      {signs.map((sign, index) => {
+        const clip = opensSheet ? clips[index] : null;
+        return (
+          <Pressable
+            key={`${sign}-${index}`}
+            onPress={clip ? () => setOpenClip(clip) : undefined}
+            onLongPress={() => onHint?.(sign)}
+            delayLongPress={400}
+            accessibilityRole="imagebutton"
+            accessibilityLabel={`Seña ${index + 1} de ${signs.length}`}
+            accessibilityHint={
+              clip ? 'Toca para verla en movimiento. Mantén presionado para ver una pista' : 'Mantén presionado para ver una pista'
+            }
+          >
+            <SignImage signKey={sign} size={resolvedSize} rounded={theme.radius.md} />
+          </Pressable>
+        );
+      })}
+      <SignClipSheet clip={openClip} onClose={() => setOpenClip(null)} />
     </View>
   );
 }

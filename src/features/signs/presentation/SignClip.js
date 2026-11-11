@@ -72,6 +72,9 @@ function ClipPlayer({ clip, nombre, caja, size, styles, theme, style }) {
   const [loop, setLoop] = useState(false);
   const [phase, setPhase] = useState('poster');
   const loadedUrl = useRef(null);
+  // Cada toque o cambio de seña invalida la descarga anterior: con red lenta,
+  // un video que termina de bajar tarde no debe reproducirse en otra seña.
+  const request = useRef(0);
 
   const player = useVideoPlayer(null, (instance) => {
     instance.muted = true;
@@ -82,6 +85,7 @@ function ClipPlayer({ clip, nombre, caja, size, styles, theme, style }) {
 
   // Otra seña en la misma caja (siguiente ejercicio): vuelve a la imagen fija.
   useEffect(() => {
+    request.current += 1;
     player.pause();
     loadedUrl.current = null;
     setPhase('poster');
@@ -111,23 +115,28 @@ function ClipPlayer({ clip, nombre, caja, size, styles, theme, style }) {
   });
 
   const stop = () => {
+    request.current += 1;
     player.pause();
     setPhase('poster');
   };
 
   const play = async () => {
+    const current = ++request.current;
+    const url = clip.videoUrl;
     haptics.tap();
     setPhase('loading');
     try {
-      if (loadedUrl.current !== clip.videoUrl) {
-        await player.replaceAsync({ uri: clip.videoUrl, useCaching: true });
-        loadedUrl.current = clip.videoUrl;
+      if (loadedUrl.current !== url) {
+        await player.replaceAsync({ uri: url, useCaching: true });
+        if (current !== request.current) return;
+        loadedUrl.current = url;
       }
       player.currentTime = 0;
       player.playbackRate = slow ? SLOW_RATE : 1;
       player.loop = loopEnabled;
       player.play();
     } catch {
+      if (current !== request.current) return;
       loadedUrl.current = null;
       setPhase('error');
       announce(`No se pudo cargar el video de la seña ${nombre}`);
@@ -146,25 +155,37 @@ function ClipPlayer({ clip, nombre, caja, size, styles, theme, style }) {
         ) : null}
         {!playing ? <Image source={{ uri: clip.posterUrl }} style={[styles.fill, caja]} resizeMode="cover" /> : null}
 
-        <Pressable
-          onPress={playing ? stop : play}
-          disabled={loading}
-          style={styles.touchArea}
-          accessibilityRole="button"
-          accessibilityLabel={playing ? `Detener la seña ${nombre}` : `Ver la seña ${nombre} en movimiento`}
-          accessibilityHint={`Video de ${segundos} segundos, sin sonido`}
-          accessibilityState={{ busy: loading }}
-        >
-          {!playing ? (
-            <View style={styles.playButton}>
+        {playing ? (
+          <Pressable
+            onPress={stop}
+            style={styles.fill}
+            accessibilityRole="button"
+            accessibilityLabel={`Detener la seña ${nombre}`}
+          >
+            <View style={caja} />
+          </Pressable>
+        ) : (
+          // Solo el botón toma el toque: mantener presionado el resto de la
+          // caja sigue llegando al contenedor (la pista de los ejercicios).
+          <View pointerEvents="box-none" style={styles.center}>
+            <Pressable
+              onPress={play}
+              disabled={loading}
+              hitSlop={8}
+              style={styles.playButton}
+              accessibilityRole="button"
+              accessibilityLabel={`Ver la seña ${nombre} en movimiento`}
+              accessibilityHint={`Video de ${segundos} segundos, sin sonido`}
+              accessibilityState={{ busy: loading, disabled: loading }}
+            >
               {loading ? (
                 <ActivityIndicator color={theme.colors.primary} />
               ) : (
                 <Ionicons name={phase === 'error' ? 'refresh' : 'play'} size={26} color={theme.colors.primary} />
               )}
-            </View>
-          ) : null}
-        </Pressable>
+            </Pressable>
+          </View>
+        )}
 
         {!playing ? (
           <View pointerEvents="none" style={styles.badge}>
@@ -201,7 +222,7 @@ function createStyles(theme) {
     column: { alignItems: 'center', gap: spacing.sm },
     frame: { overflow: 'hidden', backgroundColor: colors.surfaceSunken },
     fill: { position: 'absolute', top: 0, left: 0 },
-    touchArea: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
+    center: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
     playButton: {
       width: 56,
       height: 56,

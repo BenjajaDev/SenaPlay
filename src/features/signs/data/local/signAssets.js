@@ -1,4 +1,4 @@
-// Registro central de imágenes/GIFs de señas.
+// Registro central de fotos de señas (las de movimiento son clips: ver sign_clips).
 //
 // Cómo agregar una seña:
 //   1. Deja el archivo en assets/Alfabeto/ o assets/signs/ (ej: assets/signs/uno.png).
@@ -51,9 +51,13 @@ const SIGN_IMAGES = {
   'n~': [require('../../../../../assets/Alfabeto/Ñ.png')],
 
   // Números y acciones — pendiente (aún no hay fotos para estas señas).
+  // Las señas con movimiento no van aquí como GIF: se suben como clips desde
+  // el panel (tabla sign_clips, ver docs/10-senas-en-video.md).
   // uno: [require('../../assets/signs/uno.png')],
-  // comer: [require('../../assets/signs/comer.gif')],
 };
+
+/** Claves con foto. El dominio repite la lista (PHOTO_SIGN_KEYS) y una prueba las compara. */
+export const SIGN_IMAGE_KEYS = Object.freeze(Object.keys(SIGN_IMAGES));
 
 /** Normaliza una clave de seña al formato del registro. */
 export function normalizeSignKey(value) {

@@ -16,6 +16,7 @@ import { SessionProvider, useSession } from '../features/auth/presentation/Sessi
 import { CatalogProvider } from '../features/levels/presentation/CatalogContext';
 import { hydratePreferences } from '../features/profile/presentation/usePreferences';
 import { RemoteConfigProvider } from '../features/remoteConfig/presentation/RemoteConfigProvider';
+import { SignClipsProvider } from '../features/signs/presentation/SignClipsProvider';
 import { APP_FONTS } from '../shared/theme/fonts';
 import { AppThemeProvider } from '../shared/theme/ThemeProvider';
 import { FeedbackProvider } from '../shared/ui';
@@ -30,7 +31,9 @@ function SessionAwareProviders({ children }) {
   const { user, isAdmin } = useSession();
   return (
     <RemoteConfigProvider userId={user?.id} isAdmin={isAdmin}>
-      <CatalogProvider>{children}</CatalogProvider>
+      <CatalogProvider>
+        <SignClipsProvider>{children}</SignClipsProvider>
+      </CatalogProvider>
     </RemoteConfigProvider>
   );
 }
@@ -39,7 +42,7 @@ function SessionAwareProviders({ children }) {
  * Raíz de la app: compone los providers en orden de dependencia.
  *
  *   SafeArea → Tema → Servicios (DI) → Feedback global →
- *   Sesión → Config remota → Catálogo → Navegación
+ *   Sesión → Config remota → Catálogo → Clips de señas → Navegación
  *
  * Mientras se prepara el almacenamiento y cargan las fuentes se ve el splash
  * nativo (RootNavigator lo oculta cuando la sesión está lista).

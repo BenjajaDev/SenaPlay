@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useMemo, useState } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
-import { getSignAssets } from '../data/local/signAssets';
 import { useAppTheme } from '../../../shared/theme/ThemeProvider';
 import { poppins } from '../../../shared/theme/fonts';
+import SignClip from './SignClip';
+import { useSignMedia } from './SignClipsProvider';
 import useVariationSwipe from './useVariationSwipe';
 
 // Acciones del lector de pantalla (deslizar arriba/abajo sobre la seña).
@@ -13,7 +14,10 @@ const VARIATION_ACTIONS = [
 ];
 
 /**
- * Muestra la imagen/GIF de una seña.
+ * Muestra una seña: clip con movimiento, foto o placeholder, en ese orden
+ * (lo decide resolveSignMedia). Si hay clip, delega en SignClip: en cajas
+ * grandes, reproductor que solo corre al tocar; en chicas, imagen fija con
+ * insignia. Las pantallas que usan SignImage no cambian.
  *
  * Reemplaza al glifo tipográfico (fuente ChileanSignLanguage) que se usaba antes:
  * una fuente no puede representar señas con movimiento ni mostrar la mano real,
@@ -45,8 +49,9 @@ export default function SignImage({
   const theme = useAppTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
-  const assets = getSignAssets(signKey);
   const texto = label !== undefined ? label : String(signKey || '').toLocaleUpperCase('es');
+  const media = useSignMedia(signKey, texto);
+  const assets = media.kind === 'still' ? media.sources : [];
   const caja = { width: size, height: size, borderRadius: rounded };
 
   const [index, setIndex] = useState(0);
@@ -71,6 +76,11 @@ export default function SignImage({
     outputRange: [0.4, 1, 0.4],
     extrapolate: 'clamp',
   });
+
+  if (media.kind === 'clip') {
+    // El nombre accesible es la glosa: `label` a veces es una abreviatura para el placeholder.
+    return <SignClip clip={media.clip} label={media.clip.gloss} size={size} rounded={rounded} style={style} />;
+  }
 
   if (assets.length > 0) {
     const nombre = `Seña de ${texto}`;

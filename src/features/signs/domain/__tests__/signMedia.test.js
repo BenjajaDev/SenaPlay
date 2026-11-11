@@ -1,0 +1,105 @@
+import { groupClipsByKey, isPlayableClip, isValidSignKey, resolveSignMedia, toSignKey } from '../signMedia';
+
+const clip = (overrides = {}) => ({
+  id: 'c1',
+  signKey: 'dolor',
+  gloss: 'DOLOR',
+  variant: 1,
+  region: 'general',
+  videoUrl: 'https://cdn.test/sign-clips/dolor/1-a.mp4',
+  posterUrl: 'https://cdn.test/sign-clips/dolor/1-a.webp',
+  durationMs: 2800,
+  ...overrides,
+});
+
+describe('toSignKey', () => {
+  test.each([
+    ['DOLOR', 'dolor'],
+    ['MÉDICO / DOCTOR', 'medico'],
+    ['ENFERMO/A', 'enfermo'],
+    ['SÍ', 'si'],
+    ['DESDE / HACE', 'desde'],
+    ['VÓMITO', 'vomito'],
+    ['MAÑANA', 'mañana'],
+    ['  Dolor de cabeza  ', 'dolor-de-cabeza'],
+    ['n~', 'n~'],
+    ['Ñ', 'ñ'],
+  ])('%s → %s', (gloss, key) => {
+    expect(toSignKey(gloss)).toBe(key);
+    expect(isValidSignKey(key)).toBe(true);
+  });
+
+  test('devuelve una cadena vacía si no hay caracteres válidos', () => {
+    expect(toSignKey('¿?')).toBe('');
+    expect(toSignKey(null)).toBe('');
+    expect(isValidSignKey('')).toBe(false);
+  });
+});
+
+describe('isPlayableClip', () => {
+  test('acepta un clip completo', () => {
+    expect(isPlayableClip(clip())).toBe(true);
+  });
+
+  test.each([
+    ['sin id', { id: '' }],
+    ['clave con tilde', { signKey: 'médico' }],
+    ['variante 0', { variant: 0 }],
+    ['video con javascript:', { videoUrl: 'javascript:alert(1)' }],
+    ['imagen sin URL', { posterUrl: null }],
+    ['duración fuera de rango', { durationMs: 9000 }],
+  ])('rechaza un clip %s', (_, overrides) => {
+    expect(isPlayableClip(clip(overrides))).toBe(false);
+  });
+
+  test('rechaza valores que no son objetos', () => {
+    expect(isPlayableClip(null)).toBe(false);
+    expect(isPlayableClip('dolor')).toBe(false);
+  });
+});
+
+describe('groupClipsByKey', () => {
+  test('agrupa por clave, ordena por variante y descarta los inválidos', () => {
+    const groups = groupClipsByKey([
+      clip({ id: 'b', variant: 2 }),
+      clip({ id: 'a', variant: 1 }),
+      clip({ id: 'f', signKey: 'fiebre' }),
+      clip({ id: 'x', videoUrl: 'ftp://nope' }),
+    ]);
+    expect(Object.keys(groups).sort()).toEqual(['dolor', 'fiebre']);
+    expect(groups.dolor.map((c) => c.id)).toEqual(['a', 'b']);
+  });
+
+  test('tolera una entrada que no es arreglo', () => {
+    expect(groupClipsByKey(undefined)).toEqual({});
+  });
+});
+
+describe('resolveSignMedia', () => {
+  const clipsByKey = groupClipsByKey([clip(), clip({ id: 'c2', variant: 2 })]);
+  const stills = [101];
+
+  test('prefiere el clip y entrega todas sus variantes', () => {
+    const media = resolveSignMedia({ signKey: 'dolor', clipsByKey, stills });
+    expect(media.kind).toBe('clip');
+    expect(media.clip.id).toBe('c1');
+    expect(media.variants).toHaveLength(2);
+  });
+
+  test('encuentra el clip aunque la clave venga con tildes o mayúsculas', () => {
+    const byKey = groupClipsByKey([clip({ signKey: 'medico' })]);
+    expect(resolveSignMedia({ signKey: 'Médico', clipsByKey: byKey }).kind).toBe('clip');
+  });
+
+  test('con el flag apagado vuelve a la foto', () => {
+    expect(resolveSignMedia({ signKey: 'dolor', clipsByKey, stills, clipsEnabled: false })).toEqual({
+      kind: 'still',
+      sources: stills,
+    });
+  });
+
+  test('sin clip ni foto muestra el placeholder con la clave en mayúsculas', () => {
+    expect(resolveSignMedia({ signKey: 'tos' })).toEqual({ kind: 'placeholder', label: 'TOS' });
+    expect(resolveSignMedia({ signKey: 'tos', label: '' })).toEqual({ kind: 'placeholder', label: '' });
+  });
+});

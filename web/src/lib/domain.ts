@@ -5,6 +5,9 @@ import * as exerciseTypes from '@domain/levels/domain/exerciseTypes.js';
 import * as exerciseFactory from '@domain/levels/domain/ExerciseFactory.js';
 import * as levelBuilder from '@domain/levels/domain/LevelBuilder.js';
 import * as remoteConfig from '@domain/remoteConfig/domain/remoteConfig.js';
+import * as clipCatalog from '@domain/signs/domain/clipCatalog.js';
+import * as clipEdit from '@domain/signs/domain/clipEdit.js';
+import * as signMedia from '@domain/signs/domain/signMedia.js';
 import * as result from '@core/result.js';
 
 export type FieldSpec = {
@@ -59,3 +62,36 @@ export const mergeRemoteConfig = remoteConfig.mergeRemoteConfig as unknown as (r
 export const compareVersions = remoteConfig.compareVersions as (a: string, b: string) => number;
 
 export const toUserMessage = result.toUserMessage as (error: unknown, fallback?: string) => string;
+
+// ── Señas en video (docs/10-senas-en-video.md) ───────────────────────
+export type CropSquare = { left: number; top: number; size: number };
+export type ClipSource = { width: number; height: number; durationMs: number };
+export type ClipTrim = { startMs: number; endMs: number };
+/** Lo que decide quien edita; se guarda tal cual en sign_clips.edit_params. */
+export type ClipEdit = { source: ClipSource; crop: CropSquare; trim: ClipTrim; keyFrameMs: number };
+export type ClipEditValidation = {
+  valid: boolean;
+  errors: Partial<Record<'source' | 'crop' | 'trim' | 'keyFrame', string>>;
+  warnings: Partial<Record<'crop', string>>;
+};
+export type SignClipLimits = {
+  minDurationMs: number;
+  maxDurationMs: number;
+  exportSize: number;
+  minCropSize: number;
+  frameRate: number;
+  maxVideoBytes: number;
+};
+
+export const SIGN_CLIP_LIMITS = signMedia.SIGN_CLIP_LIMITS as SignClipLimits;
+export const toSignKey = signMedia.toSignKey as (gloss: string) => string;
+export const isValidSignKey = signMedia.isValidSignKey as (value: unknown) => boolean;
+export const MVP_CLIP_CATALOG = clipCatalog.MVP_CLIP_CATALOG as readonly { gloss: string; level: 1 | 2 | 3 }[];
+export const MVP_CLIP_LEVEL_LABELS = clipCatalog.MVP_CLIP_LEVEL_LABELS as Record<1 | 2 | 3, string>;
+export const createClipEdit = clipEdit.createClipEdit as (source: ClipSource) => ClipEdit;
+export const clampCrop = clipEdit.clampCrop as (crop: CropSquare, source: ClipSource) => CropSquare;
+export const moveCrop = clipEdit.moveCrop as (crop: CropSquare, dx: number, dy: number, source: ClipSource) => CropSquare;
+export const resizeCrop = clipEdit.resizeCrop as (crop: CropSquare, delta: number, source: ClipSource) => CropSquare;
+export const snapToFrame = clipEdit.snapToFrame as (ms: number, frameRate?: number) => number;
+export const validateClipEdit = clipEdit.validateClipEdit as (edit: ClipEdit) => ClipEditValidation;
+export const missingSignMedia = signMedia.missingSignMedia as (signKeys: unknown, options?: { clipKeys?: string[] }) => string[];

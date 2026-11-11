@@ -19,7 +19,8 @@ export function memoryStorage(initial = {}) {
  * ({ data, error }), una Error (rechaza) o `'hang'` (nunca responde, para
  * probar timeouts). La consulta encadena select/eq/order/maybeSingle como
  * PostgREST y registra en `calls` cada tabla consultada y si recibió señal
- * de cancelación.
+ * de cancelación. `storage.from(bucket).getPublicUrl(path)` arma una URL
+ * de prueba predecible.
  */
 export function fakeSupabase(respond) {
   const calls = [];
@@ -46,5 +47,11 @@ export function fakeSupabase(respond) {
     };
     return query;
   };
-  return { from, calls };
+  // Storage: solo lo que usan los repositorios (URL pública, sin red).
+  const storage = {
+    from: (bucket) => ({
+      getPublicUrl: (path) => ({ data: { publicUrl: `https://storage.test/${bucket}/${path}` } }),
+    }),
+  };
+  return { from, storage, calls };
 }

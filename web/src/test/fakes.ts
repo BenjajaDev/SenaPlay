@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 import { DEFAULT_SECTIONS, type Repositories } from '@/data/repositories';
-import type { AboutContent, FeatureFlag, Level, MediaItem, Publication, TeamMember } from '@/data/types';
+import type { AboutContent, FeatureFlag, Level, MediaItem, Publication, SignClip, TeamMember } from '@/data/types';
 
 // Repositorios en memoria para probar pantallas sin Supabase.
 export function fakeRepositories(overrides: Partial<Repositories> = {}): Repositories {
@@ -11,6 +11,37 @@ export function fakeRepositories(overrides: Partial<Repositories> = {}): Reposit
     { key: 'games.quiz', enabled: true, rollout_percentage: 100, starts_at: null, ends_at: null, description: 'Quiz' },
   ];
   const media: MediaItem[] = [];
+  const clip = (overrides: Partial<SignClip>): SignClip => ({
+    id: 'clip-dolor',
+    sign_key: 'dolor',
+    gloss: 'DOLOR',
+    variant: 1,
+    region: 'general',
+    video_path: 'dolor/1-a.mp4',
+    poster_path: 'dolor/1-a.webp',
+    video_url: 'https://cdn.test/sign-clips/dolor/1-a.mp4',
+    poster_url: 'https://cdn.test/sign-clips/dolor/1-a.webp',
+    duration_ms: 2800,
+    width: 480,
+    height: 480,
+    size_bytes: 420000,
+    signer_alias: 'Señante A',
+    consent_ref: 'CONS-001',
+    license: 'propia',
+    edit_params: {},
+    validation_status: 'in_review',
+    validated_at: null,
+    validation_notes: null,
+    published: false,
+    sort_order: 0,
+    created_at: '2026-11-11',
+    updated_at: '2026-11-11',
+    ...overrides,
+  });
+  const signClips: SignClip[] = [
+    clip({}),
+    clip({ id: 'clip-fiebre', sign_key: 'fiebre', gloss: 'FIEBRE', validation_status: 'validated', published: true }),
+  ];
   const about: AboutContent = {
     title: 'Quiénes somos',
     intro: 'Un equipo que fomenta la LSCh.',
@@ -76,6 +107,14 @@ export function fakeRepositories(overrides: Partial<Repositories> = {}): Reposit
       deleteVocabulary: vi.fn(async () => {}),
     } as unknown as Repositories['content'],
     media: { list: vi.fn(async () => media), upload: vi.fn(), update: vi.fn(async () => {}), remove: vi.fn(async () => {}) } as unknown as Repositories['media'],
+    signClips: {
+      list: vi.fn(async () => signClips),
+      create: vi.fn(async () => {}),
+      replaceMedia: vi.fn(async () => {}),
+      setStatus: vi.fn(async () => {}),
+      setPublished: vi.fn(async () => {}),
+      remove: vi.fn(async () => {}),
+    },
     config: {
       getConfig: vi.fn(async () => [{ key: 'maintenance', value: { enabled: false }, description: null, updated_at: '' }]),
       setConfig: vi.fn(async () => {}),

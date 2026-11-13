@@ -30,12 +30,12 @@ const CACHED = [
 ];
 
 describe('SignClipsRepository', () => {
-  test('consulta sign_clips y arma las URL públicas desde las rutas del bucket', async () => {
+  test('consulta la vista sign_clips_public (sin datos personales) y arma las URL públicas desde las rutas del bucket', async () => {
     const supabase = fakeSupabase(() => ({ data: [row()], error: null }));
     const repo = createSignClipsRepository({ supabase, storage: memoryStorage() });
     const { clips, source } = await repo.listClips();
     expect(source).toBe('remote');
-    expect(supabase.calls[0].table).toBe('sign_clips');
+    expect(supabase.calls[0].table).toBe('sign_clips_public');
     expect(clips).toEqual([
       {
         id: 'c1',

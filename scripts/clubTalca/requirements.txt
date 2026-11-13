@@ -1,0 +1,6 @@
+# Dependencias de convert.py (no las usa la app). Instalar en un entorno virtual:
+#   python -m venv .venv-clubtalca
+#   .venv-clubtalca\Scripts\python -m pip install -r scripts\clubTalca\requirements.txt
+opencv-python==4.11.0.86
+numpy==1.26.4
+imageio-ffmpeg==0.8.1

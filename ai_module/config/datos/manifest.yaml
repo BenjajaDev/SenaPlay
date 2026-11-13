@@ -13,8 +13,11 @@ extensiones: [.mp4, .mov]                  # sin distinguir mayúsculas
 
 # Se descarta un video si MediaPipe no detecta ninguna mano en más de esta
 # fracción de los frames muestreados.
+# 0.50 desde 2026-11-13: los clips recortados guardan ~0,2 s de reposo en cada
+# borde (sin manos), y en señas al pecho (Yo, Mi) la mano se tapa o se mueve
+# rápido. Con 0.30 se perdían 38 clips con la seña completa (revisados a ojo).
 descarte:
-  max_ratio_sin_manos: 0.30
+  max_ratio_sin_manos: 0.50
   min_frames: 8                            # menos frames útiles que esto → descartado
 
 lote_por_defecto: lote_00

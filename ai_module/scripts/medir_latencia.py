@@ -2,7 +2,7 @@
 Latencia del servidor por etapa, con cuadros sintéticos (pendiente de la
 sección 4.3.5 de la tesis).
 
-Mide /clasificar_frames en el proceso, con cada modelo dinámico (tcn y lstm):
+Mide /clasificar_frames en el proceso, con cada modelo dinámico (tcn y exportado):
 
     decodificacion   validar + decodificar los JPEG del tramo (base64 → imagen)
     crear_detector   crear el HolisticLandmarker (el servidor crea uno por petición)
@@ -144,7 +144,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--fps", type=float, default=15.0)
     parser.add_argument("--calentamiento", type=int, default=20)
     parser.add_argument("--mediciones", type=int, default=200)
-    parser.add_argument("--modelos", nargs="+", default=["tcn", "lstm"], choices=["tcn", "lstm"])
+    parser.add_argument("--modelos", nargs="+", default=["tcn", "exportado"], choices=["tcn", "exportado"])
     parser.add_argument("--semilla", type=int, default=20261031)
     parser.add_argument("--salidas", default=SALIDAS)
     args = parser.parse_args(argv)

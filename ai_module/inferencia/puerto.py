@@ -4,7 +4,7 @@ Puerto `ModeloDinamico`: lo único que el servidor sabe del modelo dinámico.
 Las rutas reciben landmarks crudos (`SecuenciaCruda`) y deciden con el ranking
 completo de clases; no conocen la arquitectura, la FeatureSpec ni el largo T.
 Los adaptadores concretos están en model/predict.py (`TCNLegado`,
-`LSTMExportado`) y solo `inferencia.modelos.cargar_modelo_dinamico` elige uno.
+`ModeloExportado`) y solo `inferencia.modelos.cargar_modelo_dinamico` elige uno.
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ import numpy as np
 
 from preprocessing.extraction import SecuenciaCruda
 
-NombreModelo = Literal["tcn", "lstm"]
+NombreModelo = Literal["tcn", "exportado"]
 
 
 @runtime_checkable

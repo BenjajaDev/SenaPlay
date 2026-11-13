@@ -107,6 +107,23 @@ Salidas de cada corrida, en `results/<fecha>_<arquitectura>/`:
 `results/summary_all.md` reúne la última corrida de cada arquitectura en tablas listas para la tesis,
 con la figura `comparacion_f1_macro.png`. Las figuras van a 300 dpi con textos en español.
 
+### Servir el modelo exportado
+
+`python -m training.select_model --arquitectura tcn` deja el modelo en `models_saved/dinamico.pt`
+y `dinamico.meta.json` (features 2.0, T = 30; TCN, GRU o LSTM). Para que el servidor lo use en vez de
+la TCN legada, desde `ai_module/` y con el venv:
+
+```bat
+set MODELO_DINAMICO=exportado
+venv\Scripts\python.exe -m uvicorn server:app --host 0.0.0.0 --port 8000
+```
+
+- `MODELO_DINAMICO=lstm` es un alias de `exportado` (mismo archivo y mismo adaptador).
+- `RUTA_MODELO_EXPORTADO` cambia el archivo (por defecto `models_saved/dinamico.pt`).
+- Si el modelo trae la clase `ninguna`, la barrera `modelo_sin_seña` se activa; si no, el servidor
+  avisa al arrancar que esa barrera queda desactivada.
+- Sin `MODELO_DINAMICO` se sirve la TCN legada (`data/models/dinamico_tcn.pt`), la de producción.
+
 ### Ablaciones
 
 ```bash

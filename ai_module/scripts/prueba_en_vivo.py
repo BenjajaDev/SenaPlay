@@ -204,7 +204,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Prueba con la app real")
     sub = parser.add_subparsers(dest="accion", required=True)
     p_servir = sub.add_parser("servir")
-    p_servir.add_argument("--modo", choices=["tcn", "lstm"], required=True)
+    p_servir.add_argument("--modo", choices=["tcn", "exportado"], required=True)
     p_servir.add_argument("--puerto", type=int, default=8000)
     p_resumen = sub.add_parser("resumen")
     p_resumen.add_argument("--registro", default=None)

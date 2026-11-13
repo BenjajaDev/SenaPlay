@@ -200,7 +200,7 @@ def inicio(request: Request):
         "total_señas": len(SEÑAS_REFERENCIA),
         "modelo_dinamico": None if modelo is None else modelo.nombre,
         "clases_dinamicas": [] if modelo is None else list(modelo.clases),
-        # En modo lstm, modelo_sin_seña es false: ese modelo no tiene clase de rechazo.
+        # Con un modelo exportado sin la clase «ninguna», modelo_sin_seña es false.
         "barreras_activas": None if modelo is None else barreras.barreras_activas(modelo.clase_rechazo),
     }
 

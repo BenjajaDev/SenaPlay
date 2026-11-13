@@ -27,6 +27,16 @@ augmentacion:
   time_warp_min: 0.8
   time_warp_max: 1.25
 señas:
+  Alergia:
+    nombre_visible: Alergia
+    descripcion: ''
+    dificultad: 1
+    activa: true
+  Dolor:
+    nombre_visible: Dolor
+    descripcion: ''
+    dificultad: 1
+    activa: true
   G:
     nombre_visible: G
     descripcion: ''
@@ -42,6 +52,11 @@ señas:
     descripcion: ''
     dificultad: 1
     activa: true
+  Mucho:
+    nombre_visible: Mucho
+    descripcion: ''
+    dificultad: 1
+    activa: true
   Nombre:
     nombre_visible: Nombre
     descripcion: ''
@@ -54,6 +69,11 @@ señas:
     activa: true
   S:
     nombre_visible: S
+    descripcion: ''
+    dificultad: 1
+    activa: true
+  Tengo:
+    nombre_visible: Tengo
     descripcion: ''
     dificultad: 1
     activa: true

@@ -5,9 +5,12 @@ import { IaBanner, useSignRecognition } from './signCamera';
 import { cameraAlpha, cameraColors } from '../../../shared/theme/tokens/colors';
 import { poppins } from '../../../shared/theme/fonts';
 
-// Señas que hoy tiene entrenadas el modelo dinámico (TCN). Solo informativo:
-// el modelo igual devuelve su mejor intento con cualquier seña que se grabe.
-const SEÑAS_ENTRENADAS = ['G', 'J', 'Mi', 'Nombre', 'Presento', 'S', 'X', 'Yo', 'Z'];
+// Señas que hoy tiene entrenadas el modelo dinámico (el exportado por
+// training/select_model.py; la TCN legada solo conoce un subconjunto). Solo
+// informativo: el modelo igual devuelve su mejor intento con cualquier seña.
+const SEÑAS_ENTRENADAS = [
+  'Alergia', 'Dolor', 'G', 'J', 'Mi', 'Mucho', 'Nombre', 'Presento', 'S', 'Tengo', 'X', 'Yo', 'Z',
+];
 
 /**
  * Monitoreo del modelo de señas DINÁMICAS (TCN, con movimiento): graba un
@@ -43,7 +46,7 @@ export default function DynamicSignMonitorScreen({ onBack }) {
       recog={recog}
       overlay={
         <View style={propios.avisoBox}>
-          <Text style={propios.avisoTexto}>Modelo en entrenamiento · señas: {SEÑAS_ENTRENADAS.join(', ')}</Text>
+          <Text style={propios.avisoTexto}>Señas que reconoce: {SEÑAS_ENTRENADAS.join(', ')}</Text>
         </View>
       }
     >

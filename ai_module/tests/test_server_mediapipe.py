@@ -18,7 +18,7 @@ from tests.test_server import CLAVES_DINAMICA, mp4_b64
 pytestmark = pytest.mark.mediapipe
 
 
-@pytest.fixture(scope="module", params=["tcn", "lstm"])
+@pytest.fixture(scope="module", params=["tcn", "exportado"])
 def cliente(request):
     with TestClient(server.crear_app(cargar_ajustes(modelo_dinamico=request.param))) as c:
         yield c

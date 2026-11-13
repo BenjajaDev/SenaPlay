@@ -1,6 +1,6 @@
 """
 Contrato de server.py con los modelos reales, en los dos modos
-(MODELO_DINAMICO=tcn y =lstm). La detección de MediaPipe se reemplaza por
+(MODELO_DINAMICO=tcn y =exportado). La detección de MediaPipe se reemplaza por
 secuencias sintéticas; las pruebas con MediaPipe real están en
 test_server_mediapipe.py.
 """
@@ -29,7 +29,7 @@ CLAVES_DINAMICA = {"seña", "confianza", "es_seña", "motivo", "alternativas",
 MOTIVOS = {None, "sin_mano", "poco_movimiento", "modelo_sin_seña"}
 
 
-@pytest.fixture(scope="module", params=["tcn", "lstm"])
+@pytest.fixture(scope="module", params=["tcn", "exportado"])
 def modo(request):
     return request.param
 
@@ -49,9 +49,9 @@ def test_estado(cliente, modo):
     r = cliente.get("/").json()
     assert set(r) == CLAVES_ESTADO
     assert r["modelo_dinamico_listo"] is True and r["modelo_dinamico"] == modo
-    assert ("ninguna" in r["clases_dinamicas"]) is (modo == "tcn")
+    assert "ninguna" in r["clases_dinamicas"]
     assert r["barreras_activas"] == {"sin_mano": True, "poco_movimiento": True,
-                                     "modelo_sin_seña": modo == "tcn"}
+                                     "modelo_sin_seña": True}
 
 
 def test_clasificar_secuencia_mantiene_el_contrato(cliente):
@@ -111,9 +111,7 @@ def test_clasificar_video_mantiene_el_contrato(cliente, modo, monkeypatch, tmp_p
         assert all(set(a) == {"seña", "confianza"} for a in cuerpo["alternativas"])
         assert cuerpo["frames_procesados"] == len(seq)
         assert cuerpo["ratio_con_mano"] == ratio_con_mano(seq)
-        if modo == "lstm":
-            assert cuerpo["motivo"] != "modelo_sin_seña"
-
+        
 
 def test_video_sobre_el_tope_de_cuadros_da_413(monkeypatch, tmp_path, sin_ffprobe):
     seq = secuencia_sintetica(0, 0, np.random.default_rng(0))
@@ -186,9 +184,7 @@ def test_clasificar_frames_mantiene_el_contrato(cliente, modo, monkeypatch):
         assert cuerpo["frames_procesados"] == len(cruda)
         assert cuerpo["seña"] in cliente.app.state.modelo_dinamico.clases
         assert timestamps == [i * 67 for i in range(len(cruda))]   # round(1000 / 15)
-        if modo == "lstm":
-            assert cuerpo["motivo"] != "modelo_sin_seña"
-
+        
 
 def test_clasificar_frames_aplica_las_barreras(cliente, monkeypatch):
     cruda = secuencia_sintetica(0, 0, np.random.default_rng(0))
@@ -212,18 +208,33 @@ def test_sin_arrancar_no_hay_modelo_dinamico():
 
 def test_no_arranca_si_el_archivo_no_es_el_modelo_configurado():
     ajustes = cargar_ajustes()
-    cruzados = cargar_ajustes(modelo_dinamico="tcn", ruta_modelo_tcn=ajustes.ruta_modelo_lstm)
+    cruzados = cargar_ajustes(modelo_dinamico="tcn", ruta_modelo_tcn=ajustes.ruta_modelo_exportado)
     with pytest.raises(ModeloInvalido):
         with TestClient(server.crear_app(cruzados)):
             pass
 
 
-def test_modo_lstm_advierte_al_arrancar(caplog):
+def test_modelo_sin_clase_de_rechazo_advierte_al_arrancar(caplog, tmp_path):
+    spec = FeatureSpec(velocidad=False, aceleracion=False)
+    meta = {"arquitectura": "lstm", "hiperparametros": {"oculto": 8, "capas": 1},
+            "clases": ["G", "J"], "T": spec.T, "dim_entrada": spec.dim_entrada,
+            "feature_spec_version": spec.version, "preprocesamiento": spec.a_config()}
+    ruta = tmp_path / "sin_ninguna.pt"
+    checkpoint.guardar(construir_modelo({"arquitectura": "lstm", "oculto": 8, "capas": 1},
+                                        spec.dim_entrada, 2), meta, str(ruta))
+    ajustes = cargar_ajustes(modelo_dinamico="exportado", ruta_modelo_exportado=ruta)
     with caplog.at_level(logging.WARNING, logger="senaplay.ia"):
-        with TestClient(server.crear_app(cargar_ajustes(modelo_dinamico="lstm"))):
+        with TestClient(server.crear_app(ajustes)):
             pass
     avisos = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
     assert any("no tiene clase de rechazo" in m and "modelo_sin_seña" in m for m in avisos)
+
+
+def test_modo_exportado_con_ninguna_no_advierte(caplog):
+    with caplog.at_level(logging.WARNING, logger="senaplay.ia"):
+        with TestClient(server.crear_app(cargar_ajustes(modelo_dinamico="exportado"))):
+            pass
+    assert not [r for r in caplog.records if "clase de rechazo" in r.getMessage()]
 
 
 def test_modo_tcn_no_advierte(caplog):

@@ -109,6 +109,88 @@ describe('niveles nuevos (13 en adelante)', () => {
     );
   });
 
+  describe('distractores y posición de la respuesta', () => {
+    const ofType = (type) => levels.flatMap((level) => level.exercises.filter((exercise) => exercise.type === type).map((exercise) => ({ level, exercise })));
+    const plainWord = (text) => toSignKey(text);
+
+    test('recognition: las opciones no son iguales a las correctas y hay al menos 2 distractores', () => {
+      const items = ofType('recognition');
+      expect(items).toHaveLength(18);
+      items.forEach(({ level, exercise }) => {
+        const distractors = exercise.options.filter((option) => !exercise.correct.includes(option));
+        expect(distractors.length).toBeGreaterThanOrEqual(2);
+        expect(distractors.length).toBeLessThanOrEqual(3);
+        expect(new Set(exercise.options).size).toBe(exercise.options.length);
+        exercise.correct.forEach((answer) => expect(exercise.options).toContain(answer));
+        expect(exercise.title).toBe('Marca todas las palabras que corresponden a estas señas');
+        // Un distractor nunca es la palabra de una seña que se muestra.
+        const shown = new Set(exercise.signs);
+        distractors.forEach((word) => expect(shown.has(plainWord(word))).toBe(false));
+        expect(level.id).toBeGreaterThan(12);
+      });
+    });
+
+    test('recognition: los distractores son palabras del mismo nivel', () => {
+      ofType('recognition').forEach(({ level, exercise }) => {
+        const levelKeys = new Set(
+          level.exercises.flatMap((other) => [other.sign, ...(other.signs || []), ...(other.type === 'matching' ? other.letters : [])]).filter(Boolean),
+        );
+        exercise.options
+          .filter((option) => !exercise.correct.includes(option))
+          .forEach((word) => {
+            const key = plainWord(word.split(' / ')[0]);
+            // «Café» es la etiqueta de la seña «cafe-color» en el nivel de colores.
+            expect(levelKeys.has(key) || (level.id === 18 && key === 'cafe')).toBe(true);
+          });
+      });
+    });
+
+    test('recognition: los distractores no quedan siempre al final', () => {
+      const atTheEnd = ofType('recognition').filter(({ exercise }) =>
+        exercise.options.slice(-2).every((option) => !exercise.correct.includes(option)),
+      );
+      expect(atTheEnd.length).toBeLessThan(ofType('recognition').length / 2);
+    });
+
+    test.each([
+      ['word-meaning', (exercise) => exercise.options],
+      ['sign-choice', (exercise) => exercise.signs],
+    ])('%s: opciones sin repetir, con la respuesta y repartida en todas las posiciones', (type, optionsOf) => {
+      const counts = {};
+      ofType(type).forEach(({ exercise }) => {
+        const options = optionsOf(exercise);
+        expect(new Set(options).size).toBe(options.length);
+        expect(options.indexOf(exercise.correct)).toBeGreaterThanOrEqual(0);
+        const position = options.indexOf(exercise.correct);
+        counts[position] = (counts[position] || 0) + 1;
+      });
+      expect(Object.keys(counts)).toHaveLength(3);
+      Object.values(counts).forEach((count) => expect(count).toBeLessThanOrEqual(18));
+    });
+
+    test('word-meaning de una palabra: los distractores son otras señas del club, no la respuesta', () => {
+      ofType('word-meaning')
+        .filter(({ exercise }) => exercise.signs.length === 1 && usableKeys.has(exercise.signs[0]) && !exercise.title.includes('frase'))
+        .forEach(({ exercise }) => {
+          const wrong = exercise.options.filter((option) => option !== exercise.correct);
+          expect(wrong).toHaveLength(exercise.options.length - 1);
+          wrong.forEach((option) => expect(usableKeys.has(plainWord(option))).toBe(true));
+        });
+    });
+
+    test('true-false: la afirmación verdadera nombra la seña y la falsa nombra otra del mismo nivel', () => {
+      ofType('true-false').forEach(({ level, exercise }) => {
+        const named = plainWord(/significa (.+)$/.exec(exercise.statement)[1]);
+        const levelKeys = new Set(level.exercises.flatMap((other) => [other.sign, ...(other.signs || []), ...(other.letters || [])]).filter(Boolean));
+        if (exercise.answer) expect(named).toBe(exercise.sign);
+        else {
+          expect(named).not.toBe(exercise.sign);
+          expect(levelKeys.has(named)).toBe(true);
+        }
+      });
+    });
+  });
+
   describe('pistas que no filtran la respuesta', () => {
     const plain = (text) =>
       String(text ?? '')

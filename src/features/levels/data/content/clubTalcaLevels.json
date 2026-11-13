@@ -30,8 +30,8 @@
             "buenas-noches"
           ],
           "options": [
-            "Buenas noches",
             "Chao",
+            "Buenas noches",
             "Adiós"
           ],
           "correct": "Buenas noches",
@@ -64,9 +64,9 @@
             "gracias"
           ],
           "options": [
+            "¿Cómo estás?",
             "Gracias",
-            "Muchas gracias",
-            "¿Cómo estás?"
+            "Muchas gracias"
           ],
           "correct": "Gracias",
           "hint": "Sin apuro: mira este video más de una vez."
@@ -76,21 +76,24 @@
           "title": "¿Cuál es la seña de MUCHAS GRACIAS?",
           "word": "MUCHAS GRACIAS",
           "signs": [
-            "bien",
+            "como-estas",
             "muchas-gracias",
-            "como-estas"
+            "bien"
           ],
           "correct": "muchas-gracias",
           "hint": "Mira primero las manos y luego la cara."
         },
         {
           "type": "recognition",
-          "title": "Selecciona lo que significan estas señas",
+          "title": "Marca todas las palabras que corresponden a estas señas",
           "signs": [
             "bien",
             "mal"
           ],
           "options": [
+            "Buenas noches",
+            "Buenos días",
+            "Hola",
             "Bien",
             "Mal"
           ],
@@ -138,8 +141,8 @@
             "edad"
           ],
           "options": [
-            "Edad",
             "Rut",
+            "Edad",
             "Dirección"
           ],
           "correct": "Edad",
@@ -151,8 +154,8 @@
           "word": "TU NOMBRE",
           "signs": [
             "tu-eres-oyente",
-            "tu-nombre",
-            "tu-eres-sordo"
+            "tu-eres-sordo",
+            "tu-nombre"
           ],
           "correct": "tu-nombre",
           "hint": "Puedes repetir este video con calma, las veces que quieras."
@@ -172,9 +175,9 @@
             "tu-eres-sordo"
           ],
           "options": [
+            "Cuídate",
             "¿Tú eres sordo?",
-            "¿Tú eres oyente?",
-            "Cuídate"
+            "¿Tú eres oyente?"
           ],
           "correct": "¿Tú eres sordo?",
           "hint": "Sin apuro: mira este video más de una vez."
@@ -184,8 +187,8 @@
           "title": "¿Cuál es la seña de DIRECCIÓN?",
           "word": "DIRECCIÓN",
           "signs": [
-            "fecha-de-nacimiento",
             "direccion",
+            "fecha-de-nacimiento",
             "numero-de-celular"
           ],
           "correct": "direccion",
@@ -193,7 +196,7 @@
         },
         {
           "type": "recognition",
-          "title": "Selecciona lo que significan estas señas",
+          "title": "Marca todas las palabras que corresponden a estas señas",
           "signs": [
             "numero-de-celular",
             "cuidate",
@@ -202,6 +205,8 @@
           "options": [
             "Cuídate",
             "Fecha de nacimiento",
+            "¿Tú eres sordo?",
+            "Tu nombre",
             "Número de celular"
           ],
           "correct": [
@@ -249,8 +254,8 @@
             "por-favor"
           ],
           "options": [
-            "Por favor",
             "Entender",
+            "Por favor",
             "No entender"
           ],
           "correct": "Por favor",
@@ -261,9 +266,9 @@
           "title": "¿Cuál es la seña de ENTENDER?",
           "word": "ENTENDER",
           "signs": [
-            "lento",
             "entender",
-            "no-entender"
+            "no-entender",
+            "lento"
           ],
           "correct": "entender",
           "hint": "Puedes repetir este video con calma, las veces que quieras."
@@ -295,8 +300,8 @@
           "title": "¿Cuál es la seña de RÁPIDO?",
           "word": "RÁPIDO",
           "signs": [
-            "duda",
             "rapido",
+            "duda",
             "compañero"
           ],
           "correct": "rapido",
@@ -304,13 +309,16 @@
         },
         {
           "type": "recognition",
-          "title": "Selecciona lo que significan estas señas",
+          "title": "Marca todas las palabras que corresponden a estas señas",
           "signs": [
             "duda",
             "disculpa"
           ],
           "options": [
             "Duda",
+            "Entender",
+            "Profesor",
+            "Lento",
             "Disculpa"
           ],
           "correct": [
@@ -391,9 +399,9 @@
             "7"
           ],
           "options": [
-            "7",
+            "9",
             "8",
-            "9"
+            "7"
           ],
           "correct": "7",
           "hint": "Sin apuro: mira este video más de una vez."
@@ -403,8 +411,8 @@
           "title": "¿Cuál es la seña de 8?",
           "word": "8",
           "signs": [
-            "10",
             "8",
+            "10",
             "9"
           ],
           "correct": "8",
@@ -412,16 +420,18 @@
         },
         {
           "type": "recognition",
-          "title": "Selecciona lo que significan estas señas",
+          "title": "Marca todas las palabras que corresponden a estas señas",
           "signs": [
             "10",
             "1",
             "2"
           ],
           "options": [
+            "7",
+            "10",
             "1",
-            "2",
-            "10"
+            "5",
+            "2"
           ],
           "correct": [
             "10",
@@ -468,8 +478,8 @@
             "14"
           ],
           "options": [
-            "14",
             "15",
+            "14",
             "16"
           ],
           "correct": "14",
@@ -481,8 +491,8 @@
           "word": "15",
           "signs": [
             "17",
-            "15",
-            "16"
+            "16",
+            "15"
           ],
           "correct": "15",
           "hint": "Puedes repetir este video con calma, las veces que quieras."
@@ -502,9 +512,9 @@
             "17"
           ],
           "options": [
-            "17",
             "18",
-            "20"
+            "20",
+            "17"
           ],
           "correct": "17",
           "hint": "Sin apuro: mira este video más de una vez."
@@ -514,23 +524,26 @@
           "title": "¿Cuál es la seña de 18?",
           "word": "18",
           "signs": [
-            "30",
+            "20",
             "18",
-            "20"
+            "30"
           ],
           "correct": "18",
           "hint": "Mira primero las manos y luego la cara."
         },
         {
           "type": "recognition",
-          "title": "Selecciona lo que significan estas señas",
+          "title": "Marca todas las palabras que corresponden a estas señas",
           "signs": [
             "30",
             "40"
           ],
           "options": [
             "30",
-            "40"
+            "12",
+            "15",
+            "40",
+            "17"
           ],
           "correct": [
             "30",
@@ -576,9 +589,9 @@
             "cafe-color"
           ],
           "options": [
-            "Café",
             "Celeste",
-            "Morado"
+            "Morado",
+            "Café"
           ],
           "correct": "Café",
           "hint": "Mira primero las manos y luego la cara."
@@ -617,16 +630,18 @@
         },
         {
           "type": "recognition",
-          "title": "Selecciona lo que significan estas señas",
+          "title": "Marca todas las palabras que corresponden a estas señas",
           "signs": [
             "rojo",
             "rosado",
             "verde"
           ],
           "options": [
-            "Rosado",
             "Verde",
-            "Rojo"
+            "Rojo",
+            "Amarillo",
+            "Rosado",
+            "Azul"
           ],
           "correct": [
             "Rojo",
@@ -649,9 +664,9 @@
             "mi-color-favorito-es-rojo-y-negro"
           ],
           "options": [
+            "Mi color favorito es el rosado y el blanco.",
             "Mi color favorito es el azul y el verde.",
-            "Mi color favorito es el rojo y el negro.",
-            "Mi color favorito es el rosado y el blanco."
+            "Mi color favorito es el rojo y el negro."
           ],
           "correct": "Mi color favorito es el rojo y el negro.",
           "hint": "Mira la frase completa y fíjate en cada seña, de a una."
@@ -687,9 +702,9 @@
             "conejo"
           ],
           "options": [
-            "Conejo",
+            "Pollo",
             "Gallina",
-            "Pollo"
+            "Conejo"
           ],
           "correct": "Conejo",
           "hint": "Mira primero las manos y luego la cara."
@@ -699,8 +714,8 @@
           "title": "¿Cuál es la seña de GALLINA?",
           "word": "GALLINA",
           "signs": [
-            "gallo",
             "gallina",
+            "gallo",
             "pollo"
           ],
           "correct": "gallina",
@@ -720,22 +735,25 @@
           "word": "PATO",
           "signs": [
             "elefante",
-            "pato",
-            "oveja"
+            "oveja",
+            "pato"
           ],
           "correct": "pato",
           "hint": "Sin apuro: mira este video más de una vez."
         },
         {
           "type": "recognition",
-          "title": "Selecciona lo que significan estas señas",
+          "title": "Marca todas las palabras que corresponden a estas señas",
           "signs": [
             "elefante",
             "oso"
           ],
           "options": [
+            "Gallo",
             "Elefante",
-            "Oso"
+            "Oso",
+            "Conejo",
+            "Oveja"
           ],
           "correct": [
             "Elefante",
@@ -830,8 +848,8 @@
           ],
           "options": [
             "Pájaro",
-            "Araña",
-            "Abeja"
+            "Abeja",
+            "Araña"
           ],
           "correct": "Pájaro",
           "hint": "Sin apuro: mira este video más de una vez."
@@ -842,24 +860,26 @@
           "word": "ARAÑA",
           "signs": [
             "caracol",
-            "araña",
-            "abeja"
+            "abeja",
+            "araña"
           ],
           "correct": "araña",
           "hint": "Mira primero las manos y luego la cara."
         },
         {
           "type": "recognition",
-          "title": "Selecciona lo que significan estas señas",
+          "title": "Marca todas las palabras que corresponden a estas señas",
           "signs": [
             "caracol",
             "loro",
             "raton"
           ],
           "options": [
-            "Loro",
+            "Abeja",
             "Ratón",
-            "Caracol"
+            "Pájaro",
+            "Caracol",
+            "Loro"
           ],
           "correct": [
             "Caracol",
@@ -906,8 +926,8 @@
             "te"
           ],
           "options": [
-            "Té",
             "Café",
+            "Té",
             "Leche"
           ],
           "correct": "Té",
@@ -918,9 +938,9 @@
           "title": "¿Cuál es la seña de CAFÉ?",
           "word": "CAFÉ",
           "signs": [
-            "queso",
             "cafe",
-            "leche"
+            "leche",
+            "queso"
           ],
           "correct": "cafe",
           "hint": "Puedes repetir este video con calma, las veces que quieras."
@@ -947,14 +967,17 @@
         },
         {
           "type": "recognition",
-          "title": "Selecciona lo que significan estas señas",
+          "title": "Marca todas las palabras que corresponden a estas señas",
           "signs": [
             "tallarines",
             "porotos"
           ],
           "options": [
+            "Café",
+            "Porotos",
             "Tallarines",
-            "Porotos"
+            "Huevo",
+            "Té"
           ],
           "correct": [
             "Tallarines",
@@ -976,9 +999,9 @@
             "mi-comida-favorita-es-tallarin-con-carne"
           ],
           "options": [
+            "Mi comida favorita es pan con queso.",
             "Mi comida favorita es arroz con pollo.",
-            "Mi comida favorita es tallarines con carne.",
-            "Mi comida favorita es pan con queso."
+            "Mi comida favorita es tallarines con carne."
           ],
           "correct": "Mi comida favorita es tallarines con carne.",
           "hint": "Mira la frase completa y fíjate en cada seña, de a una."
@@ -1014,9 +1037,9 @@
             "agua"
           ],
           "options": [
-            "Agua",
+            "Jugo",
             "Bebida",
-            "Jugo"
+            "Agua"
           ],
           "correct": "Agua",
           "hint": "Mira primero las manos y luego la cara."
@@ -1048,9 +1071,9 @@
             "queque"
           ],
           "options": [
-            "Queque",
             "Galleta",
-            "Postre"
+            "Postre",
+            "Queque"
           ],
           "correct": "Queque",
           "hint": "Sin apuro: mira este video más de una vez."
@@ -1060,16 +1083,16 @@
           "title": "¿Cuál es la seña de GALLETA?",
           "word": "GALLETA",
           "signs": [
-            "yogurt",
             "galleta",
-            "postre"
+            "postre",
+            "yogurt"
           ],
           "correct": "galleta",
           "hint": "Mira primero las manos y luego la cara."
         },
         {
           "type": "recognition",
-          "title": "Selecciona lo que significan estas señas",
+          "title": "Marca todas las palabras que corresponden a estas señas",
           "signs": [
             "yogurt",
             "torta",
@@ -1077,8 +1100,10 @@
           ],
           "options": [
             "Torta",
-            "Fruta",
-            "Yogurt"
+            "Queque",
+            "Yogurt",
+            "Bebida",
+            "Fruta"
           ],
           "correct": [
             "Yogurt",
@@ -1126,8 +1151,8 @@
           ],
           "options": [
             "Buscar",
-            "Caminar",
-            "Descansar"
+            "Descansar",
+            "Caminar"
           ],
           "correct": "Buscar",
           "hint": "Mira primero las manos y luego la cara."
@@ -1137,9 +1162,9 @@
           "title": "¿Cuál es la seña de CAMINAR?",
           "word": "CAMINAR",
           "signs": [
-            "enseñar",
             "caminar",
-            "descansar"
+            "descansar",
+            "enseñar"
           ],
           "correct": "caminar",
           "hint": "Puedes repetir este video con calma, las veces que quieras."
@@ -1159,9 +1184,9 @@
             "enseñar"
           ],
           "options": [
-            "Enseñar",
+            "Dibujar",
             "Estudiar",
-            "Dibujar"
+            "Enseñar"
           ],
           "correct": "Enseñar",
           "hint": "Sin apuro: mira este video más de una vez."
@@ -1171,23 +1196,26 @@
           "title": "¿Cuál es la seña de ESTUDIAR?",
           "word": "ESTUDIAR",
           "signs": [
-            "trabajar",
             "estudiar",
-            "dibujar"
+            "dibujar",
+            "trabajar"
           ],
           "correct": "estudiar",
           "hint": "Mira primero las manos y luego la cara."
         },
         {
           "type": "recognition",
-          "title": "Selecciona lo que significan estas señas",
+          "title": "Marca todas las palabras que corresponden a estas señas",
           "signs": [
             "trabajar",
             "ayudar"
           ],
           "options": [
             "Trabajar",
-            "Ayudar"
+            "Estudiar",
+            "Ayudar",
+            "Dibujar",
+            "Caminar"
           ],
           "correct": [
             "Trabajar",
@@ -1233,9 +1261,9 @@
             "nacer"
           ],
           "options": [
+            "Vivir",
             "Nacer",
-            "Ver",
-            "Vivir"
+            "Ver"
           ],
           "correct": "Nacer",
           "hint": "Mira primero las manos y luego la cara."
@@ -1245,9 +1273,9 @@
           "title": "¿Cuál es la seña de VER?",
           "word": "VER",
           "signs": [
+            "vivir",
             "jugar",
-            "ver",
-            "vivir"
+            "ver"
           ],
           "correct": "ver",
           "hint": "Puedes repetir este video con calma, las veces que quieras."
@@ -1267,9 +1295,9 @@
             "jugar"
           ],
           "options": [
-            "Jugar",
             "Aprender",
-            "Comprar"
+            "Comprar",
+            "Jugar"
           ],
           "correct": "Jugar",
           "hint": "Sin apuro: mira este video más de una vez."
@@ -1279,8 +1307,8 @@
           "title": "¿Cuál es la seña de APRENDER?",
           "word": "APRENDER",
           "signs": [
-            "vender",
             "aprender",
+            "vender",
             "comprar"
           ],
           "correct": "aprender",
@@ -1288,15 +1316,17 @@
         },
         {
           "type": "recognition",
-          "title": "Selecciona lo que significan estas señas",
+          "title": "Marca todas las palabras que corresponden a estas señas",
           "signs": [
             "vender",
             "viajar",
             "enfermar"
           ],
           "options": [
-            "Viajar",
+            "Ver",
             "Enfermar",
+            "Viajar",
+            "Vivir",
             "Vender"
           ],
           "correct": [
@@ -1344,9 +1374,9 @@
             "ayer"
           ],
           "options": [
+            "Mañana",
             "Ayer",
-            "Anteayer",
-            "Mañana"
+            "Anteayer"
           ],
           "correct": "Ayer",
           "hint": "Mira primero las manos y luego la cara."
@@ -1356,9 +1386,9 @@
           "title": "¿Cuál es la seña de MIÉRCOLES?",
           "word": "MIÉRCOLES",
           "signs": [
-            "viernes",
+            "jueves",
             "miercoles",
-            "jueves"
+            "viernes"
           ],
           "correct": "miercoles",
           "hint": "Puedes repetir este video con calma, las veces que quieras."
@@ -1378,9 +1408,9 @@
             "jueves"
           ],
           "options": [
-            "Jueves",
             "Viernes",
-            "Sábado"
+            "Sábado",
+            "Jueves"
           ],
           "correct": "Jueves",
           "hint": "Sin apuro: mira este video más de una vez."
@@ -1390,24 +1420,26 @@
           "title": "¿Cuál es la seña de MAÑANA?",
           "word": "MAÑANA",
           "signs": [
-            "antes",
             "mañana",
-            "pasado-mañana"
+            "pasado-mañana",
+            "antes"
           ],
           "correct": "mañana",
           "hint": "Mira primero las manos y luego la cara."
         },
         {
           "type": "recognition",
-          "title": "Selecciona lo que significan estas señas",
+          "title": "Marca todas las palabras que corresponden a estas señas",
           "signs": [
             "pasado-mañana",
             "sabado"
           ],
           "options": [
+            "Antes",
+            "Miércoles",
             "Pasado mañana",
             "Sábado",
-            "Antes"
+            "Mañana"
           ],
           "correct": [
             "Pasado mañana",
@@ -1465,9 +1497,9 @@
           "title": "¿Cuál es la seña de ÉL?",
           "word": "ÉL",
           "signs": [
+            "ella",
             "usted",
-            "el",
-            "ella"
+            "el"
           ],
           "correct": "el",
           "hint": "Puedes repetir este video con calma, las veces que quieras."
@@ -1487,8 +1519,8 @@
             "ella"
           ],
           "options": [
-            "Ella",
             "Usted",
+            "Ella",
             "Ellos"
           ],
           "correct": "Ella",
@@ -1500,15 +1532,15 @@
           "word": "DIVORCIADO",
           "signs": [
             "viudo",
-            "divorciado",
-            "conviviente"
+            "conviviente",
+            "divorciado"
           ],
           "correct": "divorciado",
           "hint": "Mira primero las manos y luego la cara."
         },
         {
           "type": "recognition",
-          "title": "Selecciona lo que significan estas señas",
+          "title": "Marca todas las palabras que corresponden a estas señas",
           "signs": [
             "conviviente",
             "ellos",
@@ -1516,8 +1548,10 @@
           ],
           "options": [
             "Ellos",
+            "Conviviente",
+            "Yo",
             "Viudo",
-            "Conviviente"
+            "Soltero"
           ],
           "correct": [
             "Conviviente",
@@ -1599,8 +1633,8 @@
           ],
           "options": [
             "Gordo",
-            "Joven",
-            "Viejo"
+            "Viejo",
+            "Joven"
           ],
           "correct": "Gordo",
           "hint": "Sin apuro: mira este video más de una vez."
@@ -1610,8 +1644,8 @@
           "title": "¿Cuál es la seña de ABURRIDO?",
           "word": "ABURRIDO",
           "signs": [
-            "cansado",
             "aburrido",
+            "cansado",
             "cariñoso"
           ],
           "correct": "aburrido",
@@ -1619,15 +1653,17 @@
         },
         {
           "type": "recognition",
-          "title": "Selecciona lo que significan estas señas",
+          "title": "Marca todas las palabras que corresponden a estas señas",
           "signs": [
             "cariñoso",
             "viejo"
           ],
           "options": [
             "Cariñoso",
-            "Viejo",
-            "Cansado"
+            "Flaco",
+            "Aburrido",
+            "Cansado",
+            "Viejo"
           ],
           "correct": [
             "Cariñoso",
@@ -1686,8 +1722,8 @@
           "word": "IGLESIA",
           "signs": [
             "escuela",
-            "iglesia",
-            "terminal"
+            "terminal",
+            "iglesia"
           ],
           "correct": "iglesia",
           "hint": "Puedes repetir este video con calma, las veces que quieras."
@@ -1707,8 +1743,8 @@
             "escuela"
           ],
           "options": [
-            "Escuela",
             "Liceo",
+            "Escuela",
             "Centro"
           ],
           "correct": "Escuela",
@@ -1719,25 +1755,27 @@
           "title": "¿Cuál es la seña de LICEO?",
           "word": "LICEO",
           "signs": [
+            "centro",
             "supermercado",
-            "liceo",
-            "centro"
+            "liceo"
           ],
           "correct": "liceo",
           "hint": "Mira primero las manos y luego la cara."
         },
         {
           "type": "recognition",
-          "title": "Selecciona lo que significan estas señas",
+          "title": "Marca todas las palabras que corresponden a estas señas",
           "signs": [
             "supermercado",
             "universidad",
             "hospital"
           ],
           "options": [
+            "Estadio",
             "Universidad",
-            "Hospital",
-            "Supermercado"
+            "Supermercado",
+            "Centro",
+            "Hospital"
           ],
           "correct": [
             "Supermercado",
@@ -1796,9 +1834,9 @@
           "title": "¿Cuál es la seña de MICRO?",
           "word": "MICRO",
           "signs": [
+            "bus",
             "tren",
-            "micro",
-            "bus"
+            "micro"
           ],
           "correct": "micro",
           "hint": "Puedes repetir este video con calma, las veces que quieras."
@@ -1816,23 +1854,26 @@
           "title": "¿Cuál es la seña de METRO?",
           "word": "METRO",
           "signs": [
+            "bicicleta",
             "moto",
-            "metro",
-            "bicicleta"
+            "metro"
           ],
           "correct": "metro",
           "hint": "Sin apuro: mira este video más de una vez."
         },
         {
           "type": "recognition",
-          "title": "Selecciona lo que significan estas señas",
+          "title": "Marca todas las palabras que corresponden a estas señas",
           "signs": [
             "moto",
             "colectivo"
           ],
           "options": [
+            "Colectivo",
+            "Bus",
             "Moto",
-            "Colectivo"
+            "Metro",
+            "Micro"
           ],
           "correct": [
             "Moto",
@@ -1854,9 +1895,9 @@
             "mi-medio-de-transporte-favorito-es-el-auto"
           ],
           "options": [
-            "Mi medio de transporte favorito es el tren.",
             "Mi medio de transporte favorito es el auto.",
-            "Mi medio de transporte favorito es la bicicleta."
+            "Mi medio de transporte favorito es la bicicleta.",
+            "Mi medio de transporte favorito es el tren."
           ],
           "correct": "Mi medio de transporte favorito es el auto.",
           "hint": "Mira la frase completa y fíjate en cada seña, de a una."
@@ -1926,9 +1967,9 @@
             "coquimbo"
           ],
           "options": [
-            "Coquimbo",
+            "Viña del Mar",
             "Valparaíso",
-            "Viña del Mar"
+            "Coquimbo"
           ],
           "correct": "Coquimbo",
           "hint": "Sin apuro: mira este video más de una vez."
@@ -1938,16 +1979,16 @@
           "title": "¿Cuál es la seña de VALPARAÍSO?",
           "word": "VALPARAÍSO",
           "signs": [
+            "viña-del-mar",
             "santiago",
-            "valparaiso",
-            "viña-del-mar"
+            "valparaiso"
           ],
           "correct": "valparaiso",
           "hint": "Mira primero las manos y luego la cara."
         },
         {
           "type": "recognition",
-          "title": "Selecciona lo que significan estas señas",
+          "title": "Marca todas las palabras que corresponden a estas señas",
           "signs": [
             "santiago",
             "rancagua",
@@ -1956,6 +1997,8 @@
           "options": [
             "Rancagua",
             "Curicó",
+            "Calama",
+            "La Serena",
             "Santiago"
           ],
           "correct": [

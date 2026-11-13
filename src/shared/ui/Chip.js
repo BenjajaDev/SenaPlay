@@ -7,14 +7,20 @@ import { useAppTheme } from '../theme/ThemeProvider';
 
 /**
  * Chip seleccionable (filtros, categorías, opciones cortas).
+ * `role="switch"` para ajustes que se encienden y apagan (Lento, Repetir).
  * Seleccionado = degradé de marca + check (el estado no depende solo del color).
  */
-export default function Chip({ label, selected = false, onPress, icon, disabled = false, style }) {
+export default function Chip({ label, selected = false, onPress, icon, iconOnly = false, role = 'button', disabled = false, style }) {
   const theme = useAppTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const textColor = selected ? theme.colors.primaryContrast : theme.colors.textSecondary;
+  const compact = iconOnly && Boolean(icon);
 
-  const content = (
+  // `iconOnly`: solo el ícono (el label sigue siendo el nombre accesible). Al
+  // elegirlo se distingue por el relleno de marca, no solo por el matiz.
+  const content = compact ? (
+    <Ionicons name={icon} size={20} color={textColor} />
+  ) : (
     <>
       {selected ? <Ionicons name="checkmark" size={14} color={textColor} /> : null}
       {!selected && icon ? <Ionicons name={icon} size={14} color={textColor} /> : null}
@@ -30,18 +36,21 @@ export default function Chip({ label, selected = false, onPress, icon, disabled 
       }}
       disabled={disabled}
       hitSlop={6}
-      accessibilityRole="button"
+      accessibilityRole={role}
       accessibilityLabel={label}
-      accessibilityState={{ selected, disabled }}
+      accessibilityState={role === 'switch' ? { selected, checked: selected, disabled } : { selected, disabled }}
       style={style}
     >
       {({ pressed }) =>
         selected ? (
-          <LinearGradient {...theme.gradients.brand} style={[styles.chip, styles.chipSelected, pressed && styles.pressed]}>
+          <LinearGradient
+            {...theme.gradients.brand}
+            style={[styles.chip, compact && styles.chipIcon, styles.chipSelected, pressed && styles.pressed]}
+          >
             {content}
           </LinearGradient>
         ) : (
-          <View style={[styles.chip, pressed && styles.pressed, disabled && styles.disabled]}>{content}</View>
+          <View style={[styles.chip, compact && styles.chipIcon, pressed && styles.pressed, disabled && styles.disabled]}>{content}</View>
         )
       }
     </Pressable>
@@ -62,6 +71,7 @@ function createStyles(theme) {
       borderColor: theme.colors.border,
       backgroundColor: theme.colors.surface,
     },
+    chipIcon: { minWidth: 44, minHeight: 44, justifyContent: 'center', paddingHorizontal: theme.spacing.sm },
     chipSelected: { borderColor: 'transparent' },
     text: { ...theme.typography.label },
     pressed: { opacity: 0.8 },

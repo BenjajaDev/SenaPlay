@@ -46,6 +46,19 @@ describe('SignClip', () => {
     expect(screen.queryByTestId('sign-clip-video')).toBeNull();
   });
 
+  test('el video completo reproduce al tocarlo y reenvía «mantener presionado» (la pista)', async () => {
+    const onLongPress = jest.fn();
+    await render(wrap(<SignClip clip={DOLOR} label="DOLOR" size={190} onLongPress={onLongPress} />));
+    await act(async () => fireEvent(playButton(), 'longPress'));
+    expect(onLongPress).toHaveBeenCalledTimes(1);
+    expect(lastPlayer().play).not.toHaveBeenCalled();
+    await act(async () => fireEvent.press(playButton()));
+    expect(lastPlayer().play).toHaveBeenCalledTimes(1);
+    // Mientras corre, el mismo toque lo detiene.
+    await act(async () => fireEvent.press(screen.getByRole('button', { name: 'Detener la seña DOLOR' })));
+    expect(lastPlayer().pause).toHaveBeenCalled();
+  });
+
   test('al tocar carga el video con caché, lo reproduce y vuelve a la imagen al terminar', async () => {
     await render(wrap(<SignClip clip={DOLOR} label="DOLOR" size={190} />));
     await act(async () => fireEvent.press(playButton()));
@@ -81,21 +94,30 @@ describe('SignClip', () => {
         </>,
       ),
     );
-    await act(async () => fireEvent.press(screen.getAllByRole('button', { name: 'Lento' })[0]));
+    await act(async () => fireEvent.press(screen.getAllByRole('switch', { name: 'Lento' })[0]));
     expect(__players.map((player) => player.playbackRate)).toEqual([0.5, 0.5]);
-    expect(screen.getAllByRole('button', { name: 'Lento', selected: true })).toHaveLength(2);
+    expect(screen.getAllByRole('switch', { name: 'Lento', selected: true })).toHaveLength(2);
+  });
+
+  test('en modo compacto (solo ícono) «Lento» conserva su nombre accesible y es un interruptor', async () => {
+    await render(wrap(<SignClip clip={DOLOR} label="DOLOR" size={150} />));
+    const before = screen.getByRole('switch', { name: 'Lento' }).props.accessibilityState.checked;
+    expect(screen.queryByText('Lento')).toBeNull();
+    await act(async () => fireEvent.press(screen.getByRole('switch', { name: 'Lento' })));
+    expect(screen.getByRole('switch', { name: 'Lento' }).props.accessibilityState.checked).toBe(!before);
+    await act(async () => fireEvent.press(screen.getByRole('switch', { name: 'Lento' })));
   });
 
   test('«Repetir» activa el bucle y no se ofrece con «reducir movimiento»', async () => {
     const { unmount } = await render(wrap(<SignClip clip={DOLOR} label="DOLOR" size={190} />));
-    await act(async () => fireEvent.press(screen.getByRole('button', { name: 'Repetir' })));
+    await act(async () => fireEvent.press(screen.getByRole('switch', { name: 'Repetir' })));
     expect(lastPlayer().loop).toBe(true);
     await unmount();
 
     useReducedMotion.mockReturnValue(true);
     await render(wrap(<SignClip clip={DOLOR} label="DOLOR" size={190} />));
-    expect(screen.queryByRole('button', { name: 'Repetir' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Lento' })).toBeTruthy();
+    expect(screen.queryByRole('switch', { name: 'Repetir' })).toBeNull();
+    expect(screen.getByRole('switch', { name: 'Lento' })).toBeTruthy();
     expect(playButton()).toBeTruthy();
   });
 
@@ -108,7 +130,8 @@ describe('SignClip', () => {
     expect(screen.getByText('No se pudo cargar el video. Toca para reintentar.')).toBeTruthy();
     expect(announce).toHaveBeenCalledWith('No se pudo cargar el video de la seña DOLOR');
 
-    await act(async () => fireEvent.press(playButton()));
+    const retry = screen.getByRole('button', { name: 'Reintentar cargar la seña DOLOR' });
+    await act(async () => fireEvent.press(retry));
     expect(lastPlayer().replaceAsync).toHaveBeenCalledTimes(2);
     announce.mockRestore();
   });

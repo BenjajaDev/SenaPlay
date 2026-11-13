@@ -301,6 +301,8 @@ img {
   position: relative;
   width: min(460px, 100%);
   max-height: calc(100vh - 40px);
+  /* En el celular 100vh incluye la barra del navegador: dvh mide lo visible. */
+  max-height: calc(100dvh - 40px);
   overflow: auto;
   padding: var(--space-6);
   border-radius: var(--radius-xxl);
@@ -367,6 +369,16 @@ img {
 @keyframes pop-in { from { opacity: 0; transform: scale(0.94); } }
 @keyframes slide-in { from { opacity: 0; transform: translateY(-10px); } }
 @keyframes rise-in { from { opacity: 0; transform: translateY(14px); } }
+
+/* Celular: Safari en iOS hace zoom al enfocar un campo con letra menor a
+   16 px, y el toque deja un destello gris sobre botones y enlaces. */
+@media (max-width: 600px) {
+  .input,
+  .select,
+  .textarea { font-size: 16px; }
+}
+a,
+button { -webkit-tap-highlight-color: transparent; }
 
 @media (prefers-reduced-motion: reduce) {
   *,

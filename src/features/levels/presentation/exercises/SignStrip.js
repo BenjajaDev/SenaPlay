@@ -61,6 +61,7 @@ export default function SignStrip({ signs, size, onHint, concealGloss = false })
               size={resolvedSize}
               rounded={theme.radius.md}
               accessibilityName={concealGloss ? neutralStripName(index, signs.length) : undefined}
+              onLongPress={() => onHint?.(concealGloss ? undefined : sign)}
             />
           </Pressable>
         );
@@ -88,6 +89,7 @@ export function SignSpotlight({ sign, caption, size = 150, onHint, concealGloss 
         size={size}
         rounded={theme.radius.xl}
         accessibilityName={concealGloss ? 'Seña a interpretar' : undefined}
+        onLongPress={() => onHint?.(concealGloss ? undefined : sign)}
       />
       {caption}
     </Pressable>

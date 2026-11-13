@@ -40,6 +40,10 @@ const VARIATION_ACTIONS = [
  *   accessibilityName  nombre neutro («Seña de la opción 2», «Seña a interpretar»)
  *            para cuando la glosa es la respuesta del ejercicio: reemplaza a la
  *            glosa en el lector de pantalla y en el texto del placeholder.
+ *   variant  'card' para tarjetas de elección: sin chips propios (los gobierna la
+ *            barra común) y las fotos fijas dejan pasar el toque a la tarjeta.
+ *   onLongPress  «mantener presionado» sobre un video (la pista del contenedor):
+ *            el video toma el toque para reproducirse, así que se le reenvía.
  */
 export default function SignImage({
   signKey,
@@ -47,6 +51,8 @@ export default function SignImage({
   size = 72,
   rounded = 14,
   accessibilityName,
+  variant = 'standalone',
+  onLongPress,
   style,
   showPlaceholderIcon = true,
 }) {
@@ -57,6 +63,9 @@ export default function SignImage({
   const media = useSignMedia(signKey, texto);
   const assets = media.kind === 'still' ? media.sources : [];
   const caja = { width: size, height: size, borderRadius: rounded };
+  const passThrough = variant === 'card';
+  // En tarjeta, la imagen sin clip no es una parada extra: el nombre lo da la tarjeta.
+  const noStop = { importantForAccessibility: 'no' };
 
   const [index, setIndex] = useState(0);
   const hasCarousel = assets.length > 1;
@@ -83,16 +92,29 @@ export default function SignImage({
 
   if (media.kind === 'clip') {
     // El nombre accesible es la glosa: `label` a veces es una abreviatura para el placeholder.
-    return <SignClip clip={media.clip} label={media.clip.gloss} neutralName={accessibilityName} size={size} rounded={rounded} style={style} />;
+    return (
+      <SignClip
+        clip={media.clip}
+        label={media.clip.gloss}
+        neutralName={accessibilityName}
+        size={size}
+        rounded={rounded}
+        variant={variant}
+        onLongPress={onLongPress}
+        style={style}
+      />
+    );
   }
 
   if (assets.length > 0) {
     const nombre = accessibilityName ?? `Seña de ${texto}`;
     return (
       <View
+        pointerEvents={passThrough && !hasCarousel ? 'none' : 'auto'}
+        {...(passThrough && !hasCarousel ? noStop : null)}
         style={[caja, styles.marco, style]}
         {...(hasCarousel ? panHandlers : null)}
-        accessible
+        accessible={!(passThrough && !hasCarousel)}
         accessibilityRole={hasCarousel ? 'adjustable' : 'image'}
         accessibilityLabel={nombre}
         accessibilityValue={hasCarousel ? { text: `Variación ${index + 1} de ${assets.length}` } : undefined}
@@ -125,8 +147,10 @@ export default function SignImage({
 
   return (
     <View
+      pointerEvents={passThrough ? 'none' : 'auto'}
+      {...(passThrough ? noStop : null)}
       style={[styles.placeholder, caja, style]}
-      accessible
+      accessible={!passThrough}
       accessibilityLabel={accessibilityName ? `${accessibilityName}, imagen pendiente` : `Imagen de la seña ${texto} pendiente`}
     >
       {showPlaceholderIcon || accessibilityName ? (

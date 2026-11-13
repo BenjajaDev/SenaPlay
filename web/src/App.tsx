@@ -16,6 +16,7 @@ const LevelsPage = lazy(() => import('@/features/admin/content/LevelsPage').then
 const LevelEditorPage = lazy(() => import('@/features/admin/content/LevelEditorPage').then((m) => ({ default: m.LevelEditorPage })));
 const DictionaryPage = lazy(() => import('@/features/admin/content/DictionaryPages').then((m) => ({ default: m.DictionaryPage })));
 const VocabularyPage = lazy(() => import('@/features/admin/content/DictionaryPages').then((m) => ({ default: m.VocabularyPage })));
+const SignClipsPage = lazy(() => import('@/features/admin/content/signClips/SignClipsPage').then((m) => ({ default: m.SignClipsPage })));
 const MediaPage = lazy(() => import('@/features/admin/media/MediaPage').then((m) => ({ default: m.MediaPage })));
 const RemoteConfigPage = lazy(() => import('@/features/admin/config/RemoteConfigPage').then((m) => ({ default: m.RemoteConfigPage })));
 const FeatureFlagsPage = lazy(() => import('@/features/admin/config/FeatureFlagsPage').then((m) => ({ default: m.FeatureFlagsPage })));
@@ -53,6 +54,7 @@ export function AppRoutes() {
           <Route path="levels/:id" element={<LevelEditorPage />} />
           <Route path="dictionary" element={<DictionaryPage />} />
           <Route path="vocabulary" element={<VocabularyPage />} />
+          <Route path="sign-clips" element={<SignClipsPage />} />
           <Route path="media" element={<MediaPage />} />
           <Route path="site/sections" element={<SectionsPage />} />
           <Route path="site/publications" element={<PublicationsPage />} />

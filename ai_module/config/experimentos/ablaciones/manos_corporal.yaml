@@ -1,0 +1,10 @@
+# Ablación de normalización: manos en el marco de hombros (origen en el punto
+# medio entre hombros, escala por la distancia entre hombros) en vez del marco
+# local de la muñeca. Un modelo exportado con esta opción NO acepta los
+# vectores de 527 valores de /clasificar_secuencia (sí /clasificar_video).
+hereda: config/experimentos/comparacion_temporal.yaml
+nombre: ablacion_manos_corporal
+preprocesamiento:
+  archivo: config/preprocesamiento/features.yaml
+  ajustes:
+    normalizacion: {marco_manos: corporal}

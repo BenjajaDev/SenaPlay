@@ -14,6 +14,7 @@ select 'roles: ' || string_agg(email || '=' || role, ', ' order by email) from p
 set role authenticated;
 set test.uid = '00000000-0000-0000-0000-000000000001';
 do $$ begin update public.profiles set role='admin' where id = auth.uid(); raise notice 'FALLA: user se hizo admin'; exception when raise_exception then raise notice 'OK user no cambia su rol'; end $$;
+do $$ begin insert into public.signs (word, type, source) values ('Hola', 'Seña', 'Club de Sordos de Talca'); raise notice 'FALLA: user insertó una seña'; exception when insufficient_privilege then raise notice 'OK user no inserta señas'; end $$;
 do $$ begin insert into public.levels(id,title,category) values (99,'x','alfabeto'); raise notice 'FALLA'; exception when insufficient_privilege then raise notice 'OK user no inserta niveles (RLS)'; end $$;
 do $$ begin perform public.save_level('{"id":50,"title":"x"}','[]'); raise notice 'FALLA'; exception when raise_exception then raise notice 'OK user no usa save_level'; end $$;
 do $$ begin update public.app_config set value='{"enabled":true}' where key='maintenance'; if found then raise notice 'FALLA: user editó config'; else raise notice 'OK user no edita config'; end if; end $$;
@@ -33,6 +34,9 @@ do $$ begin perform public.mistake_stats(); raise notice 'FALLA: user vio métri
 set test.uid = '00000000-0000-0000-0000-000000000002';
 select 'editor save_level -> ' || public.save_level('{"id":13,"title":"Saludos","category":"vocabulario","sort_order":13}', '[{"type":"true-false","title":"VF","payload":{"statement":"Hola","answer":true}},{"type":"matching","payload":{"letters":["a","b"]}}]');
 select 'ejercicios nivel 13: ' || string_agg(position || ':' || type, ', ' order by position) from public.exercises where level_id = 13;
+insert into public.signs (word, type, theme, source) values ('Buenos días', 'Seña', 'Saludos', 'Club de Sordos de Talca');
+select 'editor guarda una seña del club: ' || (select source from public.signs where word = 'Buenos días');
+do $$ begin insert into public.signs (word, source) values ('Vacía', '  '); raise notice 'FALLA: source en blanco aceptado'; exception when check_violation then raise notice 'OK source en blanco rechazado'; end $$;
 select 'reemplaza -> ' || public.save_level('{"id":13,"title":"Saludos 2","category":"vocabulario"}', '[{"type":"typing","payload":{"sign":"a","answer":"A"}}]');
 select 'nivel 13 ahora: ' || (select title from public.levels where id=13) || ' / ' || (select count(*) from public.exercises where level_id=13) || ' ejercicio(s)';
 do $$ begin update public.app_config set value='{"enabled":true}' where key='maintenance'; if found then raise notice 'FALLA: editor editó config'; else raise notice 'OK editor no edita config'; end if; end $$;
@@ -121,6 +125,7 @@ do $$ begin if exists (select 1 from public.sign_clips) then raise notice 'FALLA
 do $$ begin if exists (select 1 from storage.objects where bucket_id = 'sign-clips') then raise notice 'FALLA: anon lista el bucket sign-clips'; else raise notice 'OK anon no lista el bucket sign-clips'; end if; end $$;
 select 'bucket sign-clips: ' || file_size_limit || ' bytes · ' || array_to_string(allowed_mime_types, ', ') from storage.buckets where id = 'sign-clips';
 select 'anon lee config: ' || count(*) from public.app_config;
+select 'anon lee señas con fuente: ' || count(*) from public.signs where source is not null;
 select 'anon lee misión: ' || (select value ->> 'mission' from public.site_content where key = 'about');
 select 'anon ve integrantes publicados: ' || count(*) from public.team_members;
 select 'anon ve redes publicadas: ' || coalesce(sum(jsonb_array_length(socials)), 0) from public.team_members;

@@ -3,7 +3,7 @@
 // resuelve los imports sin extensión de `src/`, así que cada módulo se importa
 // como data: URL y, en ExerciseFactory, su único import relativo se reemplaza
 // por la URL de exerciseTypes.
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -21,7 +21,19 @@ export async function loadDomain() {
     `from '${toDataUrl(typesSource)}';`,
   );
   const { ExerciseFactory } = await import(toDataUrl(factorySource));
-  return { signMedia, exerciseTypes, ExerciseFactory };
+  // Sin imports propios: se cargan tal cual (ver el encabezado de cada archivo).
+  const clubDictionary = await import(toDataUrl(read('src/features/signs/domain/clubDictionary.js')));
+  return { signMedia, exerciseTypes, ExerciseFactory, clubDictionary };
+}
+
+export function readClipsSeed() {
+  return JSON.parse(read('src/features/signs/data/content/clubTalcaClips.json'));
+}
+
+/** Pistas observadas (las genera otra herramienta); null si todavía no existe el archivo. */
+export function readHintsSeed() {
+  const file = join(ROOT, 'src/features/signs/data/content/clubTalcaHints.json');
+  return existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : null;
 }
 
 export function readLevelsSeed() {

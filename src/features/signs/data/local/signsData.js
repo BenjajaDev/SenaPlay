@@ -63,4 +63,3 @@ export const REAL_SIGNS = [
   },
 ];
 
-export const SIGN_THEMES = ['Todos', 'Acciones', 'Animales', 'Profesiones', 'Ropa'];

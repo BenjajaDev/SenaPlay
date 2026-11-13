@@ -45,8 +45,10 @@ lines.push(`create table if not exists public.signs (
   meaning text,
   how_to text,
   theme text,
-  page integer
+  page integer,
+  source text
 );`);
+lines.push('alter table public.signs add column if not exists source text;');
 lines.push('');
 
 lines.push('-- 2) Seguridad: lectura publica');
@@ -55,8 +57,9 @@ lines.push(`drop policy if exists "signs_read" on public.signs;`);
 lines.push(`create policy "signs_read" on public.signs for select using (true);`);
 lines.push('');
 
-lines.push('-- 3) Datos (se reemplazan en cada ejecucion)');
-lines.push('truncate table public.signs;');
+lines.push('-- 3) Datos MINEDUC (se reemplazan en cada ejecucion; las filas con source, como las del');
+lines.push('--    Club de Sordos de Talca, se conservan: se cargan con scripts/clubTalca)');
+lines.push('delete from public.signs where source is null;');
 lines.push('');
 
 REAL_SIGNS.forEach((s) => {

@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { memo, useCallback, useMemo, useState } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { FlatList, ScrollView, StyleSheet, View } from 'react-native';
 import useStaleWhileRevalidate from '../../../core/data/useStaleWhileRevalidate';
 import { useServices } from '../../../core/di/ServicesProvider';
 import {
@@ -16,8 +16,9 @@ import {
 } from '../../../shared/ui';
 import { useAppTheme } from '../../../shared/theme/ThemeProvider';
 import { DICTIONARY_ENTRIES, DICTIONARY_FILTERS } from '../../signs/data/local/dictionaryData';
-import { REAL_SIGNS, SIGN_THEMES } from '../../signs/data/local/signsData';
+import { REAL_SIGNS } from '../../signs/data/local/signsData';
 import SignImage from '../../signs/presentation/SignImage';
+import { ALL_THEMES, buildSearchIndex, filterSigns, normalizeText, signToDetail, themeFilters } from '../domain/vocabulary';
 import SignDetailModal from './SignDetailModal';
 
 const LOCAL_DICTIONARY = { entries: DICTIONARY_ENTRIES, source: 'local' };
@@ -27,12 +28,6 @@ const MODES = [
   { key: 'deletreo', label: 'Deletreo' },
   { key: 'senas', label: 'Señas reales' },
 ];
-
-const normalizeText = (value) =>
-  String(value || '')
-    .toLocaleLowerCase('es')
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '');
 
 // Las entradas de deletreo y las señas léxicas vienen con formas distintas.
 // Se normalizan aquí para que el modal reciba siempre el mismo objeto.
@@ -46,18 +41,6 @@ function entryToDetail(entry) {
     badgeTone: badge.tone,
     badgeIcon: badge.icon,
     howTo: entry.description,
-  };
-}
-
-function signToDetail(sign) {
-  return {
-    signKey: sign.word,
-    title: sign.word,
-    subtitle: sign.theme,
-    badge: sign.type,
-    description: sign.meaning,
-    howTo: sign.howTo,
-    source: sign.page ? `Diccionario MINEDUC · pág. ${sign.page}` : null,
   };
 }
 
@@ -106,9 +89,9 @@ const SignListCard = memo(function SignListCard({ item, onPress, styles, theme }
             </AppText>
             {item.type ? <Badge label={item.type} /> : null}
           </View>
-          {item.meaning ? (
+          {item.meaning || item.theme ? (
             <AppText variant="caption" tone="secondary" numberOfLines={2}>
-              {item.meaning}
+              {item.meaning || item.theme}
             </AppText>
           ) : null}
           <View style={styles.moreRow}>
@@ -128,7 +111,7 @@ export default function DictionaryTabScreen() {
   const styles = useMemo(() => createStyles(theme), [theme]);
   const { signs: signsRepository } = useServices();
   const [mode, setMode] = useState('deletreo');
-  const [filter, setFilter] = useState('Todos');
+  const [filter, setFilter] = useState(ALL_THEMES);
   const [query, setQuery] = useState('');
   const [detail, setDetail] = useState(null);
   // El contenido empaquetado se ve desde el primer frame; la caché y luego el
@@ -149,31 +132,34 @@ export default function DictionaryTabScreen() {
   // Al cambiar de modo se resetea el filtro: las categorías difieren.
   const handleModeChange = (nextMode) => {
     setMode(nextMode);
-    setFilter('Todos');
+    setFilter(ALL_THEMES);
   };
 
-  const filters = mode === 'deletreo' ? DICTIONARY_FILTERS : SIGN_THEMES;
+  // Los temas salen de los datos: si el remoto trae más (o menos) que lo guardado, los chips se ajustan.
+  const themes = useMemo(() => themeFilters(signs), [signs]);
+  const filters = mode === 'deletreo' ? DICTIONARY_FILTERS : themes;
+  const activeFilter = filters.includes(filter) ? filter : ALL_THEMES;
   const search = normalizeText(query.trim());
 
   const dictionaryItems = useMemo(
     () =>
       entries.filter(
         (entry) =>
-          (filter === 'Todos' || entry.category === filter) &&
+          (activeFilter === 'Todos' || entry.category === activeFilter) &&
           (!search || normalizeText(`${entry.letter} ${entry.description}`).includes(search)),
       ),
-    [entries, filter, search],
+    [entries, activeFilter, search],
   );
 
-  const signItems = useMemo(
-    () =>
-      signs.filter(
-        (sign) =>
-          (filter === 'Todos' || sign.theme === filter) &&
-          (!search || normalizeText(`${sign.word} ${sign.meaning}`).includes(search)),
-      ),
-    [signs, filter, search],
-  );
+  // El texto de búsqueda se normaliza una vez por lista de señas, no en cada tecla.
+  const searchIndex = useMemo(() => buildSearchIndex(signs), [signs]);
+  const signItems = useMemo(() => filterSigns(searchIndex, { theme: activeFilter, query }), [searchIndex, activeFilter, query]);
+
+  // Salida del estado vacío: vuelve a la lista completa sin borrar a mano.
+  const clearSearch = useCallback(() => {
+    setQuery('');
+    setFilter(ALL_THEMES);
+  }, []);
 
   const openEntryDetail = useCallback((item) => setDetail(entryToDetail(item)), []);
   const openSignDetail = useCallback((item) => setDetail(signToDetail(item)), []);
@@ -191,7 +177,11 @@ export default function DictionaryTabScreen() {
     <View style={styles.header}>
       <SectionHeader
         title="Diccionario de señas"
-        subtitle={mode === 'deletreo' ? 'Letras, números y acciones por categoría' : 'Señas reales (un gesto por palabra)'}
+        subtitle={
+          mode === 'deletreo'
+            ? 'Letras, números y acciones por categoría'
+            : `Señas reales · ${signItems.length} ${signItems.length === 1 ? 'seña' : 'señas'}`
+        }
       />
       <SegmentedControl options={MODES} value={mode} onChange={handleModeChange} />
       <TextField
@@ -203,16 +193,38 @@ export default function DictionaryTabScreen() {
         returnKeyType="search"
         autoCorrect={false}
       />
-      <View style={styles.filtersRow}>
-        {filters.map((item) => (
-          <Chip key={item} label={item} selected={item === filter} onPress={() => setFilter(item)} />
-        ))}
-      </View>
+      {mode === 'deletreo' ? (
+        <View style={styles.filtersRow}>
+          {filters.map((item) => (
+            <Chip key={item} label={item} selected={item === activeFilter} onPress={() => setFilter(item)} />
+          ))}
+        </View>
+      ) : (
+        // Con una veintena de temas, un chip por fila ocuparía media pantalla: se desplazan de lado.
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          style={styles.filtersScrollView}
+          contentContainerStyle={styles.filtersScroll}
+          accessibilityLabel="Filtrar por tema"
+        >
+          {filters.map((item) => (
+            <Chip key={item} label={item} selected={item === activeFilter} onPress={() => setFilter(item)} />
+          ))}
+        </ScrollView>
+      )}
     </View>
   );
 
   const empty = (
-    <EmptyState icon="search" title="Sin resultados" message="Prueba con otra palabra o quita el filtro." />
+    <EmptyState
+      icon="search"
+      title="Sin resultados"
+      message="Prueba con otra palabra o quita el filtro."
+      actionLabel={query || activeFilter !== ALL_THEMES ? 'Ver todo' : undefined}
+      onAction={clearSearch}
+    />
   );
 
   const listProps = {
@@ -262,6 +274,11 @@ function createStyles(theme) {
     container: { flex: 1 },
     header: { gap: spacing.md, paddingBottom: spacing.md },
     listContent: { paddingBottom: spacing.md },
+    // El ScrollView mide lo que el chip (36 px) y en Android recorta su hitSlop:
+    // el relleno vertical devuelve el área táctil a 44 px y el margen negativo
+    // mantiene el ritmo del encabezado.
+    filtersScrollView: { marginVertical: -spacing.xs },
+    filtersScroll: { flexDirection: 'row', gap: spacing.sm, paddingRight: spacing.md, paddingVertical: spacing.xs },
     filtersRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
     gridRow: { justifyContent: 'space-between' },
     gridCard: { width: '48.5%', marginBottom: spacing.sm + 2 },

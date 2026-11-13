@@ -286,6 +286,8 @@ Exportación real con `mediabunny` en Chromium (Playwright, sin aceleración por
 | 40 s, 78 MB, tramo del medio | ✓ | 3,2 s | 253 kB |
 | Cancelar a mitad de la exportación | ✓ se detiene sin error | — | — |
 
+Las mismas pruebas se repitieron sirviendo el editor con la CSP de producción (`web/public/_headers`): todo funciona igual y no hay violaciones. `mediabunny` crea workers desde `blob:` solo para captura en vivo y funciones que el editor no usa, así que no hace falta agregar `worker-src`.
+
 La imagen fija se comparó con el mismo recorte hecho por ffmpeg: coinciden el encuadre y el cuadro. El editor también se revisó en claro, oscuro y a 390 px de ancho (sin scroll horizontal), y el encuadre con teclado.
 
 **HEVC:** Chrome solo lo decodifica si el equipo tiene soporte de hardware (en general Mac y parte de Windows). Recomendación para quien graba: en el iPhone, Ajustes → Cámara → Formatos → «Más compatible».

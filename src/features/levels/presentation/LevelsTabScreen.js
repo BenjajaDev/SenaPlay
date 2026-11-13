@@ -27,7 +27,7 @@ function LevelNode({ item, onPress, theme }) {
       <Ionicons name="checkmark" size={30} color={theme.colors.onSuccess} />
     ) : status === 'unlocked' ? (
       <AppText variant="display" tone="inverse">
-        {item.id}
+        {item.number}
       </AppText>
     ) : (
       <Ionicons name="lock-closed" size={22} color={theme.colors.textMuted} />
@@ -37,7 +37,7 @@ function LevelNode({ item, onPress, theme }) {
     <Pressable
       onPress={() => onPress(item)}
       accessibilityRole="button"
-      accessibilityLabel={`Nivel ${item.id}: ${item.title}, ${statusText}`}
+      accessibilityLabel={`Nivel ${item.number}: ${item.title}, ${statusText}`}
       accessibilityState={{ disabled: status === 'locked' }}
       style={({ pressed }) => [
         styles.node,
@@ -99,7 +99,7 @@ function LivesPoolCard({ lives, theme }) {
 export default function LevelsTabScreen({ levelProgress, onOpenLevel, isLoading, lives }) {
   const theme = useAppTheme();
   const { notify } = useFeedback();
-  const { levels: catalogLevels } = useCatalog();
+  const { levels: catalogLevels, getLevelNumber } = useCatalog();
 
   const levels = useMemo(() => {
     const unlockedIds = resolveUnlockedIds(catalogLevels, levelProgress);
@@ -107,6 +107,7 @@ export default function LevelsTabScreen({ levelProgress, onOpenLevel, isLoading,
       const completion = levelProgress?.completed?.[level.id];
       return {
         id: level.id,
+        number: getLevelNumber(level.id),
         title: level.title,
         available: level.available,
         unlocked: unlockedIds.includes(level.id),
@@ -114,7 +115,7 @@ export default function LevelsTabScreen({ levelProgress, onOpenLevel, isLoading,
         stars: completion?.stars ?? (completion ? 1 : 0),
       };
     });
-  }, [catalogLevels, levelProgress]);
+  }, [catalogLevels, levelProgress, getLevelNumber]);
 
   const completedCount = levels.filter((item) => item.completed).length;
 

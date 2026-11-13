@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { AppText, Badge, Button, Card } from '../../../shared/ui';
 import { useAppTheme } from '../../../shared/theme/ThemeProvider';
+import { useCatalog } from '../../levels/presentation/CatalogContext';
 import SignImage from '../../signs/presentation/SignImage';
 
 const times = (n) => `${n} ${n === 1 ? 'vez' : 'veces'}`;
@@ -14,6 +15,7 @@ const times = (n) => `${n} ${n === 1 ? 'vez' : 'veces'}`;
  */
 export default function FrequentMistakesCard({ items, onPractice }) {
   const theme = useAppTheme();
+  const { getLevelNumber } = useCatalog();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
   if (!items) return null;
@@ -42,7 +44,7 @@ export default function FrequentMistakesCard({ items, onPractice }) {
               key={`${item.levelId}-${item.exerciseKey}`}
               style={styles.row}
               accessible
-              accessibilityLabel={`Nivel ${item.levelId}, ${item.title || 'ejercicio'}: fallaste ${times(item.count)}${
+              accessibilityLabel={`Nivel ${getLevelNumber(item.levelId)}, ${item.title || 'ejercicio'}: fallaste ${times(item.count)}${
                 item.topAnswer ? `, sueles responder ${item.topAnswer}` : ''
               }`}
             >
@@ -58,7 +60,7 @@ export default function FrequentMistakesCard({ items, onPractice }) {
                   {item.title || 'Ejercicio'}
                 </AppText>
                 <AppText variant="caption" tone="secondary">
-                  {`Nivel ${item.levelId} · fallaste ${times(item.count)}`}
+                  {`Nivel ${getLevelNumber(item.levelId)} · fallaste ${times(item.count)}`}
                   {item.topAnswer ? ` · sueles responder «${item.topAnswer}»` : ''}
                 </AppText>
                 {item.gameOvers ? (
@@ -74,7 +76,7 @@ export default function FrequentMistakesCard({ items, onPractice }) {
 
       {items.length && onPractice ? (
         <Button
-          label={`Repasar nivel ${items[0].levelId}`}
+          label={`Repasar nivel ${getLevelNumber(items[0].levelId)}`}
           icon="refresh"
           variant="secondary"
           onPress={() => onPractice(items[0].levelId)}

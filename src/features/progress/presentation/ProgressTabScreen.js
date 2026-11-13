@@ -12,7 +12,7 @@ const plural = (n, singular, pluralWord) => `${n} ${n === 1 ? singular : pluralW
 /** Resumen de actividad: métricas, racha y detalle por nivel (del catálogo real). */
 export default function ProgressTabScreen({ levelProgress, userStats, isLoading, frequentMistakes, onOpenLevel }) {
   const theme = useAppTheme();
-  const { levels } = useCatalog();
+  const { levels, getLevelNumber } = useCatalog();
 
   const completed = levelProgress?.completed || {};
   const unlocked = resolveUnlockedIds(levels, levelProgress);
@@ -76,10 +76,10 @@ export default function ProgressTabScreen({ levelProgress, userStats, isLoading,
               ? { icon: 'play-circle', color: theme.colors.primary, text: 'Disponible', tone: 'brand' }
               : { icon: 'lock-closed', color: theme.colors.textMuted, text: 'Bloqueado', tone: 'muted' };
           return (
-            <View key={level.id} style={styles.levelRow} accessible accessibilityLabel={`Nivel ${level.id}, ${level.title}: ${status.text}`}>
+            <View key={level.id} style={styles.levelRow} accessible accessibilityLabel={`Nivel ${getLevelNumber(level.id)}, ${level.title}: ${status.text}`}>
               <Ionicons name={status.icon} size={18} color={status.color} />
               <AppText variant="caption" style={styles.flex} numberOfLines={1}>
-                {`Nivel ${level.id} · ${level.title}`}
+                {`Nivel ${getLevelNumber(level.id)} · ${level.title}`}
               </AppText>
               <AppText variant="label" tone={status.tone}>
                 {status.text}

@@ -7,6 +7,7 @@ import { useAppTheme } from '../../../shared/theme/ThemeProvider';
 import { useRemoteConfig } from '../../remoteConfig/presentation/RemoteConfigProvider';
 import { pickSessionExercises } from '../domain/exerciseRotation';
 import { SESSION_STATUS } from '../domain/sessionMachine';
+import { useCatalog } from './CatalogContext';
 import { EXERCISE_COMPONENTS } from './exercises';
 import FeedbackPanel from './session/FeedbackPanel';
 import { HintFab, HintPopover } from './session/HintFab';
@@ -46,6 +47,7 @@ export default function LevelSessionScreen({
   const styles = useMemo(() => createStyles(theme), [theme]);
   const { config, isEnabled } = useRemoteConfig();
   const { confirm } = useFeedback();
+  const { getLevelNumber } = useCatalog();
   // El nivel se fija al abrir la sesión: si el catálogo remoto llega a mitad
   // de partida, no se vuelven a sortear los ejercicios bajo la persona.
   const [baseLevel] = useState(openedLevel);
@@ -132,7 +134,7 @@ export default function LevelSessionScreen({
   return (
     <View style={styles.screen}>
       <ScreenHeader
-        title={`Nivel ${level.id}`}
+        title={`Nivel ${getLevelNumber(level.id)}`}
         onBack={requestExit}
         backLabel="Salir del nivel"
         rightNode={

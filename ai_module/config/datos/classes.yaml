@@ -12,7 +12,13 @@
 # Agregadas por el autor (2026-11-13): Alergia, Dolor, Mucho y Tengo
 # (vocabulario de salud). Dolor junta sus dos variantes (horizontal y vertical)
 # en una sola clase. Ñ queda fuera hasta tener más videos.
+#
+# `ninguna` (2026-11-13) es la clase de rechazo del modelo dinámico
+# (model/predict.py: CLASE_SIN_SEÑA). Reemplaza a los negativos sintéticos:
+# tramos reales de reposo de los videos originales y letras y números
+# estáticos del Club de Sordos de Talca (origen en videos_tesis/ninguna_origen.csv).
 dinamicas:
+  - ninguna
   - Alergia
   - Dolor
   - G

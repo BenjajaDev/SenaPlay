@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, View } from 'react-native';
 import { AppText, Card, ProgressBar, SectionHeader, SkeletonList, StatCard, StaggerItem } from '../../../shared/ui';
 import { useAppTheme } from '../../../shared/theme/ThemeProvider';
+import { resolveUnlockedIds } from '../../levels/domain/levelProgress';
 import { useCatalog } from '../../levels/presentation/CatalogContext';
 import { currentStreak, toLocalISODate } from '../domain/streak';
 import FrequentMistakesCard from './FrequentMistakesCard';
@@ -14,7 +15,7 @@ export default function ProgressTabScreen({ levelProgress, userStats, isLoading,
   const { levels } = useCatalog();
 
   const completed = levelProgress?.completed || {};
-  const unlocked = levelProgress?.unlocked || [1];
+  const unlocked = resolveUnlockedIds(levels, levelProgress);
   const completedCount = levels.filter((level) => completed[level.id]).length;
   const totalLevels = levels.length;
 

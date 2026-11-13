@@ -15,6 +15,8 @@ export const CLIP_PLAYER_MIN_SIZE = 120;
 
 const SLOW_RATE = 0.5;
 
+const lowerFirst = (text) => text.charAt(0).toLocaleLowerCase('es') + text.slice(1);
+
 const formatSeconds = (ms) => (ms / 1000).toLocaleString('es-CL', { maximumFractionDigits: 1 });
 
 /**
@@ -36,15 +38,19 @@ const formatSeconds = (ms) => (ms / 1000).toLocaleString('es-CL', { maximumFract
  * Props:
  *   clip         { signKey, gloss, videoUrl, posterUrl, durationMs }
  *   label        nombre de la seña para el lector de pantalla
+ *   neutralName  nombre sin la glosa («Seña de la opción 2», «Seña a interpretar»)
+ *                para ejercicios donde la glosa es la respuesta; reemplaza a `label`
  *   size         lado de la caja en px
  *   rounded      radio del borde
  *   interactive  muestra el reproductor (por defecto según el tamaño)
  */
-export default function SignClip({ clip, label, size, rounded = 14, interactive = size >= CLIP_PLAYER_MIN_SIZE, style }) {
+export default function SignClip({ clip, label, neutralName, size, rounded = 14, interactive = size >= CLIP_PLAYER_MIN_SIZE, style }) {
   const theme = useAppTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const caja = { width: size, height: size, borderRadius: rounded };
   const nombre = label || clip.gloss;
+  // Frase que completa «Ver …», «Detener …»: con nombre neutro no aparece la glosa.
+  const sujeto = neutralName ? `la ${lowerFirst(neutralName)}` : `la seña ${nombre}`;
 
   if (!interactive) {
     return (
@@ -52,7 +58,7 @@ export default function SignClip({ clip, label, size, rounded = 14, interactive 
         style={[caja, styles.frame, style]}
         accessible
         accessibilityRole="image"
-        accessibilityLabel={`Seña de ${nombre}, con movimiento`}
+        accessibilityLabel={`${neutralName || `Seña de ${nombre}`}, con movimiento`}
       >
         <Image source={{ uri: clip.posterUrl }} style={[styles.fill, caja]} resizeMode="cover" />
         <View pointerEvents="none" style={styles.badgeSmall}>
@@ -62,11 +68,11 @@ export default function SignClip({ clip, label, size, rounded = 14, interactive 
     );
   }
 
-  return <ClipPlayer clip={clip} nombre={nombre} caja={caja} size={size} styles={styles} theme={theme} style={style} />;
+  return <ClipPlayer clip={clip} sujeto={sujeto} caja={caja} size={size} styles={styles} theme={theme} style={style} />;
 }
 
 // Estados: 'poster' (imagen fija) · 'loading' · 'playing' · 'error'.
-function ClipPlayer({ clip, nombre, caja, size, styles, theme, style }) {
+function ClipPlayer({ clip, sujeto, caja, size, styles, theme, style }) {
   const reduceMotion = useReducedMotion();
   const [slow, setSlow] = useSlowMotion();
   const [loop, setLoop] = useState(false);
@@ -111,7 +117,7 @@ function ClipPlayer({ clip, nombre, caja, size, styles, theme, style }) {
     if (status !== 'error') return;
     loadedUrl.current = null;
     setPhase('error');
-    announce(`No se pudo cargar el video de la seña ${nombre}`);
+    announce(`No se pudo cargar el video de ${sujeto}`);
   });
 
   const stop = () => {
@@ -139,7 +145,7 @@ function ClipPlayer({ clip, nombre, caja, size, styles, theme, style }) {
       if (current !== request.current) return;
       loadedUrl.current = null;
       setPhase('error');
-      announce(`No se pudo cargar el video de la seña ${nombre}`);
+      announce(`No se pudo cargar el video de ${sujeto}`);
     }
   };
 
@@ -160,7 +166,7 @@ function ClipPlayer({ clip, nombre, caja, size, styles, theme, style }) {
             onPress={stop}
             style={styles.fill}
             accessibilityRole="button"
-            accessibilityLabel={`Detener la seña ${nombre}`}
+            accessibilityLabel={`Detener ${sujeto}`}
           >
             <View style={caja} />
           </Pressable>
@@ -174,7 +180,7 @@ function ClipPlayer({ clip, nombre, caja, size, styles, theme, style }) {
               hitSlop={8}
               style={styles.playButton}
               accessibilityRole="button"
-              accessibilityLabel={`Ver la seña ${nombre} en movimiento`}
+              accessibilityLabel={`Ver ${sujeto} en movimiento`}
               accessibilityHint={`Video de ${segundos} segundos, sin sonido`}
               accessibilityState={{ busy: loading, disabled: loading }}
             >

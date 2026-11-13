@@ -9,7 +9,7 @@ import {
   validateClipEdit,
 } from '../clipEdit';
 
-const landscape = { width: 1920, height: 1080, durationMs: 8000 };
+const landscape = { width: 1920, height: 1080, durationMs: 12000 };
 const portrait = { width: 1080, height: 1920, durationMs: 4000 };
 
 const validEdit = (overrides = {}) => ({
@@ -60,10 +60,10 @@ describe('tiempo', () => {
     expect(defaultKeyFrame({ startMs: 0, endMs: 3000 })).toBe(1500);
   });
 
-  test('la edición inicial limita el tramo a 6 s y es válida', () => {
+  test('la edición inicial limita el tramo a 10 s y es válida', () => {
     const edit = createClipEdit(landscape);
-    expect(edit.trim).toEqual({ startMs: 0, endMs: 6000 });
-    expect(edit.keyFrameMs).toBe(3000);
+    expect(edit.trim).toEqual({ startMs: 0, endMs: 10000 });
+    expect(edit.keyFrameMs).toBe(5000);
     expect(validateClipEdit(edit).valid).toBe(true);
   });
 });
@@ -89,8 +89,8 @@ describe('validateClipEdit', () => {
   });
 
   test('informa la duración con coma decimal cuando el tramo es muy largo o muy corto', () => {
-    expect(validateClipEdit(validEdit({ trim: { startMs: 0, endMs: 7200 }, keyFrameMs: 100 })).errors.trim).toBe(
-      'El tramo dura 7,2 s; debe durar entre 0,5 y 6,0 s.',
+    expect(validateClipEdit(validEdit({ trim: { startMs: 0, endMs: 11200 }, keyFrameMs: 100 })).errors.trim).toBe(
+      'El tramo dura 11,2 s; debe durar entre 0,5 y 10,0 s.',
     );
     expect(validateClipEdit(validEdit({ trim: { startMs: 1000, endMs: 1300 }, keyFrameMs: 1100 })).errors.trim).toMatch(
       /0,3 s/,
@@ -99,7 +99,7 @@ describe('validateClipEdit', () => {
 
   test('rechaza un tramo invertido o fuera del video', () => {
     expect(validateClipEdit(validEdit({ trim: { startMs: 3000, endMs: 1000 } })).errors.trim).toMatch(/antes del fin/);
-    expect(validateClipEdit(validEdit({ trim: { startMs: 5000, endMs: 9000 } })).errors.trim).toMatch(/dentro del video/);
+    expect(validateClipEdit(validEdit({ trim: { startMs: 5000, endMs: 13000 } })).errors.trim).toMatch(/dentro del video/);
   });
 
   test('exige que la imagen fija esté dentro del tramo', () => {

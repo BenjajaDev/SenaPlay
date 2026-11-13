@@ -15,8 +15,8 @@ export default function TrueFalseExercise({ exercise, answer, onAnswerChange, di
 
   return (
     <View style={styles.block}>
-      {exercise.sign ? <SignSpotlight sign={exercise.sign} size={130} onHint={onHint} /> : null}
-      {!exercise.sign && exercise.signs?.length ? <SignStrip signs={exercise.signs} onHint={onHint} /> : null}
+      {exercise.sign ? <SignSpotlight sign={exercise.sign} size={130} onHint={onHint} concealGloss /> : null}
+      {!exercise.sign && exercise.signs?.length ? <SignStrip signs={exercise.signs} onHint={onHint} concealGloss /> : null}
       <Card variant="gradient" padding="lg">
         <AppText variant="bodyStrong" align="center" style={styles.statement}>
           “{exercise.statement}”

@@ -28,6 +28,10 @@ export function evaluateAnswer(exercise, answer) {
       if (!answer) return incomplete('Elige un significado.');
       return verdict(answer === exercise.correct, 'Ese no es el significado correcto.');
 
+    case 'sign-choice':
+      if (!answer) return incomplete('Elige una seña.');
+      return verdict(answer === exercise.correct, 'Esa no es la seña correcta. Míralas de nuevo con calma.');
+
     case 'true-false': {
       if (answer === undefined || answer === null || answer === '') return incomplete('Responde Verdadero o Falso.');
       const value = answer === true || answer === 'true';

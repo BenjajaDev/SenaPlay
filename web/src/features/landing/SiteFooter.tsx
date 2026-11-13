@@ -2,8 +2,10 @@ import { ExternalLink, Mail, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { LandingSections } from '@/data/types';
 import { brandIcon } from '@/lib/brand';
+import { CLUB_SORDOS_TALCA } from '@/lib/collaborators';
 import { keyed } from '@/lib/listKeys';
 import { SOCIAL_NETWORKS, SocialIcon, safeLinkHref, socialHref } from '@/lib/social';
+import { PartnerMark } from './PartnerMark';
 
 type NavLink = { href: string; label: string };
 
@@ -22,11 +24,15 @@ export function SiteFooter({ config, navLinks }: Readonly<{ config: LandingSecti
     <footer className="site-footer">
       <div className="site-footer__top">
         <div className="site-footer__brand">
-          <Link to="/" className="brand-link site-footer__logo" aria-label="SeñaPlay, inicio">
-            {/* El pie siempre es oscuro: se usa el ícono del tema oscuro. */}
-            <img src={brandIcon('dark')} alt="" width={40} height={40} />
-            <span>SeñaPlay</span>
-          </Link>
+          <div className="brand-lockup">
+            <Link to="/" className="brand-link site-footer__logo" aria-label="SeñaPlay, inicio">
+              {/* El pie siempre es oscuro: se usa el ícono del tema oscuro. */}
+              <img src={brandIcon('dark')} alt="" width={40} height={40} />
+              <span>SeñaPlay</span>
+            </Link>
+            <PartnerMark tone="header" />
+          </div>
+          <p className="site-footer__partner">En colaboración con el {CLUB_SORDOS_TALCA.name}.</p>
           {config?.text ? <p className="site-footer__tagline">{config.text}</p> : null}
           {socials.length ? (
             <ul className="site-footer__socials" aria-label="Redes de SeñaPlay">

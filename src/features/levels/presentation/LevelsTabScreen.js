@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import haptics from '../../../core/feedback/haptics';
 import { AppText, Card, ProgressBar, SectionHeader, SkeletonList, StaggerItem, useFeedback } from '../../../shared/ui';
 import { useAppTheme } from '../../../shared/theme/ThemeProvider';
+import { resolveUnlockedIds } from '../domain/levelProgress';
 import { useCatalog } from './CatalogContext';
 
 function Stars({ count, theme }) {
@@ -100,21 +101,20 @@ export default function LevelsTabScreen({ levelProgress, onOpenLevel, isLoading,
   const { notify } = useFeedback();
   const { levels: catalogLevels } = useCatalog();
 
-  const levels = useMemo(
-    () =>
-      catalogLevels.map((level) => {
-        const completion = levelProgress?.completed?.[level.id];
-        return {
-          id: level.id,
-          title: level.title,
-          available: level.available,
-          unlocked: (levelProgress?.unlocked || [1]).includes(level.id),
-          completed: Boolean(completion),
-          stars: completion?.stars ?? (completion ? 1 : 0),
-        };
-      }),
-    [catalogLevels, levelProgress],
-  );
+  const levels = useMemo(() => {
+    const unlockedIds = resolveUnlockedIds(catalogLevels, levelProgress);
+    return catalogLevels.map((level) => {
+      const completion = levelProgress?.completed?.[level.id];
+      return {
+        id: level.id,
+        title: level.title,
+        available: level.available,
+        unlocked: unlockedIds.includes(level.id),
+        completed: Boolean(completion),
+        stars: completion?.stars ?? (completion ? 1 : 0),
+      };
+    });
+  }, [catalogLevels, levelProgress]);
 
   const completedCount = levels.filter((item) => item.completed).length;
 

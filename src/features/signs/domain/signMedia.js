@@ -7,7 +7,7 @@
 /** Límites de un clip. La migración `sign_clips` repite los mismos con `check`. */
 export const SIGN_CLIP_LIMITS = Object.freeze({
   minDurationMs: 500,
-  maxDurationMs: 6000,
+  maxDurationMs: 10000,
   exportSize: 480,
   minCropSize: 240,
   frameRate: 30,
@@ -39,6 +39,18 @@ export function toSignKey(gloss) {
     .replace(/[̀-ͯ]/g, '')
     .replace(/[^a-z0-9ñ~]+/g, '-')
     .replace(/^-+|-+$/g, '');
+}
+
+/**
+ * Carpeta del bucket `sign-clips` para una clave. Supabase Storage solo acepta
+ * `[A-Za-z0-9_/!.*'() &$=@;:+,?-]` en las rutas, así que la ñ pasa a `n_` y
+ * la `~` (n~) a `_`. La migración repite la regla en `public.sign_clip_folder`
+ * (supabase/migrations/20261113000100_club_talca_content.sql, con sus asserts en
+ * supabase/tests/10_rls_policies.sql) y el script scripts/clubTalca la reutiliza
+ * desde aquí: si cambias una, cambia la otra.
+ */
+export function toStorageFolder(signKey) {
+  return String(signKey ?? '').replace(/ñ/g, 'n_').replace(/~/g, '_');
 }
 
 export function isValidSignKey(value) {

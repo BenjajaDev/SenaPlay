@@ -19,7 +19,7 @@ export default function ChoiceExercise({ exercise, answer, onAnswerChange, disab
           <AppText variant="subtitle" tone="secondary">
             Lee las señas y elige el significado correcto.
           </AppText>
-          <SignStrip signs={exercise.signs} onHint={onHint} />
+          <SignStrip signs={exercise.signs} onHint={onHint} concealGloss />
         </>
       ) : (
         <SignSpotlight

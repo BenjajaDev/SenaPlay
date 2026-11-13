@@ -33,3 +33,23 @@ export function completeLevel(progress, { levelId, score, hits, fails, stars = 0
 export function isLevelUnlocked(progress, levelId) {
   return normalizeLevelProgress(progress).unlocked.includes(levelId);
 }
+
+/**
+ * Ids desbloqueados según el catálogo actual. `completeLevel` solo desbloquea
+ * el siguiente si ya estaba disponible; si un admin activa niveles después,
+ * quien ya completó el último nunca los vería. Por eso un nivel disponible
+ * también está desbloqueado cuando el nivel disponible anterior (en el orden
+ * del catálogo) está completado. Se calcula al leer: no se persiste.
+ */
+export function resolveUnlockedIds(levels, progress) {
+  const base = normalizeLevelProgress(progress);
+  const unlocked = new Set(base.unlocked);
+  const ordered = [...(Array.isArray(levels) ? levels : [])]
+    .filter((level) => level?.available)
+    .sort((a, b) => (a.sortOrder ?? a.sort_order ?? a.id) - (b.sortOrder ?? b.sort_order ?? b.id) || a.id - b.id);
+  ordered.forEach((level, index) => {
+    const previous = ordered[index - 1];
+    if (previous && base.completed[previous.id]) unlocked.add(level.id);
+  });
+  return [...unlocked].sort((a, b) => a - b);
+}

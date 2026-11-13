@@ -21,6 +21,7 @@ SeñaPlay es una plataforma para aprender **Lengua de Señas Chilena (LSCh)**, c
 8. [Configuración remota](08-configuracion-remota.md): claves, flags y guía operativa.
 9. [Guía de desarrollo](09-guia-desarrollo.md): instalación, scripts, pruebas y convenciones.
 10. [Señas en video](10-senas-en-video.md): diseño de los clips con movimiento (formato, datos, editor del panel y reproductor). En propuesta.
+11. [Contenido del Club de Sordos de Talca](11-contenido-club-talca.md): 356 clips, niveles nuevos, medición de formatos e importación.
 
 Los diagramas usan sintaxis **Mermaid**; GitHub y la mayoría de los editores los muestran directamente. Además, `scripts/checkMermaid.cjs` valida que todos compilen.
 

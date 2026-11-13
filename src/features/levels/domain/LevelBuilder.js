@@ -1,6 +1,24 @@
 import ExerciseFactory from './ExerciseFactory';
 
-export const LEVEL_CATEGORIES = ['alfabeto', 'numeros', 'vocabulario', 'frases'];
+export const LEVEL_CATEGORIES = [
+  'alfabeto',
+  'numeros',
+  'vocabulario',
+  'frases',
+  // Contenido del Club de Sordos de Talca (docs/11-contenido-club-talca.md)
+  'saludos',
+  'clase',
+  'colores',
+  'animales',
+  'alimentos',
+  'verbos',
+  'tiempo',
+  'personas',
+  'sentimientos',
+  'lugares',
+  'transporte',
+  'ciudades',
+];
 
 /**
  * Builder de niveles (patrón Builder).

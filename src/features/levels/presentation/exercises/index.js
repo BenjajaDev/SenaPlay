@@ -2,6 +2,7 @@ import ChoiceExercise from './ChoiceExercise';
 import MatchingExercise from './MatchingExercise';
 import OrderingExercise from './OrderingExercise';
 import RecognitionExercise from './RecognitionExercise';
+import SignChoiceExercise from './SignChoiceExercise';
 import TrueFalseExercise from './TrueFalseExercise';
 import TypingExercise from './TypingExercise';
 import WordBuilderExercise from './WordBuilderExercise';
@@ -22,5 +23,6 @@ export const EXERCISE_COMPONENTS = {
   recognition: { Component: RecognitionExercise },
   'build-word': { Component: WordBuilderExercise },
   'interpret-signs': { Component: WordBuilderExercise },
+  'sign-choice': { Component: SignChoiceExercise },
   'true-false': { Component: TrueFalseExercise },
 };

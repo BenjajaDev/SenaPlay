@@ -5,10 +5,13 @@ import { isPlayableClip } from '../domain/signMedia';
 
 const CACHE_KEY = storageKey('signClips', 'v1');
 export const SIGN_CLIPS_BUCKET = 'sign-clips';
+// Vista con solo los clips publicados y sin datos personales (consent_ref, signer_alias…):
+// la tabla `sign_clips` es solo para el staff.
+const CLIPS_VIEW = 'sign_clips_public';
 
 /**
- * Clips de señas con movimiento (tabla `sign_clips` + bucket `sign-clips`).
- * La app solo ve los publicados, que la base de datos exige validados.
+ * Clips de señas con movimiento (vista `sign_clips_public` + bucket `sign-clips`).
+ * La vista solo trae los publicados, que la base de datos exige validados.
  *
  * La tabla guarda rutas, no URLs: la URL pública se arma aquí con
  * getPublicUrl, que no consulta la red. Así un cambio de dominio de Supabase
@@ -43,9 +46,8 @@ export function createSignClipsRepository({ supabase, storage }) {
     fetchRemote: async () => {
       const { data, error } = await withTimeout(
         supabase
-          .from('sign_clips')
+          .from(CLIPS_VIEW)
           .select('id, sign_key, gloss, variant, region, video_path, poster_path, duration_ms')
-          .eq('published', true)
           .order('sign_key', { ascending: true })
           .order('variant', { ascending: true }),
       );

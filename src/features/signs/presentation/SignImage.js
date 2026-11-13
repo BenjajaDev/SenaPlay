@@ -37,19 +37,23 @@ const VARIATION_ACTIONS = [
  *   label    texto a mostrar en el placeholder; por defecto signKey en mayúsculas
  *   size     lado del cuadro en px (default 72)
  *   rounded  radio del borde (default 14)
+ *   accessibilityName  nombre neutro («Seña de la opción 2», «Seña a interpretar»)
+ *            para cuando la glosa es la respuesta del ejercicio: reemplaza a la
+ *            glosa en el lector de pantalla y en el texto del placeholder.
  */
 export default function SignImage({
   signKey,
   label,
   size = 72,
   rounded = 14,
+  accessibilityName,
   style,
   showPlaceholderIcon = true,
 }) {
   const theme = useAppTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
-  const texto = label !== undefined ? label : String(signKey || '').toLocaleUpperCase('es');
+  const texto = accessibilityName ?? (label !== undefined ? label : String(signKey || '').toLocaleUpperCase('es'));
   const media = useSignMedia(signKey, texto);
   const assets = media.kind === 'still' ? media.sources : [];
   const caja = { width: size, height: size, borderRadius: rounded };
@@ -79,11 +83,11 @@ export default function SignImage({
 
   if (media.kind === 'clip') {
     // El nombre accesible es la glosa: `label` a veces es una abreviatura para el placeholder.
-    return <SignClip clip={media.clip} label={media.clip.gloss} size={size} rounded={rounded} style={style} />;
+    return <SignClip clip={media.clip} label={media.clip.gloss} neutralName={accessibilityName} size={size} rounded={rounded} style={style} />;
   }
 
   if (assets.length > 0) {
-    const nombre = `Seña de ${texto}`;
+    const nombre = accessibilityName ?? `Seña de ${texto}`;
     return (
       <View
         style={[caja, styles.marco, style]}
@@ -116,15 +120,16 @@ export default function SignImage({
   // El tamaño de la tipografía se escala con la caja para que sirva igual en la
   // grilla del diccionario (chica) que en el modal de detalle (grande).
   const tamañoTexto = Math.max(12, Math.round(size * 0.34));
-  const tamañoIcono = Math.max(12, Math.round(size * 0.22));
+  // Sin texto (nombre neutro) el icono es el único contenido: va más grande.
+  const tamañoIcono = Math.max(12, Math.round(size * (accessibilityName ? 0.4 : 0.22)));
 
   return (
     <View
       style={[styles.placeholder, caja, style]}
       accessible
-      accessibilityLabel={`Imagen de la seña ${texto} pendiente`}
+      accessibilityLabel={accessibilityName ? `${accessibilityName}, imagen pendiente` : `Imagen de la seña ${texto} pendiente`}
     >
-      {showPlaceholderIcon ? (
+      {showPlaceholderIcon || accessibilityName ? (
         <Ionicons
           name="hand-left-outline"
           size={tamañoIcono}
@@ -132,9 +137,11 @@ export default function SignImage({
           style={styles.icono}
         />
       ) : null}
-      <Text style={[styles.texto, { fontSize: tamañoTexto }]} numberOfLines={1}>
-        {texto}
-      </Text>
+      {accessibilityName ? null : (
+        <Text style={[styles.texto, { fontSize: tamañoTexto }]} numberOfLines={1}>
+          {texto}
+        </Text>
+      )}
     </View>
   );
 }

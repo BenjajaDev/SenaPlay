@@ -4,8 +4,8 @@ import { compareVersions, EXERCISE_TYPE_KEYS, EXERCISE_TYPES, ExerciseFactory, m
 // El portal reutiliza el dominio de la app: estas pruebas fallan si el
 // puente tipado deja de apuntar al código compartido.
 describe('dominio compartido con la app móvil', () => {
-  test('expone los 9 tipos de ejercicio con sus campos', () => {
-    expect(EXERCISE_TYPE_KEYS).toHaveLength(9);
+  test('expone los 10 tipos de ejercicio con sus campos', () => {
+    expect(EXERCISE_TYPE_KEYS).toHaveLength(10);
     expect(EXERCISE_TYPES['multiple-choice'].fields.correct).toMatchObject({ type: 'choice', of: 'options' });
   });
 

@@ -11,6 +11,7 @@ const FIELD_LABELS: Record<string, string> = {
   correct: 'Respuesta correcta',
   answer: 'Respuesta',
   word: 'Palabra',
+  labels: 'Textos de las parejas',
   statement: 'Afirmación',
 };
 

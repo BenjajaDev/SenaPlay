@@ -55,6 +55,20 @@ lines.push('-- 2) Seguridad: lectura publica');
 lines.push('alter table public.signs enable row level security;');
 lines.push(`drop policy if exists "signs_read" on public.signs;`);
 lines.push(`create policy "signs_read" on public.signs for select using (true);`);
+// Escritura del staff (misma regla que 20261113000300_signs_staff_policies.sql). Solo si
+// is_staff() ya existe: en una base nueva la crea 20260924000200_content_admin.sql.
+lines.push('do $$');
+lines.push('begin');
+lines.push("  if to_regprocedure('public.is_staff()') is not null then");
+lines.push(`    drop policy if exists "signs_staff_insert" on public.signs;`);
+lines.push(`    create policy "signs_staff_insert" on public.signs for insert with check (public.is_staff());`);
+lines.push(`    drop policy if exists "signs_staff_update" on public.signs;`);
+lines.push(`    create policy "signs_staff_update" on public.signs for update using (public.is_staff()) with check (public.is_staff());`);
+lines.push(`    drop policy if exists "signs_staff_delete" on public.signs;`);
+lines.push(`    create policy "signs_staff_delete" on public.signs for delete using (public.is_staff());`);
+lines.push('  end if;');
+lines.push('end;');
+lines.push('$$;');
 lines.push('');
 
 lines.push('-- 3) Datos MINEDUC (se reemplazan en cada ejecucion; las filas con source, como las del');

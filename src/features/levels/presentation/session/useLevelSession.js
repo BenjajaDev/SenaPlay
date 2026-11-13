@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import announce from '../../../../core/a11y/announce';
 import haptics from '../../../../core/feedback/haptics';
-import { normalizeHint } from '../../../signs/domain/signDescription';
 import { ANSWER_STATUS, evaluateAnswer } from '../../domain/evaluateAnswer';
+import { resolveHint } from '../../domain/exerciseHint';
 import { computeScore, computeStars } from '../../domain/scoring';
 import { createInitialSession, SESSION_EVENTS, SESSION_STATUS, sessionReducer } from '../../domain/sessionMachine';
 
@@ -111,18 +111,15 @@ export default function useLevelSession({ level, startingLives, scoringRules, on
   }, []);
 
   const showHint = useCallback(
-    (signKey) => {
-      // Sin signKey = pista general del ejercicio (botón ampolleta).
-      const normalized = signKey ? normalizeHint(null, signKey) : normalizeHint(exercise?.hint, exercise?.sign);
-      if (!normalized) {
-        setHint({ title: 'Pista', texto: 'Observa con calma la forma de la mano y la posición de los dedos.', parametros: [] });
-      } else {
-        setHint({ ...normalized, title: signKey ? `Pista: ${String(signKey).toLocaleUpperCase('es')}` : 'Pista' });
-      }
+    (signKey, options = {}) => {
+      // Sin signKey = pista general del ejercicio (botón ampolleta). Con
+      // `conceal` la glosa es la respuesta y la pista no nombra la seña.
+      const resolved = resolveHint(exercise, { signKey, conceal: options.conceal, matched: answer });
+      setHint(resolved ?? { title: 'Pista', texto: 'Observa con calma la forma de la mano y la posición de los dedos.', parametros: [] });
       dispatch({ type: SESSION_EVENTS.USE_HINT });
       haptics.tap();
     },
-    [exercise],
+    [exercise, answer],
   );
 
   const actions = useMemo(

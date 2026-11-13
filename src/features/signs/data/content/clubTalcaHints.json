@@ -1,0 +1,1907 @@
+{
+  "fuente": "Observada automáticamente en los videos del Club de Sordos de Talca (landmarks de MediaPipe); pendiente de validar por una persona sorda",
+  "pistas": {
+    "10": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento corto",
+      "texto": "Se hace con una mano, cerca de la mejilla, con un movimiento corto."
+    },
+    "11": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca de la mejilla, casi sin moverse."
+    },
+    "12": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca de la mejilla, casi sin moverse."
+    },
+    "13": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca de la mejilla, casi sin moverse."
+    },
+    "14": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca de la mejilla, casi sin moverse."
+    },
+    "15": {
+      "manos": 1,
+      "ubicacion": "cerca de la nariz",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con una mano, cerca de la nariz, con un movimiento corto y repetido."
+    },
+    "16": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con una mano, cerca del mentón, con un movimiento corto y repetido."
+    },
+    "17": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con una mano, cerca del mentón, con un movimiento corto y repetido."
+    },
+    "18": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con una mano, cerca del mentón, con un movimiento corto y repetido."
+    },
+    "19": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con una mano, cerca del mentón, con un movimiento corto y repetido."
+    },
+    "1": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca de la mejilla, casi sin moverse."
+    },
+    "20": {
+      "manos": 1,
+      "ubicacion": "cerca de la nariz",
+      "movimiento": "un movimiento corto hacia un lado",
+      "texto": "Se hace con una mano, cerca de la nariz, con un movimiento corto hacia un lado."
+    },
+    "2": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca de la mejilla, casi sin moverse."
+    },
+    "30": {
+      "manos": 1,
+      "ubicacion": "cerca de la boca",
+      "movimiento": "un movimiento corto hacia un lado",
+      "texto": "Se hace con una mano, cerca de la boca, con un movimiento corto hacia un lado."
+    },
+    "3": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca de la mejilla, casi sin moverse."
+    },
+    "40": {
+      "manos": 1,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento corto hacia un lado",
+      "texto": "Se hace con una mano, frente al pecho, con un movimiento corto hacia un lado."
+    },
+    "4": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca del mentón, casi sin moverse."
+    },
+    "50": {
+      "manos": 1,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento corto hacia un lado",
+      "texto": "Se hace con una mano, frente al pecho, con un movimiento corto hacia un lado."
+    },
+    "5": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca de la mejilla, casi sin moverse."
+    },
+    "60": {
+      "manos": 1,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento corto hacia un lado",
+      "texto": "Se hace con una mano, frente al pecho, con un movimiento corto hacia un lado."
+    },
+    "6": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento corto",
+      "texto": "Se hace con una mano, cerca del mentón, con un movimiento corto."
+    },
+    "70": {
+      "manos": 1,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento corto hacia un lado",
+      "texto": "Se hace con una mano, frente al pecho, con un movimiento corto hacia un lado."
+    },
+    "7": {
+      "manos": 2,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento corto",
+      "texto": "Se hace con las dos manos, cerca del mentón, con un movimiento corto."
+    },
+    "80": {
+      "manos": 1,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento corto hacia un lado",
+      "texto": "Se hace con una mano, frente al pecho, con un movimiento corto hacia un lado."
+    },
+    "8": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento corto hacia abajo",
+      "texto": "Se hace con una mano, cerca del mentón, con un movimiento corto hacia abajo."
+    },
+    "90": {
+      "manos": 1,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento corto hacia un lado",
+      "texto": "Se hace con una mano, frente al pecho, con un movimiento corto hacia un lado."
+    },
+    "9": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento corto",
+      "texto": "Se hace con una mano, cerca del mentón, con un movimiento corto."
+    },
+    "abeja": {
+      "manos": 2,
+      "ubicacion": "a la altura de la cara",
+      "movimiento": "un movimiento amplio hacia un lado",
+      "texto": "Se hace con las dos manos, a la altura de la cara, con un movimiento amplio hacia un lado."
+    },
+    "aburrido": {
+      "manos": 1,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, frente al pecho, con un movimiento amplio y repetido."
+    },
+    "aceite": {
+      "manos": 2,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con las dos manos, cerca del mentón, con un movimiento corto y repetido."
+    },
+    "adios": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca de la mejilla, casi sin moverse."
+    },
+    "agua": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, cerca del mentón, con un movimiento amplio y repetido."
+    },
+    "alimentos": {
+      "manos": 2,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento corto hacia abajo",
+      "texto": "Se hace con las dos manos, cerca del mentón, con un movimiento corto hacia abajo."
+    },
+    "almorzar": {
+      "manos": 2,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con las dos manos, cerca del mentón, casi sin moverse."
+    },
+    "amarillo": {
+      "manos": 1,
+      "ubicacion": "cerca de la boca",
+      "movimiento": "un movimiento corto",
+      "texto": "Se hace con una mano, cerca de la boca, con un movimiento corto."
+    },
+    "ambulancia": {
+      "manos": 1,
+      "ubicacion": "a la altura de la cara",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con una mano, a la altura de la cara, con un movimiento corto y repetido."
+    },
+    "animales": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento amplio y repetido."
+    },
+    "anteayer": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento amplio",
+      "texto": "Se hace con una mano, cerca de la mejilla, con un movimiento amplio."
+    },
+    "antes": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, cerca de la mejilla, con un movimiento amplio y repetido."
+    },
+    "antofagasta": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca del mentón, casi sin moverse."
+    },
+    "aprender": {
+      "manos": 1,
+      "ubicacion": "a la altura de la cara",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, a la altura de la cara, con un movimiento amplio y repetido."
+    },
+    "araña": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento amplio hacia un lado",
+      "texto": "Se hace con una mano, cerca del mentón, con un movimiento amplio hacia un lado."
+    },
+    "arica": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento amplio y repetido."
+    },
+    "arroz": {
+      "manos": 1,
+      "ubicacion": "cerca de la boca",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca de la boca, casi sin moverse."
+    },
+    "atento": {
+      "manos": 2,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con las dos manos, cerca de la mejilla, con un movimiento amplio y repetido."
+    },
+    "auto": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento corto",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento corto."
+    },
+    "avion": {
+      "manos": 1,
+      "ubicacion": "a la altura de la cara",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, a la altura de la cara, con un movimiento amplio y repetido."
+    },
+    "ayer": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con una mano, cerca de la mejilla, con un movimiento corto y repetido."
+    },
+    "ayudar": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio hacia abajo",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento amplio hacia abajo."
+    },
+    "azucar": {
+      "manos": 1,
+      "ubicacion": "cerca de la boca",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca de la boca, casi sin moverse."
+    },
+    "azul": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, cerca de la mejilla, con un movimiento amplio y repetido."
+    },
+    "banco": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento amplio hacia un lado",
+      "texto": "Se hace con una mano, cerca de la mejilla, con un movimiento amplio hacia un lado."
+    },
+    "barco": {
+      "manos": 2,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con las dos manos, cerca del mentón, con un movimiento corto y repetido."
+    },
+    "baño": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con una mano, cerca de la mejilla, con un movimiento corto y repetido."
+    },
+    "bebida": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, cerca del mentón, con un movimiento amplio y repetido."
+    },
+    "bicicleta": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento amplio y repetido."
+    },
+    "bien": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento corto",
+      "texto": "Se hace con una mano, cerca del mentón, con un movimiento corto."
+    },
+    "blanco": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento corto hacia un lado",
+      "texto": "Se hace con una mano, cerca de la mejilla, con un movimiento corto hacia un lado."
+    },
+    "bonito": {
+      "manos": 1,
+      "ubicacion": "cerca de la boca",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, cerca de la boca, con un movimiento amplio y repetido."
+    },
+    "bote": {
+      "manos": 2,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento corto hacia abajo",
+      "texto": "Se hace con las dos manos, cerca del mentón, con un movimiento corto hacia abajo."
+    },
+    "buenas-noches": {
+      "manos": 2,
+      "ubicacion": "a la altura de la cara",
+      "movimiento": "un movimiento amplio hacia arriba",
+      "texto": "Se hace con las dos manos, a la altura de la cara, con un movimiento amplio hacia arriba."
+    },
+    "buenas-tardes": {
+      "manos": 2,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento amplio hacia arriba",
+      "texto": "Se hace con las dos manos, cerca de la mejilla, con un movimiento amplio hacia arriba."
+    },
+    "buenos-dias": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio hacia arriba",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento amplio hacia arriba."
+    },
+    "bus": {
+      "manos": 1,
+      "ubicacion": "frente al pecho",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, frente al pecho, casi sin moverse."
+    },
+    "buscar": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento amplio hacia un lado",
+      "texto": "Se hace con una mano, cerca del mentón, con un movimiento amplio hacia un lado."
+    },
+    "caballo": {
+      "manos": 2,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con las dos manos, cerca del mentón, con un movimiento amplio y repetido."
+    },
+    "cafe-color": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca del mentón, casi sin moverse."
+    },
+    "cafe": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca del mentón, casi sin moverse."
+    },
+    "calama": {
+      "manos": 1,
+      "ubicacion": "cerca de la frente",
+      "movimiento": "un movimiento corto",
+      "texto": "Se hace con una mano, cerca de la frente, con un movimiento corto."
+    },
+    "caminar": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento amplio hacia un lado",
+      "texto": "Se hace con una mano, cerca del mentón, con un movimiento amplio hacia un lado."
+    },
+    "camion": {
+      "manos": 2,
+      "ubicacion": "a la altura de la cara",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con las dos manos, a la altura de la cara, casi sin moverse."
+    },
+    "camioneta": {
+      "manos": 2,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento corto",
+      "texto": "Se hace con las dos manos, cerca de la mejilla, con un movimiento corto."
+    },
+    "campo": {
+      "manos": 1,
+      "ubicacion": "a la altura de la cara",
+      "movimiento": "un movimiento amplio hacia un lado",
+      "texto": "Se hace con una mano, a la altura de la cara, con un movimiento amplio hacia un lado."
+    },
+    "cansado": {
+      "manos": 2,
+      "ubicacion": "frente a la cintura",
+      "movimiento": "un movimiento amplio",
+      "texto": "Se hace con las dos manos, frente a la cintura, con un movimiento amplio."
+    },
+    "caracol": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento amplio y repetido."
+    },
+    "caracteristicas": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento amplio",
+      "texto": "Se hace con una mano, cerca de la mejilla, con un movimiento amplio."
+    },
+    "cariñoso": {
+      "manos": 1,
+      "ubicacion": "cerca de la boca",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con una mano, cerca de la boca, con un movimiento corto y repetido."
+    },
+    "carne": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca de la mejilla, casi sin moverse."
+    },
+    "casa": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento corto hacia abajo",
+      "texto": "Se hace con una mano, cerca de la mejilla, con un movimiento corto hacia abajo."
+    },
+    "casado": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento amplio."
+    },
+    "castro": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento corto hacia un lado",
+      "texto": "Se hace con una mano, cerca de la mejilla, con un movimiento corto hacia un lado."
+    },
+    "cauquenes": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento corto",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento corto."
+    },
+    "cazuela": {
+      "manos": 2,
+      "ubicacion": "cerca de la boca",
+      "movimiento": "un movimiento amplio",
+      "texto": "Se hace con las dos manos, cerca de la boca, con un movimiento amplio."
+    },
+    "celeste": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca de la mejilla, casi sin moverse."
+    },
+    "cementerio": {
+      "manos": 2,
+      "ubicacion": "cerca de la boca",
+      "movimiento": "un movimiento amplio",
+      "texto": "Se hace con las dos manos, cerca de la boca, con un movimiento amplio."
+    },
+    "centro": {
+      "manos": 2,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con las dos manos, cerca del mentón, casi sin moverse."
+    },
+    "cesfam": {
+      "manos": 2,
+      "ubicacion": "cerca de la nariz",
+      "movimiento": "un movimiento amplio hacia abajo",
+      "texto": "Se hace con las dos manos, cerca de la nariz, con un movimiento amplio hacia abajo."
+    },
+    "chancho": {
+      "manos": 1,
+      "ubicacion": "cerca de la nariz",
+      "movimiento": "un movimiento corto",
+      "texto": "Se hace con una mano, cerca de la nariz, con un movimiento corto."
+    },
+    "chao": {
+      "manos": 1,
+      "ubicacion": "a la altura de la cara",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, a la altura de la cara, casi sin moverse."
+    },
+    "chico": {
+      "manos": 2,
+      "ubicacion": "frente a la cintura",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con las dos manos, frente a la cintura, con un movimiento amplio y repetido."
+    },
+    "chillan": {
+      "manos": 2,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con las dos manos, cerca del mentón, casi sin moverse."
+    },
+    "chiloe": {
+      "manos": 2,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con las dos manos, cerca del mentón, casi sin moverse."
+    },
+    "chistoso": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento amplio y repetido."
+    },
+    "ciudad": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento corto y repetido."
+    },
+    "ciudades-de-chile": {
+      "manos": 1,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio hacia un lado",
+      "texto": "Se hace con una mano, frente al pecho, con un movimiento amplio hacia un lado."
+    },
+    "clase": {
+      "manos": 2,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con las dos manos, cerca del mentón, con un movimiento corto y repetido."
+    },
+    "clinica": {
+      "manos": 2,
+      "ubicacion": "cerca de la boca",
+      "movimiento": "un movimiento corto",
+      "texto": "Se hace con las dos manos, cerca de la boca, con un movimiento corto."
+    },
+    "colectivo": {
+      "manos": 2,
+      "ubicacion": "a la altura de la cara",
+      "movimiento": "un movimiento corto hacia un lado",
+      "texto": "Se hace con las dos manos, a la altura de la cara, con un movimiento corto hacia un lado."
+    },
+    "colores": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, cerca de la mejilla, con un movimiento amplio y repetido."
+    },
+    "comer": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca de la mejilla, casi sin moverse."
+    },
+    "como-estas": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio hacia abajo",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento amplio hacia abajo."
+    },
+    "compañero": {
+      "manos": 2,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con las dos manos, cerca del mentón, con un movimiento corto y repetido."
+    },
+    "comprar": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento corto y repetido."
+    },
+    "comuna": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento amplio y repetido."
+    },
+    "concepcion": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, cerca del mentón, con un movimiento amplio y repetido."
+    },
+    "conejo": {
+      "manos": 2,
+      "ubicacion": "a la altura de la cara",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con las dos manos, a la altura de la cara, casi sin moverse."
+    },
+    "conversar": {
+      "manos": 2,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con las dos manos, cerca del mentón, con un movimiento amplio y repetido."
+    },
+    "conviviente": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento amplio y repetido."
+    },
+    "copiapo": {
+      "manos": 1,
+      "ubicacion": "a la altura de la cara",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con una mano, a la altura de la cara, con un movimiento corto y repetido."
+    },
+    "coquimbo": {
+      "manos": 1,
+      "ubicacion": "cerca de la frente",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca de la frente, casi sin moverse."
+    },
+    "coyhaique": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca de la mejilla, casi sin moverse."
+    },
+    "cuidate": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento amplio y repetido."
+    },
+    "curico": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento corto",
+      "texto": "Se hace con una mano, cerca del mentón, con un movimiento corto."
+    },
+    "datos-personales": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, cerca del mentón, con un movimiento amplio y repetido."
+    },
+    "departamento": {
+      "manos": 1,
+      "ubicacion": "cerca de la boca",
+      "movimiento": "un movimiento corto hacia arriba",
+      "texto": "Se hace con una mano, cerca de la boca, con un movimiento corto hacia arriba."
+    },
+    "descansar": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento corto hacia abajo",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento corto hacia abajo."
+    },
+    "desordenado": {
+      "manos": 2,
+      "ubicacion": "frente a la cintura",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con las dos manos, frente a la cintura, con un movimiento amplio y repetido."
+    },
+    "despues": {
+      "manos": 1,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, frente al pecho, con un movimiento amplio y repetido."
+    },
+    "dias-de-la-semana": {
+      "manos": 1,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio hacia abajo",
+      "texto": "Se hace con una mano, frente al pecho, con un movimiento amplio hacia abajo."
+    },
+    "dibujar": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio hacia abajo",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento amplio hacia abajo."
+    },
+    "didi": {
+      "manos": 2,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con las dos manos, cerca del mentón, casi sin moverse."
+    },
+    "direccion": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento corto y repetido."
+    },
+    "disculpa": {
+      "manos": 2,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con las dos manos, cerca del mentón, con un movimiento corto y repetido."
+    },
+    "divertido": {
+      "manos": 2,
+      "ubicacion": "a la altura de la cara",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con las dos manos, a la altura de la cara, con un movimiento amplio y repetido."
+    },
+    "divorciado": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento amplio y repetido."
+    },
+    "domingo": {
+      "manos": 1,
+      "ubicacion": "cerca de los ojos",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, cerca de los ojos, con un movimiento amplio y repetido."
+    },
+    "duda": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento amplio",
+      "texto": "Se hace con una mano, cerca del mentón, con un movimiento amplio."
+    },
+    "edad": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, cerca del mentón, con un movimiento amplio y repetido."
+    },
+    "el": {
+      "manos": 1,
+      "ubicacion": "cerca de la boca",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, cerca de la boca, con un movimiento amplio y repetido."
+    },
+    "elefante": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento amplio",
+      "texto": "Se hace con una mano, cerca de la mejilla, con un movimiento amplio."
+    },
+    "ella": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, cerca de la mejilla, con un movimiento amplio y repetido."
+    },
+    "ellas": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento corto",
+      "texto": "Se hace con una mano, cerca de la mejilla, con un movimiento corto."
+    },
+    "ellos": {
+      "manos": 1,
+      "ubicacion": "cerca de la boca",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con una mano, cerca de la boca, con un movimiento corto y repetido."
+    },
+    "en-la-mañana": {
+      "manos": 2,
+      "ubicacion": "cerca de la frente",
+      "movimiento": "un movimiento amplio hacia arriba",
+      "texto": "Se hace con las dos manos, cerca de la frente, con un movimiento amplio hacia arriba."
+    },
+    "en-la-noche": {
+      "manos": 2,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento corto",
+      "texto": "Se hace con las dos manos, cerca de la mejilla, con un movimiento corto."
+    },
+    "en-la-tarde": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio hacia abajo",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento amplio hacia abajo."
+    },
+    "enamorado": {
+      "manos": 1,
+      "ubicacion": "cerca de la frente",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con una mano, cerca de la frente, con un movimiento corto y repetido."
+    },
+    "enfermar": {
+      "manos": 2,
+      "ubicacion": "cerca de los ojos",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con las dos manos, cerca de los ojos, con un movimiento amplio y repetido."
+    },
+    "enojado": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, cerca del mentón, con un movimiento amplio y repetido."
+    },
+    "enseñar": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento corto y repetido."
+    },
+    "entender": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento corto",
+      "texto": "Se hace con una mano, cerca de la mejilla, con un movimiento corto."
+    },
+    "escribir": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento corto y repetido."
+    },
+    "escuela": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con las dos manos, frente al pecho, casi sin moverse."
+    },
+    "estadio": {
+      "manos": 2,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento amplio",
+      "texto": "Se hace con las dos manos, cerca de la mejilla, con un movimiento amplio."
+    },
+    "estudiar": {
+      "manos": 2,
+      "ubicacion": "cerca de la boca",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con las dos manos, cerca de la boca, con un movimiento corto y repetido."
+    },
+    "excavadora": {
+      "manos": 2,
+      "ubicacion": "cerca de la boca",
+      "movimiento": "un movimiento amplio hacia abajo",
+      "texto": "Se hace con las dos manos, cerca de la boca, con un movimiento amplio hacia abajo."
+    },
+    "farmacia": {
+      "manos": 2,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento corto",
+      "texto": "Se hace con las dos manos, cerca del mentón, con un movimiento corto."
+    },
+    "fecha-de-nacimiento": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, cerca del mentón, con un movimiento amplio y repetido."
+    },
+    "feliz": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento corto",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento corto."
+    },
+    "feo": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento corto",
+      "texto": "Se hace con una mano, cerca del mentón, con un movimiento corto."
+    },
+    "flaco": {
+      "manos": 1,
+      "ubicacion": "cerca de la boca",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, cerca de la boca, con un movimiento amplio y repetido."
+    },
+    "flojo": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento amplio y repetido."
+    },
+    "fruta": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con una mano, cerca del mentón, con un movimiento corto y repetido."
+    },
+    "furgon": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, cerca de la mejilla, con un movimiento amplio y repetido."
+    },
+    "futuro": {
+      "manos": 1,
+      "ubicacion": "cerca de la boca",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, cerca de la boca, con un movimiento amplio y repetido."
+    },
+    "galleta": {
+      "manos": 1,
+      "ubicacion": "cerca de la boca",
+      "movimiento": "un movimiento amplio hacia un lado",
+      "texto": "Se hace con una mano, cerca de la boca, con un movimiento amplio hacia un lado."
+    },
+    "gallina": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con las dos manos, frente al pecho, casi sin moverse."
+    },
+    "gallo": {
+      "manos": 1,
+      "ubicacion": "a la altura de la cara",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, a la altura de la cara, casi sin moverse."
+    },
+    "gato": {
+      "manos": 1,
+      "ubicacion": "cerca de los ojos",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, cerca de los ojos, con un movimiento amplio y repetido."
+    },
+    "gordo": {
+      "manos": 1,
+      "ubicacion": "frente a la cintura",
+      "movimiento": "un movimiento corto hacia arriba",
+      "texto": "Se hace con una mano, frente a la cintura, con un movimiento corto hacia arriba."
+    },
+    "gracias": {
+      "manos": 1,
+      "ubicacion": "cerca de la boca",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca de la boca, casi sin moverse."
+    },
+    "grande": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento amplio y repetido."
+    },
+    "gustar": {
+      "manos": 1,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con una mano, frente al pecho, con un movimiento corto y repetido."
+    },
+    "haber": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio hacia abajo",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento amplio hacia abajo."
+    },
+    "hablar": {
+      "manos": 1,
+      "ubicacion": "cerca de la boca",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca de la boca, casi sin moverse."
+    },
+    "helado": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con una mano, cerca del mentón, con un movimiento corto y repetido."
+    },
+    "helicoptero": {
+      "manos": 2,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento amplio hacia abajo",
+      "texto": "Se hace con las dos manos, cerca de la mejilla, con un movimiento amplio hacia abajo."
+    },
+    "hola": {
+      "manos": 1,
+      "ubicacion": "a la altura de la cara",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, a la altura de la cara, casi sin moverse."
+    },
+    "hospital": {
+      "manos": 1,
+      "ubicacion": "cerca de la boca",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca de la boca, casi sin moverse."
+    },
+    "hoy": {
+      "manos": 1,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio hacia abajo",
+      "texto": "Se hace con una mano, frente al pecho, con un movimiento amplio hacia abajo."
+    },
+    "huevo": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, cerca de la mejilla, con un movimiento amplio y repetido."
+    },
+    "iglesia": {
+      "manos": 1,
+      "ubicacion": "cerca de los ojos",
+      "movimiento": "un movimiento corto hacia abajo",
+      "texto": "Se hace con una mano, cerca de los ojos, con un movimiento corto hacia abajo."
+    },
+    "instituto": {
+      "manos": 1,
+      "ubicacion": "a la altura de la cara",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, a la altura de la cara, casi sin moverse."
+    },
+    "iquique": {
+      "manos": 1,
+      "ubicacion": "cerca de la boca",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con una mano, cerca de la boca, con un movimiento corto y repetido."
+    },
+    "jamon": {
+      "manos": 2,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento amplio hacia arriba",
+      "texto": "Se hace con las dos manos, cerca del mentón, con un movimiento amplio hacia arriba."
+    },
+    "joven": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento amplio y repetido."
+    },
+    "jueves": {
+      "manos": 1,
+      "ubicacion": "frente al pecho",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, frente al pecho, casi sin moverse."
+    },
+    "jugar": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con las dos manos, frente al pecho, casi sin moverse."
+    },
+    "jugo": {
+      "manos": 1,
+      "ubicacion": "cerca de la nariz",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca de la nariz, casi sin moverse."
+    },
+    "la-serena": {
+      "manos": 2,
+      "ubicacion": "a la altura de la cara",
+      "movimiento": "un movimiento amplio hacia arriba",
+      "texto": "Se hace con las dos manos, a la altura de la cara, con un movimiento amplio hacia arriba."
+    },
+    "leche": {
+      "manos": 2,
+      "ubicacion": "cerca de la boca",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con las dos manos, cerca de la boca, con un movimiento amplio y repetido."
+    },
+    "leer": {
+      "manos": 2,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con las dos manos, cerca del mentón, con un movimiento amplio y repetido."
+    },
+    "lengua-de-señas": {
+      "manos": 2,
+      "ubicacion": "cerca de los ojos",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con las dos manos, cerca de los ojos, con un movimiento amplio y repetido."
+    },
+    "lento": {
+      "manos": 2,
+      "ubicacion": "cerca de los ojos",
+      "movimiento": "un movimiento amplio hacia abajo",
+      "texto": "Se hace con las dos manos, cerca de los ojos, con un movimiento amplio hacia abajo."
+    },
+    "liceo": {
+      "manos": 1,
+      "ubicacion": "frente al pecho",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, frente al pecho, casi sin moverse."
+    },
+    "linares": {
+      "manos": 2,
+      "ubicacion": "cerca de la boca",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con las dos manos, cerca de la boca, casi sin moverse."
+    },
+    "llegar": {
+      "manos": 1,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio hacia un lado",
+      "texto": "Se hace con una mano, frente al pecho, con un movimiento amplio hacia un lado."
+    },
+    "loro": {
+      "manos": 1,
+      "ubicacion": "cerca de la nariz",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con una mano, cerca de la nariz, con un movimiento corto y repetido."
+    },
+    "lugares": {
+      "manos": 2,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con las dos manos, cerca del mentón, casi sin moverse."
+    },
+    "lunes": {
+      "manos": 1,
+      "ubicacion": "a la altura de la cara",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, a la altura de la cara, con un movimiento amplio y repetido."
+    },
+    "mal": {
+      "manos": 1,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, frente al pecho, con un movimiento amplio y repetido."
+    },
+    "martes": {
+      "manos": 1,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, frente al pecho, con un movimiento amplio y repetido."
+    },
+    "mas-o-menos": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento corto",
+      "texto": "Se hace con una mano, cerca del mentón, con un movimiento corto."
+    },
+    "mañana": {
+      "manos": 1,
+      "ubicacion": "cerca de la boca",
+      "movimiento": "un movimiento amplio hacia abajo",
+      "texto": "Se hace con una mano, cerca de la boca, con un movimiento amplio hacia abajo."
+    },
+    "mañoso": {
+      "manos": 1,
+      "ubicacion": "cerca de los ojos",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, cerca de los ojos, con un movimiento amplio y repetido."
+    },
+    "medios-de-transporte": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento amplio y repetido."
+    },
+    "metro": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio hacia un lado",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento amplio hacia un lado."
+    },
+    "mi-nombre": {
+      "manos": 1,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio hacia un lado",
+      "texto": "Se hace con una mano, frente al pecho, con un movimiento amplio hacia un lado."
+    },
+    "mi": {
+      "manos": 1,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio",
+      "texto": "Se hace con una mano, frente al pecho, con un movimiento amplio."
+    },
+    "micro": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento corto y repetido."
+    },
+    "miercoles": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca de la mejilla, casi sin moverse."
+    },
+    "mio": {
+      "manos": 1,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio",
+      "texto": "Se hace con una mano, frente al pecho, con un movimiento amplio."
+    },
+    "montaña": {
+      "manos": 2,
+      "ubicacion": "a la altura de la cara",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con las dos manos, a la altura de la cara, con un movimiento amplio y repetido."
+    },
+    "morado": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con una mano, cerca de la mejilla, con un movimiento corto y repetido."
+    },
+    "moto": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento corto y repetido."
+    },
+    "muchas-gracias": {
+      "manos": 2,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con las dos manos, cerca del mentón, con un movimiento corto y repetido."
+    },
+    "municipalidad": {
+      "manos": 1,
+      "ubicacion": "a la altura de la cara",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, a la altura de la cara, casi sin moverse."
+    },
+    "nacer": {
+      "manos": 2,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento amplio hacia arriba",
+      "texto": "Se hace con las dos manos, cerca de la mejilla, con un movimiento amplio hacia arriba."
+    },
+    "naranjo": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con una mano, cerca del mentón, con un movimiento corto y repetido."
+    },
+    "negativo": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento corto y repetido."
+    },
+    "negro": {
+      "manos": 1,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio hacia abajo",
+      "texto": "Se hace con una mano, frente al pecho, con un movimiento amplio hacia abajo."
+    },
+    "no-entender": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca de la mejilla, casi sin moverse."
+    },
+    "no-hay": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento corto hacia un lado",
+      "texto": "Se hace con una mano, cerca del mentón, con un movimiento corto hacia un lado."
+    },
+    "no": {
+      "manos": 1,
+      "ubicacion": "cerca de la boca",
+      "movimiento": "un movimiento corto",
+      "texto": "Se hace con una mano, cerca de la boca, con un movimiento corto."
+    },
+    "nombre": {
+      "manos": 1,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento corto hacia un lado",
+      "texto": "Se hace con una mano, frente al pecho, con un movimiento corto hacia un lado."
+    },
+    "norte-y-sur": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio hacia abajo",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento amplio hacia abajo."
+    },
+    "nos-vemos": {
+      "manos": 2,
+      "ubicacion": "cerca de la nariz",
+      "movimiento": "un movimiento corto hacia un lado",
+      "texto": "Se hace con las dos manos, cerca de la nariz, con un movimiento corto hacia un lado."
+    },
+    "nosotros": {
+      "manos": 1,
+      "ubicacion": "cerca de la boca",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, cerca de la boca, con un movimiento amplio y repetido."
+    },
+    "notaria": {
+      "manos": 2,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con las dos manos, cerca de la mejilla, con un movimiento amplio y repetido."
+    },
+    "nuestro": {
+      "manos": 1,
+      "ubicacion": "frente a la cintura",
+      "movimiento": "un movimiento amplio hacia arriba",
+      "texto": "Se hace con una mano, frente a la cintura, con un movimiento amplio hacia arriba."
+    },
+    "numero-de-celular": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento corto hacia arriba",
+      "texto": "Se hace con una mano, cerca de la mejilla, con un movimiento corto hacia arriba."
+    },
+    "numeros": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento amplio",
+      "texto": "Se hace con una mano, cerca del mentón, con un movimiento amplio."
+    },
+    "ordenado": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con las dos manos, frente al pecho, casi sin moverse."
+    },
+    "oso": {
+      "manos": 2,
+      "ubicacion": "a la altura de la cara",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con las dos manos, a la altura de la cara, casi sin moverse."
+    },
+    "osorno": {
+      "manos": 1,
+      "ubicacion": "cerca de la nariz",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca de la nariz, casi sin moverse."
+    },
+    "oveja": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca de la mejilla, casi sin moverse."
+    },
+    "pajaro": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento corto hacia arriba",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento corto hacia arriba."
+    },
+    "pan": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento corto hacia un lado",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento corto hacia un lado."
+    },
+    "pasado-mañana": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento amplio hacia abajo",
+      "texto": "Se hace con una mano, cerca de la mejilla, con un movimiento amplio hacia abajo."
+    },
+    "pasear": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento amplio hacia un lado",
+      "texto": "Se hace con una mano, cerca de la mejilla, con un movimiento amplio hacia un lado."
+    },
+    "pato": {
+      "manos": 1,
+      "ubicacion": "cerca de la boca",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca de la boca, casi sin moverse."
+    },
+    "perro": {
+      "manos": 1,
+      "ubicacion": "cerca de la boca",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca de la boca, casi sin moverse."
+    },
+    "pesado": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento amplio y repetido."
+    },
+    "pez": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, cerca de la mejilla, con un movimiento amplio y repetido."
+    },
+    "playa": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento amplio y repetido."
+    },
+    "plaza": {
+      "manos": 2,
+      "ubicacion": "a la altura de la cara",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con las dos manos, a la altura de la cara, con un movimiento amplio y repetido."
+    },
+    "plomo": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca de la mejilla, casi sin moverse."
+    },
+    "pollo": {
+      "manos": 1,
+      "ubicacion": "cerca de la boca",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca de la boca, casi sin moverse."
+    },
+    "por-favor": {
+      "manos": 2,
+      "ubicacion": "cerca de la boca",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con las dos manos, cerca de la boca, casi sin moverse."
+    },
+    "porotos": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento amplio hacia un lado",
+      "texto": "Se hace con una mano, cerca del mentón, con un movimiento amplio hacia un lado."
+    },
+    "postre": {
+      "manos": 2,
+      "ubicacion": "cerca de la boca",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con las dos manos, cerca de la boca, con un movimiento corto y repetido."
+    },
+    "preocupado": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con una mano, cerca de la mejilla, con un movimiento corto y repetido."
+    },
+    "presentacion": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento amplio y repetido."
+    },
+    "primeras-señas": {
+      "manos": 2,
+      "ubicacion": "cerca de la nariz",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con las dos manos, cerca de la nariz, con un movimiento amplio y repetido."
+    },
+    "profesor": {
+      "manos": 2,
+      "ubicacion": "cerca de la boca",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con las dos manos, cerca de la boca, con un movimiento corto y repetido."
+    },
+    "profesora": {
+      "manos": 2,
+      "ubicacion": "cerca de la boca",
+      "movimiento": "un movimiento amplio hacia arriba",
+      "texto": "Se hace con las dos manos, cerca de la boca, con un movimiento amplio hacia arriba."
+    },
+    "pronombres": {
+      "manos": 1,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio",
+      "texto": "Se hace con una mano, frente al pecho, con un movimiento amplio."
+    },
+    "proxima-semana": {
+      "manos": 1,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio hacia abajo",
+      "texto": "Se hace con una mano, frente al pecho, con un movimiento amplio hacia abajo."
+    },
+    "proximo": {
+      "manos": 1,
+      "ubicacion": "a la altura de la cara",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, a la altura de la cara, con un movimiento amplio y repetido."
+    },
+    "puerto-montt": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, cerca del mentón, con un movimiento amplio y repetido."
+    },
+    "punta-arenas": {
+      "manos": 1,
+      "ubicacion": "cerca de la boca",
+      "movimiento": "un movimiento amplio hacia arriba",
+      "texto": "Se hace con una mano, cerca de la boca, con un movimiento amplio hacia arriba."
+    },
+    "queque": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, cerca de la mejilla, con un movimiento amplio y repetido."
+    },
+    "querer": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca del mentón, casi sin moverse."
+    },
+    "queso": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento corto",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento corto."
+    },
+    "rancagua": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca de la mejilla, casi sin moverse."
+    },
+    "rapido": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento amplio",
+      "texto": "Se hace con una mano, cerca del mentón, con un movimiento amplio."
+    },
+    "raton": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con las dos manos, frente al pecho, casi sin moverse."
+    },
+    "registro-civil": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, cerca de la mejilla, con un movimiento amplio y repetido."
+    },
+    "rio": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento amplio y repetido."
+    },
+    "rojo": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con una mano, cerca del mentón, con un movimiento corto y repetido."
+    },
+    "rosado": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, cerca del mentón, con un movimiento amplio y repetido."
+    },
+    "rut": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio hacia abajo",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento amplio hacia abajo."
+    },
+    "sabado": {
+      "manos": 1,
+      "ubicacion": "a la altura de la cara",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, a la altura de la cara, con un movimiento amplio y repetido."
+    },
+    "sal": {
+      "manos": 1,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio",
+      "texto": "Se hace con una mano, frente al pecho, con un movimiento amplio."
+    },
+    "salir": {
+      "manos": 1,
+      "ubicacion": "a la altura de la cara",
+      "movimiento": "un movimiento corto hacia abajo",
+      "texto": "Se hace con una mano, a la altura de la cara, con un movimiento corto hacia abajo."
+    },
+    "saludos": {
+      "manos": 2,
+      "ubicacion": "a la altura de la cara",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con las dos manos, a la altura de la cara, con un movimiento corto y repetido."
+    },
+    "san-fernando": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, cerca del mentón, con un movimiento amplio y repetido."
+    },
+    "santiago": {
+      "manos": 1,
+      "ubicacion": "frente al pecho",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, frente al pecho, casi sin moverse."
+    },
+    "sapo": {
+      "manos": 1,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, frente al pecho, con un movimiento amplio y repetido."
+    },
+    "semana-pasada": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento amplio hacia arriba",
+      "texto": "Se hace con una mano, cerca de la mejilla, con un movimiento amplio hacia arriba."
+    },
+    "sentimientos": {
+      "manos": 1,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio hacia arriba",
+      "texto": "Se hace con una mano, frente al pecho, con un movimiento amplio hacia arriba."
+    },
+    "separado": {
+      "manos": 2,
+      "ubicacion": "cerca de la boca",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con las dos manos, cerca de la boca, con un movimiento amplio y repetido."
+    },
+    "si": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca del mentón, casi sin moverse."
+    },
+    "simpatico": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca de la mejilla, casi sin moverse."
+    },
+    "soltero": {
+      "manos": 1,
+      "ubicacion": "a la altura de la cara",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, a la altura de la cara, con un movimiento amplio y repetido."
+    },
+    "su": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, cerca de la mejilla, con un movimiento amplio y repetido."
+    },
+    "supermercado": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento amplio y repetido."
+    },
+    "suyos": {
+      "manos": 2,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con las dos manos, cerca de la mejilla, con un movimiento amplio y repetido."
+    },
+    "talca": {
+      "manos": 2,
+      "ubicacion": "a la altura de la cara",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con las dos manos, a la altura de la cara, con un movimiento amplio y repetido."
+    },
+    "talcahuano": {
+      "manos": 1,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio hacia un lado",
+      "texto": "Se hace con una mano, frente al pecho, con un movimiento amplio hacia un lado."
+    },
+    "tallarines": {
+      "manos": 2,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con las dos manos, cerca de la mejilla, con un movimiento corto y repetido."
+    },
+    "taxi": {
+      "manos": 2,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento amplio",
+      "texto": "Se hace con las dos manos, cerca del mentón, con un movimiento amplio."
+    },
+    "te": {
+      "manos": 2,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento corto hacia abajo",
+      "texto": "Se hace con las dos manos, cerca del mentón, con un movimiento corto hacia abajo."
+    },
+    "temuco": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, cerca de la mejilla, con un movimiento amplio y repetido."
+    },
+    "tener": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca del mentón, casi sin moverse."
+    },
+    "tengo": {
+      "manos": 1,
+      "ubicacion": "frente al pecho",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, frente al pecho, casi sin moverse."
+    },
+    "terminal": {
+      "manos": 2,
+      "ubicacion": "cerca de la boca",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con las dos manos, cerca de la boca, con un movimiento corto y repetido."
+    },
+    "tiempo": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento amplio hacia un lado",
+      "texto": "Se hace con una mano, cerca de la mejilla, con un movimiento amplio hacia un lado."
+    },
+    "toro": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con una mano, cerca de la mejilla, con un movimiento corto y repetido."
+    },
+    "torta": {
+      "manos": 2,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con las dos manos, cerca del mentón, con un movimiento corto y repetido."
+    },
+    "trabajar": {
+      "manos": 1,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento corto",
+      "texto": "Se hace con una mano, frente al pecho, con un movimiento corto."
+    },
+    "tren": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento corto y repetido."
+    },
+    "triste": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, cerca del mentón, con un movimiento amplio y repetido."
+    },
+    "tu-eres-oyente": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con una mano, cerca del mentón, con un movimiento corto y repetido."
+    },
+    "tu-eres-sordo": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento corto",
+      "texto": "Se hace con una mano, cerca de la mejilla, con un movimiento corto."
+    },
+    "tu-nombre": {
+      "manos": 1,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio hacia abajo",
+      "texto": "Se hace con una mano, frente al pecho, con un movimiento amplio hacia abajo."
+    },
+    "tu": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento corto",
+      "texto": "Se hace con una mano, cerca de la mejilla, con un movimiento corto."
+    },
+    "uber": {
+      "manos": 2,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con las dos manos, cerca de la mejilla, casi sin moverse."
+    },
+    "universidad": {
+      "manos": 1,
+      "ubicacion": "a la altura de la cara",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con una mano, a la altura de la cara, con un movimiento corto y repetido."
+    },
+    "usted": {
+      "manos": 1,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, frente al pecho, con un movimiento amplio y repetido."
+    },
+    "ustedes": {
+      "manos": 1,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, frente al pecho, con un movimiento amplio y repetido."
+    },
+    "vaca": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca de la mejilla, casi sin moverse."
+    },
+    "valdivia": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, cerca del mentón, con un movimiento amplio y repetido."
+    },
+    "valparaiso": {
+      "manos": 1,
+      "ubicacion": "frente al pecho",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, frente al pecho, casi sin moverse."
+    },
+    "vender": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento amplio y repetido."
+    },
+    "ver": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, cerca de la mejilla, con un movimiento amplio y repetido."
+    },
+    "verbos": {
+      "manos": 1,
+      "ubicacion": "cerca de la nariz",
+      "movimiento": "un movimiento corto",
+      "texto": "Se hace con una mano, cerca de la nariz, con un movimiento corto."
+    },
+    "verde": {
+      "manos": 1,
+      "ubicacion": "cerca de la boca",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca de la boca, casi sin moverse."
+    },
+    "verdura": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento corto y repetido."
+    },
+    "viajar": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con una mano, cerca del mentón, con un movimiento amplio y repetido."
+    },
+    "viejo": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "un movimiento corto y repetido",
+      "texto": "Se hace con una mano, cerca del mentón, con un movimiento corto y repetido."
+    },
+    "viernes": {
+      "manos": 1,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento corto",
+      "texto": "Se hace con una mano, cerca de la mejilla, con un movimiento corto."
+    },
+    "viudo": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento amplio y repetido."
+    },
+    "vivir": {
+      "manos": 1,
+      "ubicacion": "cerca del mentón",
+      "movimiento": "casi sin moverse",
+      "texto": "Se hace con una mano, cerca del mentón, casi sin moverse."
+    },
+    "viña-del-mar": {
+      "manos": 2,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio hacia un lado",
+      "texto": "Se hace con las dos manos, frente al pecho, con un movimiento amplio hacia un lado."
+    },
+    "yo": {
+      "manos": 1,
+      "ubicacion": "frente al pecho",
+      "movimiento": "un movimiento amplio",
+      "texto": "Se hace con una mano, frente al pecho, con un movimiento amplio."
+    },
+    "yogurt": {
+      "manos": 2,
+      "ubicacion": "cerca de la mejilla",
+      "movimiento": "un movimiento amplio y repetido",
+      "texto": "Se hace con las dos manos, cerca de la mejilla, con un movimiento amplio y repetido."
+    }
+  }
+}

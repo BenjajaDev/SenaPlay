@@ -14,6 +14,7 @@ export type FieldSpec = {
   type: 'sign' | 'signs' | 'letters' | 'options' | 'text' | 'boolean' | 'choice' | 'subset';
   required: boolean;
   min?: number;
+  max?: number;
   of?: string;
 };
 export type ExerciseTypeDefinition = { label: string; fields: Record<string, FieldSpec> };
@@ -85,6 +86,7 @@ export type SignClipLimits = {
 
 export const SIGN_CLIP_LIMITS = signMedia.SIGN_CLIP_LIMITS as SignClipLimits;
 export const toSignKey = signMedia.toSignKey as (gloss: string) => string;
+export const toStorageFolder = signMedia.toStorageFolder as (signKey: string) => string;
 export const isValidSignKey = signMedia.isValidSignKey as (value: unknown) => boolean;
 export const MVP_CLIP_CATALOG = clipCatalog.MVP_CLIP_CATALOG as readonly { gloss: string; level: 1 | 2 | 3 }[];
 export const MVP_CLIP_LEVEL_LABELS = clipCatalog.MVP_CLIP_LEVEL_LABELS as Record<1 | 2 | 3, string>;

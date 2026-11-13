@@ -1,4 +1,4 @@
-import { EXERCISE_TYPES } from './exerciseTypes';
+import { EXERCISE_TYPES, isWordMatching, WORD_MATCHING_MAX_PAIRS } from './exerciseTypes';
 
 export class InvalidExerciseError extends Error {
   constructor(message, raw) {
@@ -10,6 +10,19 @@ export class InvalidExerciseError extends Error {
 
 const isNonEmptyString = (value) => typeof value === 'string' && value.trim().length > 0;
 const isStringList = (value) => Array.isArray(value) && value.every(isNonEmptyString);
+
+// Reglas que cruzan campos y no caben en la descripción de un campo.
+function validateCrossFields(exercise) {
+  if (exercise.type === 'matching') {
+    if (exercise.labels && exercise.labels.length !== exercise.letters.length) {
+      return ['"labels" debe tener el mismo largo que "letters"'];
+    }
+    if (isWordMatching(exercise) && exercise.letters.length > WORD_MATCHING_MAX_PAIRS) {
+      return [`emparejar palabras admite como máximo ${WORD_MATCHING_MAX_PAIRS} parejas`];
+    }
+  }
+  return [];
+}
 
 function validateField(name, spec, value, exercise) {
   if (value === undefined || value === null || value === '') {
@@ -26,6 +39,7 @@ function validateField(name, spec, value, exercise) {
     case 'options':
       if (!isStringList(value)) return `"${name}" debe ser una lista de textos`;
       if (spec.min && value.length < spec.min) return `"${name}" necesita al menos ${spec.min} elementos`;
+      if (spec.max && value.length > spec.max) return `"${name}" admite como máximo ${spec.max} elementos`;
       return null;
     case 'choice':
       return exercise[spec.of]?.includes(value) ? null : `"${name}" debe ser una de las opciones`;
@@ -67,6 +81,7 @@ export const ExerciseFactory = {
     const errors = Object.entries(definition.fields)
       .map(([name, spec]) => validateField(name, spec, exercise[name], exercise))
       .filter(Boolean);
+    if (!errors.length) errors.push(...validateCrossFields(exercise));
     if (errors.length) {
       throw new InvalidExerciseError(`Ejercicio "${exercise.title}" inválido: ${errors.join('; ')}`, raw);
     }

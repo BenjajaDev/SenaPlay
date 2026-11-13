@@ -10,11 +10,17 @@
 //   boolean   verdadero/falso
 //   choice    debe ser uno de `options`
 //   subset    lista incluida en `options`
+// Un campo de lista puede traer `min` y `max` (cantidad de elementos).
 
 export const EXERCISE_TYPES = {
   matching: {
     label: 'Emparejar seña y letra',
-    fields: { letters: { type: 'letters', required: true, min: 2 } },
+    fields: {
+      letters: { type: 'letters', required: true, min: 2 },
+      // Opcional: texto a mostrar en vez de la clave («CAFÉ» en vez de «cafe-color»).
+      // Mismo largo que `letters`; ver isWordMatching.
+      labels: { type: 'options', required: false, min: 2 },
+    },
   },
   'multiple-choice': {
     label: 'Elegir la letra de una seña',
@@ -67,6 +73,15 @@ export const EXERCISE_TYPES = {
       word: { type: 'text', required: false },
     },
   },
+  'sign-choice': {
+    label: 'Elegir la seña de una palabra',
+    fields: {
+      // Texto que se pregunta («PERRO»). Las señas candidatas se muestran en video.
+      word: { type: 'text', required: true },
+      signs: { type: 'signs', required: true, min: 2, max: 4 },
+      correct: { type: 'choice', required: true, of: 'signs' },
+    },
+  },
   'true-false': {
     label: 'Verdadero o falso',
     fields: {
@@ -79,5 +94,18 @@ export const EXERCISE_TYPES = {
     },
   },
 };
+
+/** Máximo de parejas cuando «emparejar» usa palabras y videos en vez de letras. */
+export const WORD_MATCHING_MAX_PAIRS = 4;
+
+/**
+ * «Emparejar» de palabras (señas en video a la izquierda, texto a la derecha):
+ * cuando hay `labels` o alguna clave tiene más de un carácter. 'n~' es la
+ * clave de la letra Ñ, no una palabra.
+ */
+export function isWordMatching(exercise) {
+  const letters = exercise?.letters || [];
+  return Boolean(exercise?.labels?.length) || letters.some((key) => String(key).length > 1 && key !== 'n~');
+}
 
 export const EXERCISE_TYPE_KEYS = Object.keys(EXERCISE_TYPES);

@@ -1,0 +1,23 @@
+# Aumento de datos (preprocessing/augmentation.py). Solo partición de entrenamiento.
+activo: true
+
+time_warp:          # velocidad local de reproducción variable dentro de la seña
+  activo: true
+  rango: [0.8, 1.2]
+  nodos: 4
+
+rotacion:           # en el plano XY
+  activo: true
+  max_grados: 15
+
+escala:
+  activo: true
+  rango: [0.9, 1.1]
+
+ruido:              # gaussiano, en unidades normalizadas, solo partes presentes
+  activo: true
+  sigma: 0.01
+
+espejo:             # cambia la mano dominante: desactivado por defecto
+  activo: false
+  probabilidad: 0.5

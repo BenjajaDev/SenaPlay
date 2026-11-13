@@ -18,7 +18,7 @@
 | `pnpm test` | Jest: dominio, design system, pantallas y sesión de nivel (93 tests) |
 | `pnpm verify:bundle` | compila el bundle de Android con Hermes; detecta imports rotos |
 | `pnpm test:sql` | aplica todo el SQL sobre Postgres local y prueba las políticas RLS |
-| `pnpm build:dev` / `pnpm build:preview` | builds de EAS |
+| `pnpm build:dev` / `pnpm build:preview` | builds de EAS (regenera el dev client tras agregar un módulo nativo, como `expo-video`) |
 | `node scripts/generate*Sql.cjs` | regenera el SQL base desde los datos locales (solo antes de usar el panel) |
 | `node scripts/moveModules.cjs moves.json` | mueve módulos y reescribe los imports |
 | `node scripts/checkMermaid.cjs` | valida los diagramas de `docs/` |

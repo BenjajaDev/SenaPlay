@@ -3,7 +3,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText, Badge, IconButton } from '../../../shared/ui';
 import { useAppTheme } from '../../../shared/theme/ThemeProvider';
-import { hasSignAsset } from '../../signs/data/local/signAssets';
+import { useSignMedia } from '../../signs/presentation/SignClipsProvider';
 import SignImage from '../../signs/presentation/SignImage';
 
 /**
@@ -20,9 +20,10 @@ export default function SignDetailModal({ visible, detail, onClose }) {
   const theme = useAppTheme();
   const insets = useSafeAreaInsets();
   const styles = useMemo(() => createStyles(theme), [theme]);
+  const media = useSignMedia(detail?.signKey, detail?.title);
 
   if (!detail) return null;
-  const hasImage = hasSignAsset(detail.signKey);
+  const hasImage = media.kind !== 'placeholder';
 
   return (
     <Modal visible={visible} transparent animationType="fade" statusBarTranslucent onRequestClose={onClose}>

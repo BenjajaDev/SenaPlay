@@ -1,0 +1,314 @@
+{
+  "clases": [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "H",
+    "I",
+    "K",
+    "L",
+    "M",
+    "N",
+    "O",
+    "P",
+    "Q",
+    "R",
+    "T",
+    "U",
+    "V",
+    "W",
+    "Y"
+  ],
+  "n_caracteristicas": 85,
+  "por_clase": [
+    {
+      "clase": "A",
+      "imagenes_roboflow": 81,
+      "muestras_roboflow": 79,
+      "deteccion": 0.975,
+      "muestras_kaggle": 9
+    },
+    {
+      "clase": "B",
+      "imagenes_roboflow": 73,
+      "muestras_roboflow": 69,
+      "deteccion": 0.945,
+      "muestras_kaggle": 10
+    },
+    {
+      "clase": "C",
+      "imagenes_roboflow": 74,
+      "muestras_roboflow": 67,
+      "deteccion": 0.905,
+      "muestras_kaggle": 4
+    },
+    {
+      "clase": "D",
+      "imagenes_roboflow": 26,
+      "muestras_roboflow": 25,
+      "deteccion": 0.962,
+      "muestras_kaggle": 7
+    },
+    {
+      "clase": "E",
+      "imagenes_roboflow": 70,
+      "muestras_roboflow": 70,
+      "deteccion": 1.0,
+      "muestras_kaggle": 10
+    },
+    {
+      "clase": "F",
+      "imagenes_roboflow": 26,
+      "muestras_roboflow": 25,
+      "deteccion": 0.962,
+      "muestras_kaggle": 8
+    },
+    {
+      "clase": "H",
+      "imagenes_roboflow": 26,
+      "muestras_roboflow": 19,
+      "deteccion": 0.731,
+      "muestras_kaggle": 7
+    },
+    {
+      "clase": "I",
+      "imagenes_roboflow": 23,
+      "muestras_roboflow": 23,
+      "deteccion": 1.0,
+      "muestras_kaggle": 7
+    },
+    {
+      "clase": "K",
+      "imagenes_roboflow": 23,
+      "muestras_roboflow": 22,
+      "deteccion": 0.957,
+      "muestras_kaggle": 5
+    },
+    {
+      "clase": "L",
+      "imagenes_roboflow": 75,
+      "muestras_roboflow": 70,
+      "deteccion": 0.933,
+      "muestras_kaggle": 10
+    },
+    {
+      "clase": "M",
+      "imagenes_roboflow": 52,
+      "muestras_roboflow": 48,
+      "deteccion": 0.923,
+      "muestras_kaggle": 5
+    },
+    {
+      "clase": "N",
+      "imagenes_roboflow": 44,
+      "muestras_roboflow": 41,
+      "deteccion": 0.932,
+      "muestras_kaggle": 3
+    },
+    {
+      "clase": "O",
+      "imagenes_roboflow": 52,
+      "muestras_roboflow": 46,
+      "deteccion": 0.885,
+      "muestras_kaggle": 6
+    },
+    {
+      "clase": "P",
+      "imagenes_roboflow": 26,
+      "muestras_roboflow": 25,
+      "deteccion": 0.962,
+      "muestras_kaggle": 3
+    },
+    {
+      "clase": "Q",
+      "imagenes_roboflow": 47,
+      "muestras_roboflow": 47,
+      "deteccion": 1.0,
+      "muestras_kaggle": 3
+    },
+    {
+      "clase": "R",
+      "imagenes_roboflow": 58,
+      "muestras_roboflow": 53,
+      "deteccion": 0.914,
+      "muestras_kaggle": 8
+    },
+    {
+      "clase": "T",
+      "imagenes_roboflow": 51,
+      "muestras_roboflow": 50,
+      "deteccion": 0.98,
+      "muestras_kaggle": 8
+    },
+    {
+      "clase": "U",
+      "imagenes_roboflow": 34,
+      "muestras_roboflow": 34,
+      "deteccion": 1.0,
+      "muestras_kaggle": 10
+    },
+    {
+      "clase": "V",
+      "imagenes_roboflow": 31,
+      "muestras_roboflow": 31,
+      "deteccion": 1.0,
+      "muestras_kaggle": 7
+    },
+    {
+      "clase": "W",
+      "imagenes_roboflow": 30,
+      "muestras_roboflow": 30,
+      "deteccion": 1.0,
+      "muestras_kaggle": 9
+    },
+    {
+      "clase": "Y",
+      "imagenes_roboflow": 34,
+      "muestras_roboflow": 32,
+      "deteccion": 0.941,
+      "muestras_kaggle": 8
+    }
+  ],
+  "descriptivos": {
+    "Roboflow": {
+      "total": 906,
+      "media": 43.1,
+      "desviacion": 18.9,
+      "minimo": 19,
+      "maximo": 79,
+      "coef_variacion": 0.437,
+      "razon_desbalance": 4.16
+    },
+    "Kaggle": {
+      "total": 147,
+      "media": 7.0,
+      "desviacion": 2.4,
+      "minimo": 3,
+      "maximo": 10,
+      "coef_variacion": 0.341,
+      "razon_desbalance": 3.33
+    },
+    "Total": {
+      "total": 1053,
+      "media": 50.1,
+      "desviacion": 19.7,
+      "minimo": 26,
+      "maximo": 88,
+      "coef_variacion": 0.393,
+      "razon_desbalance": 3.38
+    }
+  },
+  "deteccion_global": 0.948,
+  "imagenes_roboflow": 956,
+  "deteccion_minima": {
+    "clase": "H",
+    "imagenes_roboflow": 26,
+    "muestras_roboflow": 19,
+    "deteccion": 0.731,
+    "muestras_kaggle": 7
+  },
+  "ks": {
+    "alfa_bonferroni": 0.0005882352941176471,
+    "significativas": 31,
+    "por_grupo": {
+      "Coordenadas (63)": {
+        "significativas": 26,
+        "total": 63,
+        "D_mediana": 0.164
+      },
+      "Ángulos de flexión (15)": {
+        "significativas": 3,
+        "total": 15,
+        "D_mediana": 0.106
+      },
+      "Distancias entre puntas (7)": {
+        "significativas": 2,
+        "total": 7,
+        "D_mediana": 0.109
+      }
+    }
+  },
+  "pca_varianza": [
+    0.244,
+    0.188
+  ],
+  "silueta_global": 0.089,
+  "silueta_por_clase": {
+    "A": 0.04,
+    "B": 0.205,
+    "C": 0.106,
+    "D": -0.05,
+    "E": 0.132,
+    "F": 0.175,
+    "H": 0.016,
+    "I": 0.061,
+    "K": -0.004,
+    "L": 0.097,
+    "M": 0.073,
+    "N": 0.206,
+    "O": -0.096,
+    "P": 0.114,
+    "Q": 0.074,
+    "R": 0.259,
+    "T": 0.18,
+    "U": 0.043,
+    "V": -0.062,
+    "W": 0.027,
+    "Y": 0.002
+  },
+  "pares_cercanos": [
+    [
+      "C",
+      "O",
+      3.07
+    ],
+    [
+      "D",
+      "I",
+      3.39
+    ],
+    [
+      "A",
+      "E",
+      4.17
+    ],
+    [
+      "T",
+      "U",
+      4.24
+    ],
+    [
+      "M",
+      "N",
+      4.46
+    ],
+    [
+      "V",
+      "W",
+      4.49
+    ],
+    [
+      "Q",
+      "T",
+      4.78
+    ],
+    [
+      "E",
+      "L",
+      5.29
+    ]
+  ],
+  "importancia_por_grupo": {
+    "Coordenadas (63)": 0.484,
+    "Ángulos de flexión (15)": 0.251,
+    "Distancias entre puntas (7)": 0.265
+  },
+  "importancia_media_por_caracteristica": {
+    "Coordenadas (63)": 0.0077,
+    "Ángulos de flexión (15)": 0.0167,
+    "Distancias entre puntas (7)": 0.0379
+  }
+}

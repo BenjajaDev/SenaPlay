@@ -8,6 +8,7 @@ import { createProgressRepository } from '../../features/progress/data/ProgressR
 import { createRemoteConfigRepository } from '../../features/remoteConfig/data/RemoteConfigRepository';
 import { DICTIONARY_ENTRIES } from '../../features/signs/data/local/dictionaryData';
 import { REAL_SIGNS } from '../../features/signs/data/local/signsData';
+import { createSignClipsRepository } from '../../features/signs/data/SignClipsRepository';
 import { createSignsRepository } from '../../features/signs/data/SignsRepository';
 import { createMediaRepository } from '../../features/videos/data/MediaRepository';
 import { appEvents } from '../events/EventBus';
@@ -36,6 +37,7 @@ export function createServices({ supabase = defaultSupabase, storage = jsonStora
       localDictionary: DICTIONARY_ENTRIES,
       localVocabulary: REAL_SIGNS,
     }),
+    signClips: createSignClipsRepository({ supabase, storage }),
     media: createMediaRepository({ supabase, storage }),
     remoteConfig: createRemoteConfigRepository({ supabase, storage }),
   };

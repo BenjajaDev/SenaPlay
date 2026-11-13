@@ -62,6 +62,38 @@ export type MediaItem = {
   created_at: string;
 };
 
+export type SignClipStatus = 'draft' | 'in_review' | 'validated' | 'rejected';
+export type SignClipLicense = 'propia' | 'cedida';
+
+/** Fila de public.sign_clips (ver supabase/migrations/…_sign_clips.sql). */
+export type SignClipRow = {
+  id: string;
+  sign_key: string;
+  gloss: string;
+  variant: number;
+  region: string;
+  video_path: string;
+  poster_path: string;
+  duration_ms: number;
+  width: number;
+  height: number;
+  size_bytes: number;
+  signer_alias: string;
+  consent_ref: string;
+  license: SignClipLicense;
+  edit_params: Record<string, unknown>;
+  validation_status: SignClipStatus;
+  validated_at: string | null;
+  validation_notes: string | null;
+  published: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
+/** Clip con sus URL públicas, listo para la UI del panel. */
+export type SignClip = SignClipRow & { video_url: string; poster_url: string };
+
 export type ConfigRow = { key: string; value: unknown; description: string | null; updated_at: string };
 
 export type FeatureFlag = {

@@ -3,6 +3,14 @@
 /* El ícono ya trae su forma de cuadrado redondeado con esquinas transparentes. */
 .brand-link img { border-radius: 22%; transition: transform var(--duration-base) var(--ease-pop); }
 .brand-link:hover img { transform: rotate(-8deg) scale(1.08); }
+/* Marca compartida: SeñaPlay | Club de Sordos de Talca. La línea separa sin
+   competir con los logos; el del club no gira para respetar su identidad. */
+.brand-lockup { display: inline-flex; align-items: center; gap: var(--space-3); min-width: 0; }
+.brand-divider { width: 1px; height: 32px; flex: none; background: var(--color-border-strong); }
+.brand-divider--header { background: color-mix(in srgb, var(--color-on-header) 45%, transparent); }
+.partner-mark { display: inline-flex; flex: none; border-radius: var(--radius-pill); }
+.partner-mark img { display: block; border-radius: 50%; }
+.partner-mark:focus-visible { outline: 3px solid var(--color-focus-ring); outline-offset: 3px; }
 
 /* ── Landing ─────────────────────────────────────────────────────── */
 .landing-nav {
@@ -189,6 +197,15 @@
 .pillar { display: grid; gap: var(--space-2); align-content: start; }
 .pillar h3 { font-size: 18px; }
 .about__team-title { font-size: 22px; text-align: center; margin: var(--space-12) 0 var(--space-6); }
+.collaborators { scroll-margin-top: 88px; }
+.collaborators__list { list-style: none; margin: 0 auto; padding: 0; display: grid; gap: var(--space-4); max-width: 640px; }
+.collaborator-card { display: flex; align-items: center; gap: var(--space-5); }
+.collaborator-card__logo { flex: none; border-radius: 50%; }
+.collaborator-card__name { font-size: 18px; }
+.collaborator-card__motto { font-size: 13px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-primary); }
+@media (max-width: 480px) {
+  .collaborator-card { flex-direction: column; text-align: center; }
+}
 /* Filas tipo acordeón (las arma TeamRows según el ancho disponible): la
    tarjeta activa crece y las demás de su fila se angostan y se desplazan
    para hacerle espacio. Nada se tapa y ninguna tarjeta cambia de línea. */
@@ -404,6 +421,7 @@
 .site-footer__brand { flex: 2 1 280px; max-width: 420px; display: grid; gap: var(--space-4); align-content: start; }
 .site-footer .site-footer__logo { color: var(--color-on-header); }
 .site-footer__tagline { font-size: 15px; }
+.site-footer__partner { font-size: 14px; opacity: 0.9; }
 .site-footer__socials { list-style: none; display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; padding: 0; }
 .site-footer .social-link { background: var(--color-on-header-soft); color: var(--color-on-header); }
 .site-footer .social-link:is(:hover, :focus-visible) { background: var(--color-on-header); color: var(--color-shadow); }

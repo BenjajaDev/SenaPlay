@@ -13,6 +13,8 @@ import { useThemeMode } from '@/lib/useThemeMode';
 import { Badge, Button, Card, Dialog, Skeleton, SkeletonRows } from '@/ui';
 import { HeroSigns } from './HeroSigns';
 import { AuroraBackground } from './AuroraBackground';
+import { CollaboratorsSection } from './CollaboratorsSection';
+import { PartnerMark } from './PartnerMark';
 import { PhoneShowcase } from './PhoneShowcase';
 import { SiteFooter } from './SiteFooter';
 
@@ -198,6 +200,8 @@ function AboutSection({ about, team }: { about: AboutContent | undefined; team: 
           <TeamRows team={team} />
         </>
       ) : null}
+
+      <CollaboratorsSection />
     </section>
   );
 }
@@ -434,10 +438,13 @@ export function LandingPage() {
         Saltar al contenido
       </a>
       <header className="landing-nav">
-        <Link to="/" className="brand-link" aria-label="SeñaPlay, inicio">
-          <img src={brandIcon(mode)} alt="" width={40} height={40} />
-          <span>SeñaPlay</span>
-        </Link>
+        <div className="brand-lockup">
+          <Link to="/" className="brand-link" aria-label="SeñaPlay, inicio">
+            <img src={brandIcon(mode)} alt="" width={40} height={40} />
+            <span>SeñaPlay</span>
+          </Link>
+          <PartnerMark />
+        </div>
         <nav aria-label="Principal" className="landing-nav__links">
           {navLinks.map((link) => (
             <a key={link.href} href={link.href}>

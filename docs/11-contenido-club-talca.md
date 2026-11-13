@@ -127,7 +127,7 @@ node scripts\clubTalca\importClubTalca.mjs --only dictionary --dry-run
 node scripts\clubTalca\importClubTalca.mjs --only dictionary
 ```
 
-Orden: aplicar la migración `20261113000200_signs_source.sql`, generar `clubTalcaHints.json` (si ya existe, el diccionario lo usa para `how_to`), simular y recién entonces escribir. Para actualizar `how_to` cuando cambie el archivo de pistas, vuelve a correr `--only dictionary`.
+Orden: aplicar las migraciones `20261113000200_signs_source.sql` y `20261113000300_signs_staff_policies.sql` (esta crea `signs_staff_*` donde `signs.sql` se cargó después de `content_admin`; sin ella el importador falla con «violates row-level security policy»), generar `clubTalcaHints.json` (si ya existe, el diccionario lo usa para `how_to`), simular y recién entonces escribir. Para actualizar `how_to` cuando cambie el archivo de pistas, vuelve a correr `--only dictionary`.
 
 ## 5. Verificación
 

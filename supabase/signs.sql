@@ -1,7 +1,7 @@
 -- ============================================================
 -- Senas lexicas reales de SeñaPlay (generado automaticamente)
 -- Fuente: Diccionario Bilingue LSCh-Espanol, MINEDUC
--- Generado el: 2026-06-06T20:12:38.984Z
+-- Generado el: 2026-11-13T18:08:38.945Z
 -- Pegar completo en Supabase -> SQL Editor -> Run
 -- ============================================================
 
@@ -22,6 +22,18 @@ alter table public.signs add column if not exists source text;
 alter table public.signs enable row level security;
 drop policy if exists "signs_read" on public.signs;
 create policy "signs_read" on public.signs for select using (true);
+do $$
+begin
+  if to_regprocedure('public.is_staff()') is not null then
+    drop policy if exists "signs_staff_insert" on public.signs;
+    create policy "signs_staff_insert" on public.signs for insert with check (public.is_staff());
+    drop policy if exists "signs_staff_update" on public.signs;
+    create policy "signs_staff_update" on public.signs for update using (public.is_staff()) with check (public.is_staff());
+    drop policy if exists "signs_staff_delete" on public.signs;
+    create policy "signs_staff_delete" on public.signs for delete using (public.is_staff());
+  end if;
+end;
+$$;
 
 -- 3) Datos MINEDUC (se reemplazan en cada ejecucion; las filas con source, como las del
 --    Club de Sordos de Talca, se conservan: se cargan con scripts/clubTalca)

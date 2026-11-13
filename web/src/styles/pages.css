@@ -3,6 +3,14 @@
 /* El ícono ya trae su forma de cuadrado redondeado con esquinas transparentes. */
 .brand-link img { border-radius: 22%; transition: transform var(--duration-base) var(--ease-pop); }
 .brand-link:hover img { transform: rotate(-8deg) scale(1.08); }
+/* Marca compartida: SeñaPlay | Club de Sordos de Talca. La línea separa sin
+   competir con los logos; el del club no gira para respetar su identidad. */
+.brand-lockup { display: inline-flex; align-items: center; gap: var(--space-3); min-width: 0; }
+.brand-divider { width: 1px; height: 32px; flex: none; background: var(--color-border-strong); }
+.brand-divider--header { background: color-mix(in srgb, var(--color-on-header) 45%, transparent); }
+.partner-mark { display: inline-flex; flex: none; border-radius: var(--radius-pill); }
+.partner-mark img { display: block; border-radius: 50%; }
+.partner-mark:focus-visible { outline: 3px solid var(--color-focus-ring); outline-offset: 3px; }
 
 /* ── Landing ─────────────────────────────────────────────────────── */
 .landing-nav {
@@ -19,6 +27,31 @@
   border-bottom: 1px solid var(--color-border);
 }
 .landing-nav__links { display: flex; gap: var(--space-5); }
+.landing-nav__actions { gap: var(--space-2); flex-wrap: nowrap; }
+/* Menú móvil: oculto en escritorio; el panel cae bajo la barra fija. */
+.mobile-nav { display: none; }
+.mobile-nav__panel {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  padding: var(--space-2) clamp(12px, 5vw, 64px) var(--space-4);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: var(--shadow-lg);
+}
+.mobile-nav__panel ul { list-style: none; margin: 0; padding: 0; display: grid; }
+.mobile-nav__panel a {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  font-weight: 700;
+  text-decoration: none;
+}
+.mobile-nav__panel a:is(:hover, :focus-visible) { background: var(--color-primary-soft); color: var(--color-primary); }
 .landing-nav__links a { position: relative; color: var(--color-text-secondary); text-decoration: none; font-weight: 600; transition: color var(--duration-fast); }
 .landing-nav__links a:hover { color: var(--color-primary); }
 /* Subrayado que crece desde el centro. */
@@ -39,7 +72,9 @@
 
 .hero {
   display: grid;
-  grid-template-columns: 1.1fr 1fr;
+  /* minmax(0, …): sin él, un botón o una palabra larga ensancha la columna
+     y la página se desplaza hacia el lado en el celular. */
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
   align-items: center;
   gap: var(--space-8);
   padding: clamp(40px, 8vw, 96px) clamp(16px, 5vw, 64px) clamp(56px, 9vw, 120px);
@@ -107,6 +142,8 @@
 @media (max-width: 1100px) { .metrics { grid-template-columns: repeat(3, 1fr); } }
 
 .section { padding: clamp(48px, 7vw, 88px) clamp(16px, 5vw, 64px); }
+/* Al saltar desde el menú, el título no queda tapado por la barra fija. */
+section[id] { scroll-margin-top: 72px; }
 .section--tinted { background: var(--color-background-soft); }
 .section__title { font-size: clamp(24px, 3.4vw, 34px); text-align: center; margin-bottom: var(--space-8); }
 .features-grid { display: grid; gap: var(--space-4); grid-template-columns: repeat(3, 1fr); }
@@ -182,13 +219,22 @@
 .publication-admin-cover { width: 96px; aspect-ratio: 16 / 10; border-radius: var(--radius-md); object-fit: cover; background: var(--color-surface-sunken); display: grid; place-items: center; color: var(--color-text-muted); flex-shrink: 0; }
 
 /* ── Nosotros ────────────────────────────────────────────────────── */
-.about { display: grid; grid-template-columns: 1fr 1.2fr; gap: var(--space-8); align-items: center; }
+.about { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: var(--space-8); align-items: center; }
 .about__intro > .badge { align-self: flex-start; }
 .about__text { font-size: 17px; }
 .about__pillars { display: grid; gap: var(--space-4); grid-template-columns: repeat(2, 1fr); }
 .pillar { display: grid; gap: var(--space-2); align-content: start; }
 .pillar h3 { font-size: 18px; }
 .about__team-title { font-size: 22px; text-align: center; margin: var(--space-12) 0 var(--space-6); }
+.collaborators { scroll-margin-top: 88px; }
+.collaborators__list { list-style: none; margin: 0 auto; padding: 0; display: grid; gap: var(--space-4); max-width: 640px; }
+.collaborator-card { display: flex; align-items: center; gap: var(--space-5); }
+.collaborator-card__logo { flex: none; border-radius: 50%; }
+.collaborator-card__name { font-size: 18px; }
+.collaborator-card__motto { font-size: 13px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-primary); }
+@media (max-width: 480px) {
+  .collaborator-card { flex-direction: column; text-align: center; }
+}
 /* Filas tipo acordeón (las arma TeamRows según el ancho disponible): la
    tarjeta activa crece y las demás de su fila se angostan y se desplazan
    para hacerle espacio. Nada se tapa y ninguna tarjeta cambia de línea. */
@@ -318,7 +364,7 @@
 @keyframes social-pulse { 25% { transform: scale(1.18); } 50% { transform: scale(1); } 75% { transform: scale(1.12); } }
 @keyframes social-float { 50% { transform: translateY(-5px); } }
 @media (max-width: 860px) {
-  .about { grid-template-columns: 1fr; }
+  .about { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 560px) {
   .about__pillars { grid-template-columns: 1fr; }
@@ -330,7 +376,7 @@
 .download:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
 
 /* ── La app: teléfono con capturas ───────────────────────────────── */
-.showcase { display: grid; grid-template-columns: 1.1fr 1fr; gap: clamp(32px, 6vw, 72px); align-items: center; max-width: 1200px; margin: 0 auto; }
+.showcase { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: clamp(32px, 6vw, 72px); align-items: center; max-width: 1200px; margin: 0 auto; }
 .showcase__text > .badge { align-self: flex-start; }
 .showcase__lead { font-size: 17px; }
 .showcase__steps { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
@@ -395,7 +441,7 @@
 .showcase__dot:focus-visible { outline: 3px solid var(--color-focus-ring); outline-offset: 0; border-radius: var(--radius-pill); }
 @keyframes phone-float { 50% { transform: translateY(-8px); } }
 @media (max-width: 860px) {
-  .showcase { grid-template-columns: 1fr; }
+  .showcase { grid-template-columns: minmax(0, 1fr); }
 }
 
 /* ── Pie de página ───────────────────────────────────────────────── */
@@ -404,6 +450,7 @@
 .site-footer__brand { flex: 2 1 280px; max-width: 420px; display: grid; gap: var(--space-4); align-content: start; }
 .site-footer .site-footer__logo { color: var(--color-on-header); }
 .site-footer__tagline { font-size: 15px; }
+.site-footer__partner { font-size: 14px; opacity: 0.9; }
 .site-footer__socials { list-style: none; display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; padding: 0; }
 .site-footer .social-link { background: var(--color-on-header-soft); color: var(--color-on-header); }
 .site-footer .social-link:is(:hover, :focus-visible) { background: var(--color-on-header); color: var(--color-shadow); }
@@ -415,6 +462,11 @@
 .site-footer__column a { text-underline-offset: 4px; transition: transform var(--duration-fast) var(--ease-enter); }
 .site-footer__column a:hover { text-decoration: underline; transform: translateX(2px); }
 .site-footer__column a:focus-visible { outline-color: var(--color-on-header); }
+/* Táctil: enlaces del pie con área de toque de 44 px (a 15 px de letra medían 22). */
+@media (pointer: coarse) {
+  .site-footer__column ul { gap: 0; }
+  .site-footer__column a { min-height: 44px; }
+}
 .site-footer__bottom {
   display: flex;
   flex-wrap: wrap;
@@ -428,17 +480,37 @@
 }
 
 @media (max-width: 860px) {
-  .hero { grid-template-columns: 1fr; }
+  .hero { grid-template-columns: minmax(0, 1fr); }
   .hero__visual { height: 240px; }
   .sign-card { width: 140px; }
+  /* Las tres tarjetas se reparten en el ancho disponible sin salirse. */
+  .sign-card { left: calc(var(--i) * (100% - 140px) / 2); }
   .sign-card img { width: 110px; height: 110px; }
   .sign-card__viewport { width: 110px; height: 110px; }
   .landing-nav__links { display: none; }
+  .mobile-nav { display: block; }
+}
+/* Celulares: botones del hero a todo el ancho y con salto de línea, barra más compacta. */
+@media (max-width: 480px) {
+  .hero__content .row { flex-direction: column; align-items: stretch; }
+  .hero__content .row .btn { white-space: normal; text-align: center; justify-content: center; }
+  .hero__visual { height: 210px; }
+  .sign-card { width: 120px; padding: 8px; left: calc(var(--i) * (100% - 120px) / 2); }
+  .sign-card img,
+  .sign-card__viewport { width: 100px; height: 100px; }
+  .landing-nav { padding-inline: 12px; gap: var(--space-2); }
+  .landing-nav .brand-lockup { gap: var(--space-2); }
+  .landing-nav .brand-link { gap: 6px; font-size: 18px; }
+  .landing-nav .brand-link img,
+  .landing-nav .partner-mark img { width: 34px; height: 34px; }
+  .landing-nav__panel-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .download .row { width: 100%; }
+  .download .row .btn { flex: 1 1 100%; justify-content: center; white-space: normal; }
 }
 @media (max-width: 600px) { .metrics { grid-template-columns: repeat(2, 1fr); padding: var(--space-3); gap: var(--space-2); } }
 
 /* ── Login ───────────────────────────────────────────────────────── */
-.auth-page { min-height: 100vh; display: grid; place-items: center; padding: var(--space-5); background: var(--gradient-header); }
+.auth-page { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: var(--space-5); background: var(--gradient-header); }
 .auth-card { width: min(420px, 100%); padding: var(--space-8); }
 
 /* ── Panel ───────────────────────────────────────────────────────── */

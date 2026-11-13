@@ -8,6 +8,7 @@ import {
   PHOTO_SIGN_KEYS,
   resolveSignMedia,
   toSignKey,
+  toStorageFolder,
 } from '../signMedia';
 
 const clip = (overrides = {}) => ({
@@ -46,6 +47,29 @@ describe('toSignKey', () => {
   });
 });
 
+// Mismas salidas que `public.sign_clip_folder` en supabase/tests/10_rls_policies.sql:
+// si cambias un caso aquí, cámbialo allá.
+describe('toStorageFolder', () => {
+  const STORAGE_SAFE = /^[A-Za-z0-9_/!.*'() &$=@;:+,?-]*$/;
+
+  test.each([
+    ['dolor', 'dolor'],
+    ['mañana', 'man_ana'],
+    ['ñ', 'n_'],
+    ['n~', 'n_'],
+    ['año-nuevo', 'an_o-nuevo'],
+  ])('%s → %s', (key, folder) => {
+    expect(toStorageFolder(key)).toBe(folder);
+    expect(STORAGE_SAFE.test(folder)).toBe(true);
+  });
+
+  test('toda clave válida produce una carpeta aceptada por Storage', () => {
+    ['mañana', 'n~', 'ñ', 'a-b-c', '19'].forEach((key) => {
+      expect(STORAGE_SAFE.test(toStorageFolder(key))).toBe(true);
+    });
+  });
+});
+
 describe('isPlayableClip', () => {
   test('acepta un clip completo', () => {
     expect(isPlayableClip(clip())).toBe(true);
@@ -57,7 +81,7 @@ describe('isPlayableClip', () => {
     ['variante 0', { variant: 0 }],
     ['video con javascript:', { videoUrl: 'javascript:alert(1)' }],
     ['imagen sin URL', { posterUrl: null }],
-    ['duración fuera de rango', { durationMs: 9000 }],
+    ['duración fuera de rango', { durationMs: 11000 }],
   ])('rechaza un clip %s', (_, overrides) => {
     expect(isPlayableClip(clip(overrides))).toBe(false);
   });

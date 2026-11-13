@@ -1,0 +1,1978 @@
+{
+  "_comment": "Semilla de los niveles 13-30 (Club de Sordos de Talca). La app NO importa este archivo: se guarda en Supabase con scripts/clubTalca/importClubTalca.mjs (--only levels). Entran con available=false; un admin los activa desde el panel cuando los clips esten validados y publicados. Ver docs/11-contenido-club-talca.md.",
+  "levels": [
+    {
+      "id": 13,
+      "title": "Saludos",
+      "description": "Aprende a saludar y despedirte en lengua de señas.",
+      "category": "saludos",
+      "available": false,
+      "sort_order": 13,
+      "exercises": [
+        {
+          "type": "matching",
+          "title": "Empareja las señas con su palabra",
+          "letters": [
+            "hola",
+            "buenos-dias",
+            "buenas-tardes"
+          ],
+          "labels": [
+            "Hola",
+            "Buenos días",
+            "Buenas tardes"
+          ]
+        },
+        {
+          "type": "word-meaning",
+          "title": "¿Qué significa esta seña?",
+          "signs": [
+            "buenas-noches"
+          ],
+          "options": [
+            "Buenas noches",
+            "Chao",
+            "Adiós"
+          ],
+          "correct": "Buenas noches",
+          "hint": "Mira primero las manos y luego la cara."
+        },
+        {
+          "type": "sign-choice",
+          "title": "¿Cuál es la seña de CHAO?",
+          "word": "CHAO",
+          "signs": [
+            "gracias",
+            "chao",
+            "adios"
+          ],
+          "correct": "chao",
+          "hint": "Puedes repetir este video con calma, las veces que quieras."
+        },
+        {
+          "type": "true-false",
+          "title": "¿Es correcta esta afirmación?",
+          "sign": "adios",
+          "statement": "Esta seña significa ADIÓS",
+          "answer": true,
+          "hint": "Fíjate en dónde parte y hacia dónde va cada movimiento."
+        },
+        {
+          "type": "word-meaning",
+          "title": "¿Qué significa esta seña?",
+          "signs": [
+            "gracias"
+          ],
+          "options": [
+            "Gracias",
+            "Muchas gracias",
+            "¿Cómo estás?"
+          ],
+          "correct": "Gracias",
+          "hint": "Sin apuro: mira este video más de una vez."
+        },
+        {
+          "type": "sign-choice",
+          "title": "¿Cuál es la seña de MUCHAS GRACIAS?",
+          "word": "MUCHAS GRACIAS",
+          "signs": [
+            "bien",
+            "muchas-gracias",
+            "como-estas"
+          ],
+          "correct": "muchas-gracias",
+          "hint": "Mira primero las manos y luego la cara."
+        },
+        {
+          "type": "recognition",
+          "title": "Selecciona lo que significan estas señas",
+          "signs": [
+            "bien",
+            "mal"
+          ],
+          "options": [
+            "Bien",
+            "Mal"
+          ],
+          "correct": [
+            "Bien",
+            "Mal"
+          ]
+        },
+        {
+          "type": "true-false",
+          "title": "¿Es correcta esta afirmación?",
+          "sign": "como-estas",
+          "statement": "Esta seña significa BIEN",
+          "answer": false,
+          "hint": "Puedes repetir este video con calma, las veces que quieras."
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "title": "Presentación",
+      "description": "Saluda, di tu nombre y comparte tus datos personales.",
+      "category": "saludos",
+      "available": false,
+      "sort_order": 14,
+      "exercises": [
+        {
+          "type": "matching",
+          "title": "Empareja las señas con su palabra",
+          "letters": [
+            "presentacion",
+            "nombre",
+            "mi-nombre"
+          ],
+          "labels": [
+            "Presentación",
+            "Nombre",
+            "Mi nombre"
+          ]
+        },
+        {
+          "type": "word-meaning",
+          "title": "¿Qué significa esta seña?",
+          "signs": [
+            "edad"
+          ],
+          "options": [
+            "Edad",
+            "Rut",
+            "Dirección"
+          ],
+          "correct": "Edad",
+          "hint": "Mira primero las manos y luego la cara."
+        },
+        {
+          "type": "sign-choice",
+          "title": "¿Cuál es la seña de TU NOMBRE?",
+          "word": "TU NOMBRE",
+          "signs": [
+            "tu-eres-oyente",
+            "tu-nombre",
+            "tu-eres-sordo"
+          ],
+          "correct": "tu-nombre",
+          "hint": "Puedes repetir este video con calma, las veces que quieras."
+        },
+        {
+          "type": "true-false",
+          "title": "¿Es correcta esta afirmación?",
+          "sign": "rut",
+          "statement": "Esta seña significa RUT",
+          "answer": true,
+          "hint": "Fíjate en dónde parte y hacia dónde va cada movimiento."
+        },
+        {
+          "type": "word-meaning",
+          "title": "¿Qué significa esta seña?",
+          "signs": [
+            "tu-eres-sordo"
+          ],
+          "options": [
+            "¿Tú eres sordo?",
+            "¿Tú eres oyente?",
+            "Cuídate"
+          ],
+          "correct": "¿Tú eres sordo?",
+          "hint": "Sin apuro: mira este video más de una vez."
+        },
+        {
+          "type": "sign-choice",
+          "title": "¿Cuál es la seña de DIRECCIÓN?",
+          "word": "DIRECCIÓN",
+          "signs": [
+            "fecha-de-nacimiento",
+            "direccion",
+            "numero-de-celular"
+          ],
+          "correct": "direccion",
+          "hint": "Mira primero las manos y luego la cara."
+        },
+        {
+          "type": "recognition",
+          "title": "Selecciona lo que significan estas señas",
+          "signs": [
+            "numero-de-celular",
+            "cuidate",
+            "fecha-de-nacimiento"
+          ],
+          "options": [
+            "Cuídate",
+            "Fecha de nacimiento",
+            "Número de celular"
+          ],
+          "correct": [
+            "Número de celular",
+            "Cuídate",
+            "Fecha de nacimiento"
+          ]
+        },
+        {
+          "type": "true-false",
+          "title": "¿Es correcta esta afirmación?",
+          "sign": "tu-eres-oyente",
+          "statement": "Esta seña significa CUÍDATE",
+          "answer": false,
+          "hint": "Puedes repetir este video con calma, las veces que quieras."
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "title": "Primeras señas en clase",
+      "description": "Las señas que más vas a usar en una sala de clases.",
+      "category": "clase",
+      "available": false,
+      "sort_order": 15,
+      "exercises": [
+        {
+          "type": "matching",
+          "title": "Empareja las señas con su palabra",
+          "letters": [
+            "profesor",
+            "profesora",
+            "clase"
+          ],
+          "labels": [
+            "Profesor",
+            "Profesora",
+            "Clase"
+          ]
+        },
+        {
+          "type": "word-meaning",
+          "title": "¿Qué significa esta seña?",
+          "signs": [
+            "por-favor"
+          ],
+          "options": [
+            "Por favor",
+            "Entender",
+            "No entender"
+          ],
+          "correct": "Por favor",
+          "hint": "Mira primero las manos y luego la cara."
+        },
+        {
+          "type": "sign-choice",
+          "title": "¿Cuál es la seña de ENTENDER?",
+          "word": "ENTENDER",
+          "signs": [
+            "lento",
+            "entender",
+            "no-entender"
+          ],
+          "correct": "entender",
+          "hint": "Puedes repetir este video con calma, las veces que quieras."
+        },
+        {
+          "type": "true-false",
+          "title": "¿Es correcta esta afirmación?",
+          "sign": "no-entender",
+          "statement": "Esta seña significa NO ENTENDER",
+          "answer": true,
+          "hint": "Fíjate en dónde parte y hacia dónde va cada movimiento."
+        },
+        {
+          "type": "word-meaning",
+          "title": "¿Qué significa esta seña?",
+          "signs": [
+            "lento"
+          ],
+          "options": [
+            "Lento",
+            "Rápido",
+            "Compañero"
+          ],
+          "correct": "Lento",
+          "hint": "Sin apuro: mira este video más de una vez."
+        },
+        {
+          "type": "sign-choice",
+          "title": "¿Cuál es la seña de RÁPIDO?",
+          "word": "RÁPIDO",
+          "signs": [
+            "duda",
+            "rapido",
+            "compañero"
+          ],
+          "correct": "rapido",
+          "hint": "Mira primero las manos y luego la cara."
+        },
+        {
+          "type": "recognition",
+          "title": "Selecciona lo que significan estas señas",
+          "signs": [
+            "duda",
+            "disculpa"
+          ],
+          "options": [
+            "Duda",
+            "Disculpa"
+          ],
+          "correct": [
+            "Duda",
+            "Disculpa"
+          ]
+        },
+        {
+          "type": "true-false",
+          "title": "¿Es correcta esta afirmación?",
+          "sign": "compañero",
+          "statement": "Esta seña significa DUDA",
+          "answer": false,
+          "hint": "Puedes repetir este video con calma, las veces que quieras."
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "title": "Números del 1 al 10",
+      "description": "Cuenta de uno a diez con las manos.",
+      "category": "numeros",
+      "available": false,
+      "sort_order": 16,
+      "exercises": [
+        {
+          "type": "matching",
+          "title": "Empareja las señas con su palabra",
+          "letters": [
+            "1",
+            "2",
+            "3"
+          ],
+          "labels": [
+            "1",
+            "2",
+            "3"
+          ]
+        },
+        {
+          "type": "word-meaning",
+          "title": "¿Qué significa esta seña?",
+          "signs": [
+            "4"
+          ],
+          "options": [
+            "4",
+            "5",
+            "6"
+          ],
+          "correct": "4",
+          "hint": "Mira primero las manos y luego la cara."
+        },
+        {
+          "type": "sign-choice",
+          "title": "¿Cuál es la seña de 5?",
+          "word": "5",
+          "signs": [
+            "7",
+            "5",
+            "6"
+          ],
+          "correct": "5",
+          "hint": "Puedes repetir este video con calma, las veces que quieras."
+        },
+        {
+          "type": "true-false",
+          "title": "¿Es correcta esta afirmación?",
+          "sign": "6",
+          "statement": "Esta seña significa 6",
+          "answer": true,
+          "hint": "Fíjate en dónde parte y hacia dónde va cada movimiento."
+        },
+        {
+          "type": "word-meaning",
+          "title": "¿Qué significa esta seña?",
+          "signs": [
+            "7"
+          ],
+          "options": [
+            "7",
+            "8",
+            "9"
+          ],
+          "correct": "7",
+          "hint": "Sin apuro: mira este video más de una vez."
+        },
+        {
+          "type": "sign-choice",
+          "title": "¿Cuál es la seña de 8?",
+          "word": "8",
+          "signs": [
+            "10",
+            "8",
+            "9"
+          ],
+          "correct": "8",
+          "hint": "Mira primero las manos y luego la cara."
+        },
+        {
+          "type": "recognition",
+          "title": "Selecciona lo que significan estas señas",
+          "signs": [
+            "10",
+            "1",
+            "2"
+          ],
+          "options": [
+            "1",
+            "2",
+            "10"
+          ],
+          "correct": [
+            "10",
+            "1",
+            "2"
+          ]
+        },
+        {
+          "type": "true-false",
+          "title": "¿Es correcta esta afirmación?",
+          "sign": "9",
+          "statement": "Esta seña significa 10",
+          "answer": false,
+          "hint": "Puedes repetir este video con calma, las veces que quieras."
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "title": "Números del 11 al 90",
+      "description": "Del once al noventa: los números intermedios y las decenas.",
+      "category": "numeros",
+      "available": false,
+      "sort_order": 17,
+      "exercises": [
+        {
+          "type": "matching",
+          "title": "Empareja las señas con su palabra",
+          "letters": [
+            "11",
+            "12",
+            "13"
+          ],
+          "labels": [
+            "11",
+            "12",
+            "13"
+          ]
+        },
+        {
+          "type": "word-meaning",
+          "title": "¿Qué significa esta seña?",
+          "signs": [
+            "14"
+          ],
+          "options": [
+            "14",
+            "15",
+            "16"
+          ],
+          "correct": "14",
+          "hint": "Mira primero las manos y luego la cara."
+        },
+        {
+          "type": "sign-choice",
+          "title": "¿Cuál es la seña de 15?",
+          "word": "15",
+          "signs": [
+            "17",
+            "15",
+            "16"
+          ],
+          "correct": "15",
+          "hint": "Puedes repetir este video con calma, las veces que quieras."
+        },
+        {
+          "type": "true-false",
+          "title": "¿Es correcta esta afirmación?",
+          "sign": "16",
+          "statement": "Esta seña significa 16",
+          "answer": true,
+          "hint": "Fíjate en dónde parte y hacia dónde va cada movimiento."
+        },
+        {
+          "type": "word-meaning",
+          "title": "¿Qué significa esta seña?",
+          "signs": [
+            "17"
+          ],
+          "options": [
+            "17",
+            "18",
+            "20"
+          ],
+          "correct": "17",
+          "hint": "Sin apuro: mira este video más de una vez."
+        },
+        {
+          "type": "sign-choice",
+          "title": "¿Cuál es la seña de 18?",
+          "word": "18",
+          "signs": [
+            "30",
+            "18",
+            "20"
+          ],
+          "correct": "18",
+          "hint": "Mira primero las manos y luego la cara."
+        },
+        {
+          "type": "recognition",
+          "title": "Selecciona lo que significan estas señas",
+          "signs": [
+            "30",
+            "40"
+          ],
+          "options": [
+            "30",
+            "40"
+          ],
+          "correct": [
+            "30",
+            "40"
+          ]
+        },
+        {
+          "type": "true-false",
+          "title": "¿Es correcta esta afirmación?",
+          "sign": "20",
+          "statement": "Esta seña significa 30",
+          "answer": false,
+          "hint": "Puedes repetir este video con calma, las veces que quieras."
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "title": "Colores",
+      "description": "Los colores de todos los días.",
+      "category": "colores",
+      "available": false,
+      "sort_order": 18,
+      "exercises": [
+        {
+          "type": "matching",
+          "title": "Empareja las señas con su palabra",
+          "letters": [
+            "amarillo",
+            "azul",
+            "blanco"
+          ],
+          "labels": [
+            "Amarillo",
+            "Azul",
+            "Blanco"
+          ]
+        },
+        {
+          "type": "word-meaning",
+          "title": "¿Qué significa esta seña?",
+          "signs": [
+            "cafe-color"
+          ],
+          "options": [
+            "Café",
+            "Celeste",
+            "Morado"
+          ],
+          "correct": "Café",
+          "hint": "Mira primero las manos y luego la cara."
+        },
+        {
+          "type": "sign-choice",
+          "title": "¿Cuál es la seña de CELESTE?",
+          "word": "CELESTE",
+          "signs": [
+            "naranjo",
+            "celeste",
+            "morado"
+          ],
+          "correct": "celeste",
+          "hint": "Puedes repetir este video con calma, las veces que quieras."
+        },
+        {
+          "type": "true-false",
+          "title": "¿Es correcta esta afirmación?",
+          "sign": "morado",
+          "statement": "Esta seña significa MORADO",
+          "answer": true,
+          "hint": "Fíjate en dónde parte y hacia dónde va cada movimiento."
+        },
+        {
+          "type": "sign-choice",
+          "title": "¿Cuál es la seña de NEGRO?",
+          "word": "NEGRO",
+          "signs": [
+            "rojo",
+            "negro",
+            "plomo"
+          ],
+          "correct": "negro",
+          "hint": "Sin apuro: mira este video más de una vez."
+        },
+        {
+          "type": "recognition",
+          "title": "Selecciona lo que significan estas señas",
+          "signs": [
+            "rojo",
+            "rosado",
+            "verde"
+          ],
+          "options": [
+            "Rosado",
+            "Verde",
+            "Rojo"
+          ],
+          "correct": [
+            "Rojo",
+            "Rosado",
+            "Verde"
+          ]
+        },
+        {
+          "type": "true-false",
+          "title": "¿Es correcta esta afirmación?",
+          "sign": "plomo",
+          "statement": "Esta seña significa ROJO",
+          "answer": false,
+          "hint": "Mira primero las manos y luego la cara."
+        },
+        {
+          "type": "word-meaning",
+          "title": "¿Qué dice esta frase?",
+          "signs": [
+            "mi-color-favorito-es-rojo-y-negro"
+          ],
+          "options": [
+            "Mi color favorito es el azul y el verde.",
+            "Mi color favorito es el rojo y el negro.",
+            "Mi color favorito es el rosado y el blanco."
+          ],
+          "correct": "Mi color favorito es el rojo y el negro.",
+          "hint": "Mira la frase completa y fíjate en cada seña, de a una."
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "title": "Animales I",
+      "description": "Mascotas y animales de la casa y del campo.",
+      "category": "animales",
+      "available": false,
+      "sort_order": 19,
+      "exercises": [
+        {
+          "type": "matching",
+          "title": "Empareja las señas con su palabra",
+          "letters": [
+            "perro",
+            "gato",
+            "caballo"
+          ],
+          "labels": [
+            "Perro",
+            "Gato",
+            "Caballo"
+          ]
+        },
+        {
+          "type": "word-meaning",
+          "title": "¿Qué significa esta seña?",
+          "signs": [
+            "conejo"
+          ],
+          "options": [
+            "Conejo",
+            "Gallina",
+            "Pollo"
+          ],
+          "correct": "Conejo",
+          "hint": "Mira primero las manos y luego la cara."
+        },
+        {
+          "type": "sign-choice",
+          "title": "¿Cuál es la seña de GALLINA?",
+          "word": "GALLINA",
+          "signs": [
+            "gallo",
+            "gallina",
+            "pollo"
+          ],
+          "correct": "gallina",
+          "hint": "Puedes repetir este video con calma, las veces que quieras."
+        },
+        {
+          "type": "true-false",
+          "title": "¿Es correcta esta afirmación?",
+          "sign": "pollo",
+          "statement": "Esta seña significa POLLO",
+          "answer": true,
+          "hint": "Fíjate en dónde parte y hacia dónde va cada movimiento."
+        },
+        {
+          "type": "sign-choice",
+          "title": "¿Cuál es la seña de PATO?",
+          "word": "PATO",
+          "signs": [
+            "elefante",
+            "pato",
+            "oveja"
+          ],
+          "correct": "pato",
+          "hint": "Sin apuro: mira este video más de una vez."
+        },
+        {
+          "type": "recognition",
+          "title": "Selecciona lo que significan estas señas",
+          "signs": [
+            "elefante",
+            "oso"
+          ],
+          "options": [
+            "Elefante",
+            "Oso"
+          ],
+          "correct": [
+            "Elefante",
+            "Oso"
+          ]
+        },
+        {
+          "type": "true-false",
+          "title": "¿Es correcta esta afirmación?",
+          "sign": "oveja",
+          "statement": "Esta seña significa ELEFANTE",
+          "answer": false,
+          "hint": "Mira primero las manos y luego la cara."
+        },
+        {
+          "type": "word-meaning",
+          "title": "¿Qué dice esta frase?",
+          "signs": [
+            "mi-animal-favorito-es-el-perro"
+          ],
+          "options": [
+            "Mi animal favorito es el gato.",
+            "Mi animal favorito es el perro.",
+            "Mi animal favorito es el caballo."
+          ],
+          "correct": "Mi animal favorito es el perro.",
+          "hint": "Mira la frase completa y fíjate en cada seña, de a una."
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "title": "Animales II",
+      "description": "Más animales: del campo, del agua y del jardín.",
+      "category": "animales",
+      "available": false,
+      "sort_order": 20,
+      "exercises": [
+        {
+          "type": "matching",
+          "title": "Empareja las señas con su palabra",
+          "letters": [
+            "loro",
+            "raton",
+            "sapo"
+          ],
+          "labels": [
+            "Loro",
+            "Ratón",
+            "Sapo"
+          ]
+        },
+        {
+          "type": "word-meaning",
+          "title": "¿Qué significa esta seña?",
+          "signs": [
+            "vaca"
+          ],
+          "options": [
+            "Vaca",
+            "Toro",
+            "Chancho"
+          ],
+          "correct": "Vaca",
+          "hint": "Mira primero las manos y luego la cara."
+        },
+        {
+          "type": "sign-choice",
+          "title": "¿Cuál es la seña de TORO?",
+          "word": "TORO",
+          "signs": [
+            "pajaro",
+            "toro",
+            "chancho"
+          ],
+          "correct": "toro",
+          "hint": "Puedes repetir este video con calma, las veces que quieras."
+        },
+        {
+          "type": "true-false",
+          "title": "¿Es correcta esta afirmación?",
+          "sign": "chancho",
+          "statement": "Esta seña significa CHANCHO",
+          "answer": true,
+          "hint": "Fíjate en dónde parte y hacia dónde va cada movimiento."
+        },
+        {
+          "type": "word-meaning",
+          "title": "¿Qué significa esta seña?",
+          "signs": [
+            "pajaro"
+          ],
+          "options": [
+            "Pájaro",
+            "Araña",
+            "Abeja"
+          ],
+          "correct": "Pájaro",
+          "hint": "Sin apuro: mira este video más de una vez."
+        },
+        {
+          "type": "sign-choice",
+          "title": "¿Cuál es la seña de ARAÑA?",
+          "word": "ARAÑA",
+          "signs": [
+            "caracol",
+            "araña",
+            "abeja"
+          ],
+          "correct": "araña",
+          "hint": "Mira primero las manos y luego la cara."
+        },
+        {
+          "type": "recognition",
+          "title": "Selecciona lo que significan estas señas",
+          "signs": [
+            "caracol",
+            "loro",
+            "raton"
+          ],
+          "options": [
+            "Loro",
+            "Ratón",
+            "Caracol"
+          ],
+          "correct": [
+            "Caracol",
+            "Loro",
+            "Ratón"
+          ]
+        },
+        {
+          "type": "true-false",
+          "title": "¿Es correcta esta afirmación?",
+          "sign": "abeja",
+          "statement": "Esta seña significa CARACOL",
+          "answer": false,
+          "hint": "Puedes repetir este video con calma, las veces que quieras."
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "title": "Alimentos I",
+      "description": "Lo que hay en la mesa a la hora de once.",
+      "category": "alimentos",
+      "available": false,
+      "sort_order": 21,
+      "exercises": [
+        {
+          "type": "matching",
+          "title": "Empareja las señas con su palabra",
+          "letters": [
+            "pan",
+            "huevo",
+            "azucar"
+          ],
+          "labels": [
+            "Pan",
+            "Huevo",
+            "Azúcar"
+          ]
+        },
+        {
+          "type": "word-meaning",
+          "title": "¿Qué significa esta seña?",
+          "signs": [
+            "te"
+          ],
+          "options": [
+            "Té",
+            "Café",
+            "Leche"
+          ],
+          "correct": "Té",
+          "hint": "Mira primero las manos y luego la cara."
+        },
+        {
+          "type": "sign-choice",
+          "title": "¿Cuál es la seña de CAFÉ?",
+          "word": "CAFÉ",
+          "signs": [
+            "queso",
+            "cafe",
+            "leche"
+          ],
+          "correct": "cafe",
+          "hint": "Puedes repetir este video con calma, las veces que quieras."
+        },
+        {
+          "type": "true-false",
+          "title": "¿Es correcta esta afirmación?",
+          "sign": "leche",
+          "statement": "Esta seña significa LECHE",
+          "answer": true,
+          "hint": "Fíjate en dónde parte y hacia dónde va cada movimiento."
+        },
+        {
+          "type": "sign-choice",
+          "title": "¿Cuál es la seña de JAMÓN?",
+          "word": "JAMÓN",
+          "signs": [
+            "tallarines",
+            "jamon",
+            "arroz"
+          ],
+          "correct": "jamon",
+          "hint": "Sin apuro: mira este video más de una vez."
+        },
+        {
+          "type": "recognition",
+          "title": "Selecciona lo que significan estas señas",
+          "signs": [
+            "tallarines",
+            "porotos"
+          ],
+          "options": [
+            "Tallarines",
+            "Porotos"
+          ],
+          "correct": [
+            "Tallarines",
+            "Porotos"
+          ]
+        },
+        {
+          "type": "true-false",
+          "title": "¿Es correcta esta afirmación?",
+          "sign": "arroz",
+          "statement": "Esta seña significa TALLARINES",
+          "answer": false,
+          "hint": "Mira primero las manos y luego la cara."
+        },
+        {
+          "type": "word-meaning",
+          "title": "¿Qué dice esta frase?",
+          "signs": [
+            "mi-comida-favorita-es-tallarin-con-carne"
+          ],
+          "options": [
+            "Mi comida favorita es arroz con pollo.",
+            "Mi comida favorita es tallarines con carne.",
+            "Mi comida favorita es pan con queso."
+          ],
+          "correct": "Mi comida favorita es tallarines con carne.",
+          "hint": "Mira la frase completa y fíjate en cada seña, de a una."
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "title": "Alimentos II",
+      "description": "Comidas, bebidas y postres.",
+      "category": "alimentos",
+      "available": false,
+      "sort_order": 22,
+      "exercises": [
+        {
+          "type": "matching",
+          "title": "Empareja las señas con su palabra",
+          "letters": [
+            "carne",
+            "cazuela",
+            "helado"
+          ],
+          "labels": [
+            "Carne",
+            "Cazuela",
+            "Helado"
+          ]
+        },
+        {
+          "type": "word-meaning",
+          "title": "¿Qué significa esta seña?",
+          "signs": [
+            "agua"
+          ],
+          "options": [
+            "Agua",
+            "Bebida",
+            "Jugo"
+          ],
+          "correct": "Agua",
+          "hint": "Mira primero las manos y luego la cara."
+        },
+        {
+          "type": "sign-choice",
+          "title": "¿Cuál es la seña de BEBIDA?",
+          "word": "BEBIDA",
+          "signs": [
+            "queque",
+            "bebida",
+            "jugo"
+          ],
+          "correct": "bebida",
+          "hint": "Puedes repetir este video con calma, las veces que quieras."
+        },
+        {
+          "type": "true-false",
+          "title": "¿Es correcta esta afirmación?",
+          "sign": "jugo",
+          "statement": "Esta seña significa JUGO",
+          "answer": true,
+          "hint": "Fíjate en dónde parte y hacia dónde va cada movimiento."
+        },
+        {
+          "type": "word-meaning",
+          "title": "¿Qué significa esta seña?",
+          "signs": [
+            "queque"
+          ],
+          "options": [
+            "Queque",
+            "Galleta",
+            "Postre"
+          ],
+          "correct": "Queque",
+          "hint": "Sin apuro: mira este video más de una vez."
+        },
+        {
+          "type": "sign-choice",
+          "title": "¿Cuál es la seña de GALLETA?",
+          "word": "GALLETA",
+          "signs": [
+            "yogurt",
+            "galleta",
+            "postre"
+          ],
+          "correct": "galleta",
+          "hint": "Mira primero las manos y luego la cara."
+        },
+        {
+          "type": "recognition",
+          "title": "Selecciona lo que significan estas señas",
+          "signs": [
+            "yogurt",
+            "torta",
+            "fruta"
+          ],
+          "options": [
+            "Torta",
+            "Fruta",
+            "Yogurt"
+          ],
+          "correct": [
+            "Yogurt",
+            "Torta",
+            "Fruta"
+          ]
+        },
+        {
+          "type": "true-false",
+          "title": "¿Es correcta esta afirmación?",
+          "sign": "postre",
+          "statement": "Esta seña significa YOGURT",
+          "answer": false,
+          "hint": "Puedes repetir este video con calma, las veces que quieras."
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "title": "Verbos I",
+      "description": "Acciones de todos los días.",
+      "category": "verbos",
+      "available": false,
+      "sort_order": 23,
+      "exercises": [
+        {
+          "type": "matching",
+          "title": "Empareja las señas con su palabra",
+          "letters": [
+            "gustar",
+            "querer",
+            "pasear"
+          ],
+          "labels": [
+            "Gustar",
+            "Querer",
+            "Pasear"
+          ]
+        },
+        {
+          "type": "word-meaning",
+          "title": "¿Qué significa esta seña?",
+          "signs": [
+            "buscar"
+          ],
+          "options": [
+            "Buscar",
+            "Caminar",
+            "Descansar"
+          ],
+          "correct": "Buscar",
+          "hint": "Mira primero las manos y luego la cara."
+        },
+        {
+          "type": "sign-choice",
+          "title": "¿Cuál es la seña de CAMINAR?",
+          "word": "CAMINAR",
+          "signs": [
+            "enseñar",
+            "caminar",
+            "descansar"
+          ],
+          "correct": "caminar",
+          "hint": "Puedes repetir este video con calma, las veces que quieras."
+        },
+        {
+          "type": "true-false",
+          "title": "¿Es correcta esta afirmación?",
+          "sign": "descansar",
+          "statement": "Esta seña significa DESCANSAR",
+          "answer": true,
+          "hint": "Fíjate en dónde parte y hacia dónde va cada movimiento."
+        },
+        {
+          "type": "word-meaning",
+          "title": "¿Qué significa esta seña?",
+          "signs": [
+            "enseñar"
+          ],
+          "options": [
+            "Enseñar",
+            "Estudiar",
+            "Dibujar"
+          ],
+          "correct": "Enseñar",
+          "hint": "Sin apuro: mira este video más de una vez."
+        },
+        {
+          "type": "sign-choice",
+          "title": "¿Cuál es la seña de ESTUDIAR?",
+          "word": "ESTUDIAR",
+          "signs": [
+            "trabajar",
+            "estudiar",
+            "dibujar"
+          ],
+          "correct": "estudiar",
+          "hint": "Mira primero las manos y luego la cara."
+        },
+        {
+          "type": "recognition",
+          "title": "Selecciona lo que significan estas señas",
+          "signs": [
+            "trabajar",
+            "ayudar"
+          ],
+          "options": [
+            "Trabajar",
+            "Ayudar"
+          ],
+          "correct": [
+            "Trabajar",
+            "Ayudar"
+          ]
+        },
+        {
+          "type": "true-false",
+          "title": "¿Es correcta esta afirmación?",
+          "sign": "dibujar",
+          "statement": "Esta seña significa TRABAJAR",
+          "answer": false,
+          "hint": "Puedes repetir este video con calma, las veces que quieras."
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "title": "Verbos II",
+      "description": "Más acciones: moverse, aprender y comprar.",
+      "category": "verbos",
+      "available": false,
+      "sort_order": 24,
+      "exercises": [
+        {
+          "type": "matching",
+          "title": "Empareja las señas con su palabra",
+          "letters": [
+            "almorzar",
+            "llegar",
+            "salir"
+          ],
+          "labels": [
+            "Almorzar",
+            "Llegar",
+            "Salir"
+          ]
+        },
+        {
+          "type": "word-meaning",
+          "title": "¿Qué significa esta seña?",
+          "signs": [
+            "nacer"
+          ],
+          "options": [
+            "Nacer",
+            "Ver",
+            "Vivir"
+          ],
+          "correct": "Nacer",
+          "hint": "Mira primero las manos y luego la cara."
+        },
+        {
+          "type": "sign-choice",
+          "title": "¿Cuál es la seña de VER?",
+          "word": "VER",
+          "signs": [
+            "jugar",
+            "ver",
+            "vivir"
+          ],
+          "correct": "ver",
+          "hint": "Puedes repetir este video con calma, las veces que quieras."
+        },
+        {
+          "type": "true-false",
+          "title": "¿Es correcta esta afirmación?",
+          "sign": "vivir",
+          "statement": "Esta seña significa VIVIR",
+          "answer": true,
+          "hint": "Fíjate en dónde parte y hacia dónde va cada movimiento."
+        },
+        {
+          "type": "word-meaning",
+          "title": "¿Qué significa esta seña?",
+          "signs": [
+            "jugar"
+          ],
+          "options": [
+            "Jugar",
+            "Aprender",
+            "Comprar"
+          ],
+          "correct": "Jugar",
+          "hint": "Sin apuro: mira este video más de una vez."
+        },
+        {
+          "type": "sign-choice",
+          "title": "¿Cuál es la seña de APRENDER?",
+          "word": "APRENDER",
+          "signs": [
+            "vender",
+            "aprender",
+            "comprar"
+          ],
+          "correct": "aprender",
+          "hint": "Mira primero las manos y luego la cara."
+        },
+        {
+          "type": "recognition",
+          "title": "Selecciona lo que significan estas señas",
+          "signs": [
+            "vender",
+            "viajar",
+            "enfermar"
+          ],
+          "options": [
+            "Viajar",
+            "Enfermar",
+            "Vender"
+          ],
+          "correct": [
+            "Vender",
+            "Viajar",
+            "Enfermar"
+          ]
+        },
+        {
+          "type": "true-false",
+          "title": "¿Es correcta esta afirmación?",
+          "sign": "comprar",
+          "statement": "Esta seña significa VENDER",
+          "answer": false,
+          "hint": "Puedes repetir este video con calma, las veces que quieras."
+        }
+      ]
+    },
+    {
+      "id": 25,
+      "title": "Días y tiempo",
+      "description": "Los días de la semana y cuándo pasan las cosas.",
+      "category": "tiempo",
+      "available": false,
+      "sort_order": 25,
+      "exercises": [
+        {
+          "type": "matching",
+          "title": "Empareja las señas con su palabra",
+          "letters": [
+            "lunes",
+            "hoy",
+            "martes"
+          ],
+          "labels": [
+            "Lunes",
+            "Hoy",
+            "Martes"
+          ]
+        },
+        {
+          "type": "word-meaning",
+          "title": "¿Qué significa esta seña?",
+          "signs": [
+            "ayer"
+          ],
+          "options": [
+            "Ayer",
+            "Anteayer",
+            "Mañana"
+          ],
+          "correct": "Ayer",
+          "hint": "Mira primero las manos y luego la cara."
+        },
+        {
+          "type": "sign-choice",
+          "title": "¿Cuál es la seña de MIÉRCOLES?",
+          "word": "MIÉRCOLES",
+          "signs": [
+            "viernes",
+            "miercoles",
+            "jueves"
+          ],
+          "correct": "miercoles",
+          "hint": "Puedes repetir este video con calma, las veces que quieras."
+        },
+        {
+          "type": "true-false",
+          "title": "¿Es correcta esta afirmación?",
+          "sign": "anteayer",
+          "statement": "Esta seña significa ANTEAYER",
+          "answer": true,
+          "hint": "Fíjate en dónde parte y hacia dónde va cada movimiento."
+        },
+        {
+          "type": "word-meaning",
+          "title": "¿Qué significa esta seña?",
+          "signs": [
+            "jueves"
+          ],
+          "options": [
+            "Jueves",
+            "Viernes",
+            "Sábado"
+          ],
+          "correct": "Jueves",
+          "hint": "Sin apuro: mira este video más de una vez."
+        },
+        {
+          "type": "sign-choice",
+          "title": "¿Cuál es la seña de MAÑANA?",
+          "word": "MAÑANA",
+          "signs": [
+            "antes",
+            "mañana",
+            "pasado-mañana"
+          ],
+          "correct": "mañana",
+          "hint": "Mira primero las manos y luego la cara."
+        },
+        {
+          "type": "recognition",
+          "title": "Selecciona lo que significan estas señas",
+          "signs": [
+            "pasado-mañana",
+            "sabado"
+          ],
+          "options": [
+            "Pasado mañana",
+            "Sábado",
+            "Antes"
+          ],
+          "correct": [
+            "Pasado mañana",
+            "Sábado"
+          ]
+        },
+        {
+          "type": "true-false",
+          "title": "¿Es correcta esta afirmación?",
+          "sign": "viernes",
+          "statement": "Esta seña significa SÁBADO",
+          "answer": false,
+          "hint": "Puedes repetir este video con calma, las veces que quieras."
+        }
+      ]
+    },
+    {
+      "id": 26,
+      "title": "Pronombres y estado civil",
+      "description": "Quién habla y cómo te presentas: yo, tú, casado, soltero.",
+      "category": "personas",
+      "available": false,
+      "sort_order": 26,
+      "exercises": [
+        {
+          "type": "matching",
+          "title": "Empareja las señas con su palabra",
+          "letters": [
+            "yo",
+            "soltero",
+            "tu"
+          ],
+          "labels": [
+            "Yo",
+            "Soltero",
+            "Tú"
+          ]
+        },
+        {
+          "type": "word-meaning",
+          "title": "¿Qué significa esta seña?",
+          "signs": [
+            "casado"
+          ],
+          "options": [
+            "Casado",
+            "Separado",
+            "Divorciado"
+          ],
+          "correct": "Casado",
+          "hint": "Mira primero las manos y luego la cara."
+        },
+        {
+          "type": "sign-choice",
+          "title": "¿Cuál es la seña de ÉL?",
+          "word": "ÉL",
+          "signs": [
+            "usted",
+            "el",
+            "ella"
+          ],
+          "correct": "el",
+          "hint": "Puedes repetir este video con calma, las veces que quieras."
+        },
+        {
+          "type": "true-false",
+          "title": "¿Es correcta esta afirmación?",
+          "sign": "separado",
+          "statement": "Esta seña significa SEPARADO",
+          "answer": true,
+          "hint": "Fíjate en dónde parte y hacia dónde va cada movimiento."
+        },
+        {
+          "type": "word-meaning",
+          "title": "¿Qué significa esta seña?",
+          "signs": [
+            "ella"
+          ],
+          "options": [
+            "Ella",
+            "Usted",
+            "Ellos"
+          ],
+          "correct": "Ella",
+          "hint": "Sin apuro: mira este video más de una vez."
+        },
+        {
+          "type": "sign-choice",
+          "title": "¿Cuál es la seña de DIVORCIADO?",
+          "word": "DIVORCIADO",
+          "signs": [
+            "viudo",
+            "divorciado",
+            "conviviente"
+          ],
+          "correct": "divorciado",
+          "hint": "Mira primero las manos y luego la cara."
+        },
+        {
+          "type": "recognition",
+          "title": "Selecciona lo que significan estas señas",
+          "signs": [
+            "conviviente",
+            "ellos",
+            "viudo"
+          ],
+          "options": [
+            "Ellos",
+            "Viudo",
+            "Conviviente"
+          ],
+          "correct": [
+            "Conviviente",
+            "Ellos",
+            "Viudo"
+          ]
+        },
+        {
+          "type": "true-false",
+          "title": "¿Es correcta esta afirmación?",
+          "sign": "usted",
+          "statement": "Esta seña significa ELLOS",
+          "answer": false,
+          "hint": "Puedes repetir este video con calma, las veces que quieras."
+        }
+      ]
+    },
+    {
+      "id": 27,
+      "title": "Características y sentimientos",
+      "description": "Cómo es algo o alguien, y cómo te sientes.",
+      "category": "sentimientos",
+      "available": false,
+      "sort_order": 27,
+      "exercises": [
+        {
+          "type": "matching",
+          "title": "Empareja las señas con su palabra",
+          "letters": [
+            "bonito",
+            "feliz",
+            "feo"
+          ],
+          "labels": [
+            "Bonito",
+            "Feliz",
+            "Feo"
+          ]
+        },
+        {
+          "type": "word-meaning",
+          "title": "¿Qué significa esta seña?",
+          "signs": [
+            "triste"
+          ],
+          "options": [
+            "Triste",
+            "Divertido",
+            "Aburrido"
+          ],
+          "correct": "Triste",
+          "hint": "Mira primero las manos y luego la cara."
+        },
+        {
+          "type": "sign-choice",
+          "title": "¿Cuál es la seña de FLACO?",
+          "word": "FLACO",
+          "signs": [
+            "joven",
+            "flaco",
+            "gordo"
+          ],
+          "correct": "flaco",
+          "hint": "Puedes repetir este video con calma, las veces que quieras."
+        },
+        {
+          "type": "true-false",
+          "title": "¿Es correcta esta afirmación?",
+          "sign": "divertido",
+          "statement": "Esta seña significa DIVERTIDO",
+          "answer": true,
+          "hint": "Fíjate en dónde parte y hacia dónde va cada movimiento."
+        },
+        {
+          "type": "word-meaning",
+          "title": "¿Qué significa esta seña?",
+          "signs": [
+            "gordo"
+          ],
+          "options": [
+            "Gordo",
+            "Joven",
+            "Viejo"
+          ],
+          "correct": "Gordo",
+          "hint": "Sin apuro: mira este video más de una vez."
+        },
+        {
+          "type": "sign-choice",
+          "title": "¿Cuál es la seña de ABURRIDO?",
+          "word": "ABURRIDO",
+          "signs": [
+            "cansado",
+            "aburrido",
+            "cariñoso"
+          ],
+          "correct": "aburrido",
+          "hint": "Mira primero las manos y luego la cara."
+        },
+        {
+          "type": "recognition",
+          "title": "Selecciona lo que significan estas señas",
+          "signs": [
+            "cariñoso",
+            "viejo"
+          ],
+          "options": [
+            "Cariñoso",
+            "Viejo",
+            "Cansado"
+          ],
+          "correct": [
+            "Cariñoso",
+            "Viejo"
+          ]
+        },
+        {
+          "type": "true-false",
+          "title": "¿Es correcta esta afirmación?",
+          "sign": "joven",
+          "statement": "Esta seña significa VIEJO",
+          "answer": false,
+          "hint": "Puedes repetir este video con calma, las veces que quieras."
+        }
+      ]
+    },
+    {
+      "id": 28,
+      "title": "Lugares",
+      "description": "Lugares de tu barrio y de tu ciudad.",
+      "category": "lugares",
+      "available": false,
+      "sort_order": 28,
+      "exercises": [
+        {
+          "type": "matching",
+          "title": "Empareja las señas con su palabra",
+          "letters": [
+            "casa",
+            "plaza",
+            "estadio"
+          ],
+          "labels": [
+            "Casa",
+            "Plaza",
+            "Estadio"
+          ]
+        },
+        {
+          "type": "word-meaning",
+          "title": "¿Qué significa esta seña?",
+          "signs": [
+            "baño"
+          ],
+          "options": [
+            "Baño",
+            "Iglesia",
+            "Terminal"
+          ],
+          "correct": "Baño",
+          "hint": "Mira primero las manos y luego la cara."
+        },
+        {
+          "type": "sign-choice",
+          "title": "¿Cuál es la seña de IGLESIA?",
+          "word": "IGLESIA",
+          "signs": [
+            "escuela",
+            "iglesia",
+            "terminal"
+          ],
+          "correct": "iglesia",
+          "hint": "Puedes repetir este video con calma, las veces que quieras."
+        },
+        {
+          "type": "true-false",
+          "title": "¿Es correcta esta afirmación?",
+          "sign": "terminal",
+          "statement": "Esta seña significa TERMINAL",
+          "answer": true,
+          "hint": "Fíjate en dónde parte y hacia dónde va cada movimiento."
+        },
+        {
+          "type": "word-meaning",
+          "title": "¿Qué significa esta seña?",
+          "signs": [
+            "escuela"
+          ],
+          "options": [
+            "Escuela",
+            "Liceo",
+            "Centro"
+          ],
+          "correct": "Escuela",
+          "hint": "Sin apuro: mira este video más de una vez."
+        },
+        {
+          "type": "sign-choice",
+          "title": "¿Cuál es la seña de LICEO?",
+          "word": "LICEO",
+          "signs": [
+            "supermercado",
+            "liceo",
+            "centro"
+          ],
+          "correct": "liceo",
+          "hint": "Mira primero las manos y luego la cara."
+        },
+        {
+          "type": "recognition",
+          "title": "Selecciona lo que significan estas señas",
+          "signs": [
+            "supermercado",
+            "universidad",
+            "hospital"
+          ],
+          "options": [
+            "Universidad",
+            "Hospital",
+            "Supermercado"
+          ],
+          "correct": [
+            "Supermercado",
+            "Universidad",
+            "Hospital"
+          ]
+        },
+        {
+          "type": "true-false",
+          "title": "¿Es correcta esta afirmación?",
+          "sign": "centro",
+          "statement": "Esta seña significa SUPERMERCADO",
+          "answer": false,
+          "hint": "Puedes repetir este video con calma, las veces que quieras."
+        }
+      ]
+    },
+    {
+      "id": 29,
+      "title": "Transporte",
+      "description": "Cómo te mueves por la ciudad y el país.",
+      "category": "transporte",
+      "available": false,
+      "sort_order": 29,
+      "exercises": [
+        {
+          "type": "matching",
+          "title": "Empareja las señas con su palabra",
+          "letters": [
+            "auto",
+            "barco",
+            "bote"
+          ],
+          "labels": [
+            "Auto",
+            "Barco",
+            "Bote"
+          ]
+        },
+        {
+          "type": "word-meaning",
+          "title": "¿Qué significa esta seña?",
+          "signs": [
+            "helicoptero"
+          ],
+          "options": [
+            "Helicóptero",
+            "Micro",
+            "Bus"
+          ],
+          "correct": "Helicóptero",
+          "hint": "Mira primero las manos y luego la cara."
+        },
+        {
+          "type": "sign-choice",
+          "title": "¿Cuál es la seña de MICRO?",
+          "word": "MICRO",
+          "signs": [
+            "tren",
+            "micro",
+            "bus"
+          ],
+          "correct": "micro",
+          "hint": "Puedes repetir este video con calma, las veces que quieras."
+        },
+        {
+          "type": "true-false",
+          "title": "¿Es correcta esta afirmación?",
+          "sign": "bus",
+          "statement": "Esta seña significa BUS",
+          "answer": true,
+          "hint": "Fíjate en dónde parte y hacia dónde va cada movimiento."
+        },
+        {
+          "type": "sign-choice",
+          "title": "¿Cuál es la seña de METRO?",
+          "word": "METRO",
+          "signs": [
+            "moto",
+            "metro",
+            "bicicleta"
+          ],
+          "correct": "metro",
+          "hint": "Sin apuro: mira este video más de una vez."
+        },
+        {
+          "type": "recognition",
+          "title": "Selecciona lo que significan estas señas",
+          "signs": [
+            "moto",
+            "colectivo"
+          ],
+          "options": [
+            "Moto",
+            "Colectivo"
+          ],
+          "correct": [
+            "Moto",
+            "Colectivo"
+          ]
+        },
+        {
+          "type": "true-false",
+          "title": "¿Es correcta esta afirmación?",
+          "sign": "bicicleta",
+          "statement": "Esta seña significa MOTO",
+          "answer": false,
+          "hint": "Mira primero las manos y luego la cara."
+        },
+        {
+          "type": "word-meaning",
+          "title": "¿Qué dice esta frase?",
+          "signs": [
+            "mi-medio-de-transporte-favorito-es-el-auto"
+          ],
+          "options": [
+            "Mi medio de transporte favorito es el tren.",
+            "Mi medio de transporte favorito es el auto.",
+            "Mi medio de transporte favorito es la bicicleta."
+          ],
+          "correct": "Mi medio de transporte favorito es el auto.",
+          "hint": "Mira la frase completa y fíjate en cada seña, de a una."
+        }
+      ]
+    },
+    {
+      "id": 30,
+      "title": "Ciudades de Chile",
+      "description": "De Arica a Punta Arenas: ciudades que vas a querer nombrar.",
+      "category": "ciudades",
+      "available": false,
+      "sort_order": 30,
+      "exercises": [
+        {
+          "type": "matching",
+          "title": "Empareja las señas con su palabra",
+          "letters": [
+            "arica",
+            "iquique",
+            "calama"
+          ],
+          "labels": [
+            "Arica",
+            "Iquique",
+            "Calama"
+          ]
+        },
+        {
+          "type": "word-meaning",
+          "title": "¿Qué significa esta seña?",
+          "signs": [
+            "antofagasta"
+          ],
+          "options": [
+            "Antofagasta",
+            "Copiapó",
+            "La Serena"
+          ],
+          "correct": "Antofagasta",
+          "hint": "Mira primero las manos y luego la cara."
+        },
+        {
+          "type": "sign-choice",
+          "title": "¿Cuál es la seña de COPIAPÓ?",
+          "word": "COPIAPÓ",
+          "signs": [
+            "coquimbo",
+            "copiapo",
+            "la-serena"
+          ],
+          "correct": "copiapo",
+          "hint": "Puedes repetir este video con calma, las veces que quieras."
+        },
+        {
+          "type": "true-false",
+          "title": "¿Es correcta esta afirmación?",
+          "sign": "la-serena",
+          "statement": "Esta seña significa LA SERENA",
+          "answer": true,
+          "hint": "Fíjate en dónde parte y hacia dónde va cada movimiento."
+        },
+        {
+          "type": "word-meaning",
+          "title": "¿Qué significa esta seña?",
+          "signs": [
+            "coquimbo"
+          ],
+          "options": [
+            "Coquimbo",
+            "Valparaíso",
+            "Viña del Mar"
+          ],
+          "correct": "Coquimbo",
+          "hint": "Sin apuro: mira este video más de una vez."
+        },
+        {
+          "type": "sign-choice",
+          "title": "¿Cuál es la seña de VALPARAÍSO?",
+          "word": "VALPARAÍSO",
+          "signs": [
+            "santiago",
+            "valparaiso",
+            "viña-del-mar"
+          ],
+          "correct": "valparaiso",
+          "hint": "Mira primero las manos y luego la cara."
+        },
+        {
+          "type": "recognition",
+          "title": "Selecciona lo que significan estas señas",
+          "signs": [
+            "santiago",
+            "rancagua",
+            "curico"
+          ],
+          "options": [
+            "Rancagua",
+            "Curicó",
+            "Santiago"
+          ],
+          "correct": [
+            "Santiago",
+            "Rancagua",
+            "Curicó"
+          ]
+        },
+        {
+          "type": "true-false",
+          "title": "¿Es correcta esta afirmación?",
+          "sign": "viña-del-mar",
+          "statement": "Esta seña significa SANTIAGO",
+          "answer": false,
+          "hint": "Puedes repetir este video con calma, las veces que quieras."
+        }
+      ]
+    }
+  ]
+}

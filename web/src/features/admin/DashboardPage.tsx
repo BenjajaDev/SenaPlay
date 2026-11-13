@@ -16,6 +16,7 @@ const EXERCISE_LABELS: Record<string, string> = {
   'build-word': 'Construir palabra',
   'interpret-signs': 'Interpretar señas',
   'word-meaning': 'Significado',
+  'sign-choice': 'Elegir la seña',
   'true-false': 'Verdadero o falso',
 };
 

@@ -52,6 +52,7 @@ const alphabetical = (a, b) => ALPHABET.indexOf(a) - ALPHABET.indexOf(b);
 /** Clave estable de un ejercicio (no depende de su posición ni del título). */
 export function exerciseKey(exercise) {
   if (!exercise) return '';
+  if (exercise.type === 'sign-choice') return `sign-choice:${String(exercise.word).toLocaleLowerCase('es')}`.slice(0, 200);
   const sign = exercise.sign ? canonicalLetter(exercise.sign) || exercise.sign : null;
   const content =
     sign ||
@@ -87,6 +88,8 @@ export function collectSigns(level) {
   const exercises = level?.exercises || [];
 
   exercises.forEach((exercise) => {
+    // «Elegir la seña» pregunta por una palabra pero no deletrea nada: no genera variantes.
+    if (exercise.type === 'sign-choice') return;
     (exercise.options || []).forEach((option) => options.add(option));
     if (exercise.word) {
       const word = upper(exercise.word).trim();

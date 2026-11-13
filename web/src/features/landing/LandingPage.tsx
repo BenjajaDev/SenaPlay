@@ -13,6 +13,9 @@ import { useThemeMode } from '@/lib/useThemeMode';
 import { Badge, Button, Card, Dialog, Skeleton, SkeletonRows } from '@/ui';
 import { HeroSigns } from './HeroSigns';
 import { AuroraBackground } from './AuroraBackground';
+import { CollaboratorsSection } from './CollaboratorsSection';
+import { MobileNav } from './MobileNav';
+import { PartnerMark } from './PartnerMark';
 import { PhoneShowcase } from './PhoneShowcase';
 import { SiteFooter } from './SiteFooter';
 
@@ -198,6 +201,8 @@ function AboutSection({ about, team }: { about: AboutContent | undefined; team: 
           <TeamRows team={team} />
         </>
       ) : null}
+
+      <CollaboratorsSection />
     </section>
   );
 }
@@ -434,10 +439,13 @@ export function LandingPage() {
         Saltar al contenido
       </a>
       <header className="landing-nav">
-        <Link to="/" className="brand-link" aria-label="SeñaPlay, inicio">
-          <img src={brandIcon(mode)} alt="" width={40} height={40} />
-          <span>SeñaPlay</span>
-        </Link>
+        <div className="brand-lockup">
+          <Link to="/" className="brand-link" aria-label="SeñaPlay, inicio">
+            <img src={brandIcon(mode)} alt="" width={40} height={40} />
+            <span>SeñaPlay</span>
+          </Link>
+          <PartnerMark />
+        </div>
         <nav aria-label="Principal" className="landing-nav__links">
           {navLinks.map((link) => (
             <a key={link.href} href={link.href}>
@@ -445,13 +453,14 @@ export function LandingPage() {
             </a>
           ))}
         </nav>
-        <div className="row" style={{ gap: 8 }}>
+        <div className="row landing-nav__actions">
           <Button variant="ghost" icon={mode === 'dark' ? Sun : Moon} onClick={toggle} aria-label={mode === 'dark' ? 'Usar tema claro' : 'Usar tema oscuro'} />
           {isStaff ? (
-            <Link to="/admin" className="btn btn--secondary btn--sm">
-              <LayoutDashboard size={16} aria-hidden /> Panel
+            <Link to="/admin" className="btn btn--secondary btn--sm" aria-label="Panel">
+              <LayoutDashboard size={16} aria-hidden /> <span className="landing-nav__panel-label">Panel</span>
             </Link>
           ) : null}
+          <MobileNav links={navLinks} />
         </div>
       </header>
 

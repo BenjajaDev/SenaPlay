@@ -8,13 +8,21 @@
 #   - Las dinámicas del experimento son las 9 clases del modelo TCN ya
 #     entrenado (config/dataset_config.yaml). De las primeras pruebas
 #     (G, F, X, S, Z), G, X, S y Z son dinámicas.
+#
+# Agregadas por el autor (2026-11-13): Alergia, Dolor, Mucho y Tengo
+# (vocabulario de salud). Dolor junta sus dos variantes (horizontal y vertical)
+# en una sola clase. Ñ queda fuera hasta tener más videos.
 dinamicas:
+  - Alergia
+  - Dolor
   - G
   - J
   - Mi
+  - Mucho
   - Nombre
   - Presento
   - S
+  - Tengo
   - X
   - Yo
   - Z

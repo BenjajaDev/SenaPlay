@@ -38,7 +38,7 @@ describe('SignStrip con clips', () => {
     expect(await screen.findByRole('button', { name: 'Ver la seña FIEBRE en movimiento' })).toBeTruthy();
 
     await act(async () => fireEvent(screen.getByRole('imagebutton', { name: 'Seña 1 de 1' }), 'longPress'));
-    expect(onHint).toHaveBeenCalledWith('fiebre');
+    expect(onHint).toHaveBeenCalledWith('fiebre', { conceal: false });
   });
 
   test('en una frase de tres señas, tocar una abre su clip en una hoja y la fila no tiene reproductores', async () => {
@@ -52,7 +52,7 @@ describe('SignStrip con clips', () => {
     expect(await screen.findByRole('button', { name: 'Ver la seña TENER en movimiento' })).toBeTruthy();
 
     await act(async () => fireEvent(screen.getByRole('imagebutton', { name: 'Seña 3 de 3' }), 'longPress'));
-    expect(onHint).toHaveBeenCalledWith('fiebre');
+    expect(onHint).toHaveBeenCalledWith('fiebre', { conceal: false });
   });
 
   test('las letras sin clip mantienen su tamaño y solo dan la pista', async () => {
@@ -67,6 +67,6 @@ describe('SignStrip con clips', () => {
     await renderWithClips(<SignSpotlight sign="fiebre" onHint={onHint} />);
     expect(await screen.findByRole('button', { name: 'Ver la seña FIEBRE en movimiento' })).toBeTruthy();
     await act(async () => fireEvent(screen.getByRole('imagebutton'), 'longPress'));
-    expect(onHint).toHaveBeenCalledWith('fiebre');
+    expect(onHint).toHaveBeenCalledWith('fiebre', { conceal: false });
   });
 });

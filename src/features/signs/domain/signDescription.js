@@ -32,8 +32,15 @@
 // dictionaryData.js permiten deducir con seguridad: la CONFIGURACIÓN. Los demás
 // quedan vacíos a propósito en vez de inventados — completarlos requiere
 // contrastar con el diccionario MINEDUC o con un usuario nativo de LSCh.
+//
+// Excepción: las señas del Club de Sordos de Talca pueden traer una pista
+// OBSERVADA en el video (observedHints.js). Esa pista llena UBICACIÓN y
+// MOVIMIENTO, deja la configuración vacía y viaja siempre con una nota que
+// avisa que falta la validación de una persona Sorda.
 
 import { DICTIONARY_ENTRIES } from '../data/local/dictionaryData';
+import { OBSERVED_HINTS } from '../data/local/clubHintsData';
+import { handsSentence, OBSERVED_NOTE } from './observedHints';
 
 export const PARAMETROS = [
   { key: 'configuracion', label: 'Configuración', icon: 'hand-left-outline' },
@@ -63,20 +70,27 @@ const POR_CLAVE = DICTIONARY_ENTRIES.reduce((acc, entry) => {
 /**
  * Devuelve la descripción por parámetros de una seña.
  * Los parámetros sin dato confiable vuelven como null y no se muestran.
+ * `observed` permite probar con otro catálogo de pistas observadas.
  */
-export function describeSign(signKey) {
+export function describeSign(signKey, observed = OBSERVED_HINTS) {
   const clave = String(signKey || '').trim().toLocaleLowerCase('es');
   const entry = POR_CLAVE[clave];
-  if (!entry) return null;
+  const seen = observed.forSign(clave);
+  if (!entry && !seen) return null;
 
+  const ubicacion = seen?.ubicacion || null;
+  const movimiento = CON_MOVIMIENTO[clave] || seen?.movimiento || null;
   return {
     clave,
-    titulo: entry.letter,
-    configuracion: entry.description || null,
-    ubicacion: null,
+    titulo: entry?.letter ?? null,
+    configuracion: entry?.description || null,
+    ubicacion,
     orientacion: null,
-    movimiento: CON_MOVIMIENTO[clave] || null,
+    movimiento,
     noManual: null,
+    // Hay datos que vienen de la observación automática (no de una fuente validada).
+    observada: Boolean(seen),
+    manos: seen?.manos ?? null,
   };
 }
 
@@ -86,22 +100,24 @@ export function describeSign(signKey) {
  * Acepta las tres formas que existen hoy:
  *   - string                     → pista suelta de levelsConfig (55 de estas)
  *   - objeto con parámetros      → formato nuevo
- *   - null + signKey             → se deduce del diccionario
+ *   - null + signKey             → se deduce del diccionario y de las pistas observadas
  *
- * Devuelve { texto?, parametros: [{label, icon, valor}] }.
+ * Devuelve { texto?, parametros: [{label, icon, valor}], nota? }. `nota` solo
+ * aparece cuando la pista incluye datos observados.
  */
-export function normalizeHint(hint, signKey) {
+export function normalizeHint(hint, signKey, observed = OBSERVED_HINTS) {
   if (typeof hint === 'string' && hint.trim()) {
     return { texto: hint, parametros: [] };
   }
 
-  const fuente = hint && typeof hint === 'object' ? hint : describeSign(signKey);
+  const fuente = hint && typeof hint === 'object' ? hint : describeSign(signKey, observed);
   if (!fuente) return null;
 
   const parametros = PARAMETROS
     .map(({ key, label, icon }) => ({ label, icon, valor: fuente[key] }))
     .filter((p) => p.valor);
+  const texto = fuente.observada ? handsSentence(fuente.manos) : null;
 
-  if (!parametros.length) return null;
-  return { texto: null, parametros };
+  if (!parametros.length && !texto) return null;
+  return fuente.observada ? { texto, parametros, nota: OBSERVED_NOTE } : { texto: null, parametros };
 }

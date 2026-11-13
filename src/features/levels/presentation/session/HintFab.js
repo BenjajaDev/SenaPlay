@@ -98,6 +98,15 @@ export function HintPopover({ hint, onClose }) {
           ))}
         </View>
       ) : null}
+      {/* Pista observada por un programa en el video: se avisa que falta validarla. */}
+      {hint.nota ? (
+        <View style={styles.note} accessible accessibilityLabel={`Aviso: ${hint.nota}`}>
+          <Ionicons name="information-circle-outline" size={16} color={theme.colors.textSecondary} style={styles.paramIcon} />
+          <AppText variant="caption" tone="secondary" style={styles.flex}>
+            {hint.nota}
+          </AppText>
+        </View>
+      ) : null}
       {/* Flecha que apunta a la ampolleta. */}
       <View style={styles.arrow} />
     </Animated.View>
@@ -140,6 +149,15 @@ function createStyles(theme) {
     params: { gap: spacing.xs + 2 },
     paramRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.xs + 2 },
     paramIcon: { marginTop: 2 },
+    // Separada por una línea: es un aviso sobre la pista, no parte de ella.
+    note: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: spacing.xs + 2,
+      paddingTop: spacing.sm,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
     arrow: {
       position: 'absolute',
       bottom: -8,

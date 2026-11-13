@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ExerciseFactory, isValidSignKey, SIGN_CLIP_LIMITS, toSignKey, toUserMessage, validateClipEdit, type ClipEdit } from '@/lib/domain';
+import { ExerciseFactory, isValidSignKey, SIGN_CLIP_LIMITS, toSignKey, toStorageFolder, toUserMessage, validateClipEdit, type ClipEdit } from '@/lib/domain';
 import { builtinSignSlide, isSafeImageUrl } from '@/lib/signs';
 import { cleanSocials } from '@/lib/social';
 import type {
@@ -228,7 +228,7 @@ export function checkExportedClip(clip: ExportedClip, edit: ClipEdit) {
   if (clip.poster.type !== 'image/webp') throw new RepositoryError('La imagen fija debe ser WebP.');
   if (clip.video.size > SIGN_CLIP_LIMITS.maxVideoBytes) throw new RepositoryError('El video supera 1,5 MB: acorta el tramo.');
   if (clip.durationMs < SIGN_CLIP_LIMITS.minDurationMs || clip.durationMs > SIGN_CLIP_LIMITS.maxDurationMs) {
-    throw new RepositoryError('El clip debe durar entre 0,5 y 6 segundos.');
+    throw new RepositoryError('El clip debe durar entre 0,5 y 10 segundos.');
   }
 }
 
@@ -243,7 +243,8 @@ export function createSignClipsRepository(client: SupabaseClient) {
   /** Sube video e imagen; si algo falla, borra lo que alcanzó a subir. */
   const uploadFiles = async (signKey: string, variant: number, clip: ExportedClip) => {
     const id = crypto.randomUUID();
-    const paths = { video: `${signKey}/${variant}-${id}.mp4`, poster: `${signKey}/${variant}-${id}.webp` };
+    const folder = toStorageFolder(signKey);
+    const paths = { video: `${folder}/${variant}-${id}.mp4`, poster: `${folder}/${variant}-${id}.webp` };
     const uploaded: string[] = [];
     try {
       for (const [path, file] of [

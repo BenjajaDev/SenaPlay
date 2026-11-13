@@ -20,7 +20,7 @@
 | Imagen fija | **WebP** del cuadro clave (la configuración de la mano en su punto más claro), no el primer cuadro | El primer cuadro suele mostrar las manos en reposo y no identifica la seña. |
 | Encuadre | **Cuadrado 1:1, 480 × 480**, de la cintura hacia arriba, con codos y cara dentro | Coincide con la caja cuadrada de `SignImage`; la cara es parte de la seña (preguntas y negación). |
 | Fotogramas | 30 fps | 60 fps duplica el peso; con 0,5× sigue siendo legible. |
-| Duración | De 0,5 a 6 s; se recorta la pausa inicial y final | — |
+| Duración | De 0,5 a 10 s; se recorta la pausa inicial y final | — (el límite era 6 s; se subió a 10 s para las frases del Club de Talca, ver [11](11-contenido-club-talca.md)) |
 | Peso | ≤ 1,5 MB el video (objetivo 300 a 600 KB) y ≤ 150 KB la imagen | Lo exige el bucket; ver la sección 3. |
 
 Estos valores no los elige quien edita: el editor del panel (sección 5) los aplica siempre igual al exportar. Quien edita decide solo el encuadre, el tramo y el cuadro clave.
@@ -63,7 +63,7 @@ Restricciones (todas en la migración, no solo en el panel):
 
 - `unique (sign_key, variant)`.
 - `check (sign_key ~ '^[a-z0-9ñ~]+(-[a-z0-9ñ~]+)*$')`.
-- `check (duration_ms between 500 and 6000)`, `check (size_bytes <= 1500000)` y `check (width = height)`.
+- `check (duration_ms between 500 and 10000)`, `check (size_bytes <= 1500000)` y `check (width = height)`.
 - `check (not published or validation_status = 'validated')`: nada sin validar llega a la app.
 - Disparador `guard_sign_clip` (`before insert or update`): solo `is_admin()` puede validar, rechazar o publicar; el staff sube borradores, los envía a revisión y puede despublicar. Al validar se rellenan `validated_by = auth.uid()` y `validated_at = now()`. Si cambia el video, la imagen, el encuadre o la clave de un clip validado o rechazado, vuelve a borrador y se despublica. Como `guard_profile_role`, no aplica al SQL Editor ni al service role.
 - `edit_params` guarda cómo se exportó el clip: `{ source: { width, height, durationMs }, crop: { left, top, size }, trim: { startMs, endMs }, keyFrameMs }`. Sirve para auditar un clip publicado y para volver a exportarlo con el mismo encuadre si se cambian los parámetros de codificación.
@@ -73,7 +73,7 @@ Restricciones (todas en la migración, no solo en el panel):
 
 | Operación | Política |
 |---|---|
-| `select` | `published or is_staff()` |
+| `select` | `is_staff()`. La app lee la vista `sign_clips_public` (solo publicados, sin datos personales); ver [11](11-contenido-club-talca.md) |
 | `insert`, `update` | `is_staff()` (el disparador restringe validar, rechazar y publicar a `is_admin()`) |
 | `delete` | `is_admin()` |
 
@@ -88,7 +88,7 @@ Bucket nuevo `sign-clips`, separado de `media` para limitarlo a nivel de bucket:
 - Público en lectura (los clips publicados se ven sin sesión, igual que el diccionario).
 - `file_size_limit = 1.5 MB`, `allowed_mime_types = {video/mp4, image/webp}`.
 - Escritura, actualización y borrado: `is_staff()`, igual que `media`.
-- Ruta: `<sign_key>/<variant>-<uuid>.<ext>`. El `uuid` evita que la app muestre un clip viejo desde la caché cuando se reemplaza.
+- Ruta: `<carpeta>/<variant>-<uuid>.<ext>`, donde la carpeta es `toStorageFolder(sign_key)` (`signMedia.js`): Storage solo acepta `[A-Za-z0-9_/!.*'() &$=@;:+,?-]`, así que la ñ pasa a `n_` y `~` a `_` (`mañana` → `man_ana/`). Los `check` de rutas usan la función SQL `public.sign_clip_folder`. El `uuid` evita que la app muestre un clip viejo desde la caché cuando se reemplaza.
 
 La tabla guarda rutas, no URLs: el repositorio arma la URL con `storage.from('sign-clips').getPublicUrl(path)`, que no hace consultas de red. Si cambia el dominio de Supabase, no hay URLs viejas guardadas.
 
@@ -155,7 +155,7 @@ flowchart LR
 |---|---|---|
 | 1. Elegir archivo | Arrastra o elige el video (MP4, MOV o WebM, hasta 200 MB) y la glosa del catálogo; la variante se sugiere sola (la siguiente libre). | El archivo se abre en local con `URL.createObjectURL`; no se sube. Los videos verticales del celular se muestran derechos: `mediabunny` respeta la rotación del archivo. |
 | 2. Encuadrar | Mueve y escala un **cuadro 1:1** sobre el video. | Encima se dibuja una guía de signado que se puede ocultar: margen sobre la cabeza, línea de cintura y márgenes laterales para los codos. Si el lado del recorte queda bajo 480 px del original, aparece un aviso («se verá borroso»), sin bloquear. El encuadre inicial es el cuadrado más grande centrado. |
-| 3. Cortar el tramo | Ajusta inicio y fin en una línea de tiempo con dos tiradores; avanza cuadro a cuadro. | El tramo elegido se repite en bucle en la vista del editor para revisarlo. La duración se valida entre 0,5 y 6 s, con el error junto a la línea de tiempo. |
+| 3. Cortar el tramo | Ajusta inicio y fin en una línea de tiempo con dos tiradores; avanza cuadro a cuadro. | El tramo elegido se repite en bucle en la vista del editor para revisarlo. La duración se valida entre 0,5 y 10 s, con el error junto a la línea de tiempo. |
 | 4. Elegir imagen fija | Va al cuadro donde la mano se ve mejor y toca «Usar este cuadro». | Por defecto propone el punto medio del tramo. Muestra una miniatura con el recorte ya aplicado. |
 | 5. Vista previa | Ve el clip tal como saldrá en la app: caja de 240 px, imagen fija, 1× / 0,5×. | Usa el mismo recorte en vivo (CSS sobre el `<video>`), sin exportar todavía. |
 | 6. Exportar y subir | Toca «Exportar y subir como borrador». | Barra de progreso con texto («Convirtiendo… 45 %», «Subiendo…») y botón Cancelar. Si el MP4 supera 1,5 MB, se reintenta una vez con menor calidad y se avisa; si aún no cabe, se pide acortar el tramo. Termina con un toast y el clip aparece en la lista como borrador. |

@@ -55,6 +55,8 @@ ai_module/venv/
 # ai_module: dataset y checkpoints de señas dinámicas (binarios locales, no van a git)
 ai_module/data/raw_videos/*
 !ai_module/data/raw_videos/.gitkeep
+# Videos del Club de Sordos de Talca y sus recortes por seña (fuente, no son clases).
+ai_module/data/videos_tesis/
 ai_module/data/processed_landmarks/*
 !ai_module/data/processed_landmarks/.gitkeep
 # Caché de landmarks por imagen fuente (training/eval_static*.py, config/experimentos/estatico_rf.yaml); se regenera.

@@ -9,7 +9,7 @@ from inferencia.ajustes import DIR_MODULO, AjustesInvalidos, cargar_ajustes
 
 @pytest.fixture(autouse=True)
 def _entorno_limpio(monkeypatch):
-    for variable in ("MODELO_DINAMICO", "RUTA_MODELO_TCN", "RUTA_MODELO_LSTM",
+    for variable in ("MODELO_DINAMICO", "RUTA_MODELO_TCN", "RUTA_MODELO_EXPORTADO",
                      "RUTA_MODELO_ESTATICO", "PRECARGAR_MODELOS", "MAX_CUADROS_VIDEO"):
         monkeypatch.delenv(variable, raising=False)
 
@@ -22,8 +22,9 @@ def test_por_defecto_sirve_la_tcn_legada():
     assert ajustes.precargar_modelos is False
 
 
-def test_lee_el_entorno(monkeypatch):
-    monkeypatch.setenv("MODELO_DINAMICO", "lstm")
+@pytest.mark.parametrize("valor", ["exportado", "lstm"])
+def test_lee_el_entorno(monkeypatch, valor):
+    monkeypatch.setenv("MODELO_DINAMICO", valor)
     monkeypatch.setenv("MAX_CUADROS_VIDEO", "150")
     monkeypatch.setenv("PRECARGAR_MODELOS", "1")
     ajustes = cargar_ajustes()
@@ -36,7 +37,7 @@ def test_modelo_dinamico_invalido(monkeypatch, valor):
     monkeypatch.setenv("MODELO_DINAMICO", valor)
     with pytest.raises(AjustesInvalidos) as error:
         cargar_ajustes()
-    assert "MODELO_DINAMICO" in str(error.value) and "'tcn' o 'lstm'" in str(error.value)
+    assert "MODELO_DINAMICO" in str(error.value) and "'tcn', 'exportado' o 'lstm'" in str(error.value)
 
 
 def test_archivo_inexistente_nombra_la_variable(tmp_path):
@@ -44,13 +45,20 @@ def test_archivo_inexistente_nombra_la_variable(tmp_path):
         cargar_ajustes(ruta_modelo_tcn=tmp_path / "no_existe.pt")
 
 
-def test_con_lstm_no_se_exige_la_tcn(tmp_path):
-    ajustes = cargar_ajustes(modelo_dinamico="lstm", ruta_modelo_tcn=tmp_path / "no_existe.pt")
-    assert ajustes.modelo_dinamico == "lstm"
+@pytest.mark.parametrize("valor", ["exportado", "lstm"])
+def test_con_exportado_no_se_exige_la_tcn(tmp_path, valor):
+    ajustes = cargar_ajustes(modelo_dinamico=valor, ruta_modelo_tcn=tmp_path / "no_existe.pt")
+    assert ajustes.modelo_dinamico == valor
 
 
-def test_con_tcn_no_se_exige_la_lstm(tmp_path):
-    assert cargar_ajustes(ruta_modelo_lstm=tmp_path / "no_existe.pt").modelo_dinamico == "tcn"
+def test_con_tcn_no_se_exige_el_exportado(tmp_path):
+    assert cargar_ajustes(ruta_modelo_exportado=tmp_path / "no_existe.pt").modelo_dinamico == "tcn"
+
+
+@pytest.mark.parametrize("valor", ["exportado", "lstm"])
+def test_exportado_inexistente_nombra_la_variable(tmp_path, valor):
+    with pytest.raises(AjustesInvalidos, match="RUTA_MODELO_EXPORTADO: no existe el archivo"):
+        cargar_ajustes(modelo_dinamico=valor, ruta_modelo_exportado=tmp_path / "no_existe.pt")
 
 
 def test_sin_modelo_estatico_no_arranca(tmp_path):

@@ -1,13 +1,13 @@
 """
 Barreras de rechazo de los tramos dinámicos, calculadas sobre landmarks
 crudos (`SecuenciaCruda`) y no sobre el vector de features: así valen igual
-para la TCN (FeatureSpec 1.0) y para la LSTM (2.0).
+para la TCN (FeatureSpec 1.0) y para el modelo exportado (2.0).
 
     sin_mano          menos de RATIO_MIN_CON_MANO de cuadros con alguna mano
     poco_movimiento   la muñeca más activa recorre menos de MOVIMIENTO_MIN_MUÑECA
                       anchos de hombro (solo si hay pose en la mitad de los cuadros)
     modelo_sin_seña   el modelo responde su clase de rechazo («ninguna»); solo
-                      existe si el modelo la tiene: la LSTM exportada no
+                      existe si el modelo la tiene: el modelo exportado puede no tenerla
 
 Se evalúan en ese orden y gana la primera. Las constantes son las que fijó el
 servidor con la TCN legada; cambiarlas es recalibrar (tarea 5 de

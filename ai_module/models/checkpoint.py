@@ -54,7 +54,9 @@ def cargar(ruta_pt: str):
     """Devuelve (modelo en modo eval, meta)."""
     import torch
 
-    payload = torch.load(ruta_pt, map_location="cpu", weights_only=False)
+    # weights_only: un .pt con objetos arbitrarios podría ejecutar código al
+    # cargarse; los checkpoints de SeñaPlay solo traen tensores y tipos básicos.
+    payload = torch.load(ruta_pt, map_location="cpu", weights_only=True)
     if "meta" in payload:
         meta = payload["meta"]
     elif os.path.exists(ruta_meta(ruta_pt)):

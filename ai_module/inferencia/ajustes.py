@@ -9,12 +9,15 @@ archivo, el servidor no arranca: es preferible a servir en silencio otro
 modelo, o ninguno.
 
     MODELO_DINAMICO=tcn   TCN legada con la clase «ninguna» (producción, por defecto)
-    MODELO_DINAMICO=lstm  LSTM exportada por training/select_model.py, solo para
-                          pruebas locales (no tiene clase de rechazo)
+    MODELO_DINAMICO=exportado
+                          modelo exportado por training/select_model.py
+                          (models_saved/dinamico.pt; TCN, GRU o LSTM con features 2.0)
+    MODELO_DINAMICO=lstm  alias de «exportado» (mismo archivo y adaptador)
 """
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Literal, Self
 
@@ -32,13 +35,13 @@ class AjustesInvalidos(RuntimeError):
 
 class Ajustes(BaseSettings):
     # case_sensitive=False aplica al NOMBRE de la variable de entorno, no a su
-    # valor: MODELO_DINAMICO=TCN se rechaza (los valores válidos son tcn | lstm).
+    # valor: MODELO_DINAMICO=TCN se rechaza (los valores válidos son tcn | exportado | lstm).
     model_config = SettingsConfigDict(case_sensitive=False, extra="ignore",
                                       validate_default=True)
 
-    modelo_dinamico: Literal["tcn", "lstm"] = "tcn"
+    modelo_dinamico: Literal["tcn", "exportado", "lstm"] = "tcn"
     ruta_modelo_tcn: Path = Path("data/models/dinamico_tcn.pt")
-    ruta_modelo_lstm: Path = Path("models_saved/dinamico.pt")
+    ruta_modelo_exportado: Path = Path("models_saved/dinamico.pt")
     ruta_modelo_estatico: Path = Path("models_saved/estatico.pkl")
     # En el despliegue (Dockerfile) el estático se carga al arrancar: si no, la
     # primera seña de cada arranque espera varios segundos y la app la da por
@@ -57,7 +60,7 @@ class Ajustes(BaseSettings):
     max_bytes_cuerpo_video: PositiveInt = 9 * MIB
     max_bytes_cuerpo: PositiveInt = 1 * MIB
 
-    @field_validator("ruta_modelo_tcn", "ruta_modelo_lstm", "ruta_modelo_estatico")
+    @field_validator("ruta_modelo_tcn", "ruta_modelo_exportado", "ruta_modelo_estatico")
     @classmethod
     def _desde_el_modulo(cls, ruta: Path) -> Path:
         # Relativas a ai_module/, no al directorio desde el que se lanzó uvicorn.
@@ -65,12 +68,21 @@ class Ajustes(BaseSettings):
 
     @property
     def ruta_modelo_dinamico(self) -> Path:
-        return self.ruta_modelo_tcn if self.modelo_dinamico == "tcn" else self.ruta_modelo_lstm
+        return self.ruta_modelo_tcn if self.modelo_dinamico == "tcn" else self.ruta_modelo_exportado
+
+    @model_validator(mode="after")
+    def _sin_variables_renombradas(self) -> Self:
+        # RUTA_MODELO_LSTM pasó a RUTA_MODELO_EXPORTADO: si sigue definida, se
+        # ignoraría en silencio y el servidor cargaría otro archivo.
+        if os.environ.get("RUTA_MODELO_LSTM"):
+            raise ValueError("RUTA_MODELO_LSTM se renombró a RUTA_MODELO_EXPORTADO")
+        return self
 
     @model_validator(mode="after")
     def _archivos_existen(self) -> Self:
         # Solo el dinámico elegido: sin dinamico.pt se puede arrancar con tcn.
-        variable_dinamico = f"RUTA_MODELO_{self.modelo_dinamico.upper()}"
+        variable_dinamico = ("RUTA_MODELO_TCN" if self.modelo_dinamico == "tcn"
+                             else "RUTA_MODELO_EXPORTADO")
         for variable, ruta in (("RUTA_MODELO_ESTATICO", self.ruta_modelo_estatico),
                                (variable_dinamico, self.ruta_modelo_dinamico)):
             if not ruta.is_file():

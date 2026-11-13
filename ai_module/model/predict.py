@@ -9,7 +9,7 @@ ClasificadorDinamico  → TCN, LSTM o GRU de PyTorch (models/), según el meta
                         o vectores de 527 valores en formato 1.0
                         (/clasificar_secuencia).
   TCNLegado           → adaptador de la TCN de producción (con «ninguna»).
-  LSTMExportado       → adaptador de la LSTM exportada (sin clase de rechazo).
+  ModeloExportado     → adaptador del modelo exportado (TCN/GRU/LSTM, features 2.0).
 """
 
 from __future__ import annotations
@@ -92,7 +92,7 @@ class ClasificadorDinamico:
     mismo módulo compartido que usó el entrenamiento (preprocessing/).
 
     Implementa el puerto `inferencia.puerto.ModeloDinamico`. El servidor usa
-    los adaptadores `TCNLegado` y `LSTMExportado`, que además verifican que el
+    los adaptadores `TCNLegado` y `ModeloExportado`, que además verifican que el
     archivo sea el modelo esperado.
     """
 
@@ -194,24 +194,21 @@ class TCNLegado(ClasificadorDinamico):
         return dict(self._cfg_extraccion)
 
 
-class LSTMExportado(ClasificadorDinamico):
+class ModeloExportado(ClasificadorDinamico):
     """
-    LSTM exportada por training/select_model.py (models_saved/dinamico.pt):
-    FeatureSpec 2.0 (1577 valores, T = 30), 9 clases y SIN clase de rechazo.
-    Solo para pruebas locales: sin «ninguna», la barrera modelo_sin_seña no
-    existe y cualquier tramo con movimiento recibe alguna seña.
+    Modelo exportado por training/select_model.py (models_saved/dinamico.pt):
+    FeatureSpec 2.0 (1577 valores, T = 30) y arquitectura TCN, GRU o LSTM.
+    Tiene clase de rechazo solo si «ninguna» está entre sus clases; si no, la
+    barrera modelo_sin_seña no existe y cualquier tramo con movimiento recibe
+    alguna seña.
     """
 
-    nombre = "lstm"
+    nombre = "exportado"
+    ARQUITECTURAS = frozenset({"tcn", "gru", "lstm"})
 
     def __init__(self, ruta_modelo: str):
         super().__init__(ruta_modelo)
-        self._exigir(self.meta["arquitectura"] == "lstm",
-                     f"arquitectura {self.meta['arquitectura']!r}, no 'lstm'")
+        self._exigir(self.meta["arquitectura"] in self.ARQUITECTURAS,
+                     f"arquitectura {self.meta['arquitectura']!r}, no una de "
+                     f"{sorted(self.ARQUITECTURAS)}")
         self._exigir(self.spec.version == "2.0", f"features {self.spec.version}, no 2.0")
-        self._exigir(CLASE_SIN_SEÑA not in self._etiquetas,
-                     f"trae la clase {CLASE_SIN_SEÑA!r}, que este adaptador no contempla")
-
-    @property
-    def clase_rechazo(self) -> None:
-        return None

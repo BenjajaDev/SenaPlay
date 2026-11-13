@@ -1,25 +1,41 @@
 {
   "formato": "oratiolingo-dinamico/1",
-  "arquitectura": "lstm",
+  "arquitectura": "tcn",
   "hiperparametros": {
     "proyeccion": 64,
-    "oculto": 64,
-    "capas": 2,
-    "bidireccional": true,
+    "canales": [
+      80,
+      80,
+      80,
+      80
+    ],
+    "kernel_size": 3,
+    "dilataciones": [
+      1,
+      2,
+      4,
+      8
+    ],
     "dropout": 0.3,
+    "causal": false,
     "pooling": "media",
     "cabeza_oculta": null
   },
   "clases": [
+    "Alergia",
+    "Dolor",
     "G",
     "J",
     "Mi",
+    "Mucho",
     "Nombre",
     "Presento",
     "S",
+    "Tengo",
     "X",
     "Yo",
-    "Z"
+    "Z",
+    "ninguna"
   ],
   "T": 30,
   "dim_entrada": 1577,
@@ -76,16 +92,16 @@
       "aceleracion": true
     }
   },
-  "parametros": 268169,
+  "parametros": 259134,
   "entrenamiento": {
-    "fecha": "2026-10-31T05:22:56",
-    "commit": "4794e36bc409aa5c50bb196d86561a680ad43ebf",
+    "fecha": "2026-11-13T07:50:24",
+    "commit": "b82dc9a6d13c3b93be8454948b6e8e464f2c52d4",
     "experimento": "comparacion_temporal",
     "semilla": 0,
-    "epoca_mejor": 34,
-    "epocas": 54,
-    "f1_validacion": 0.8211640211640211,
-    "n_videos": 233,
+    "epoca_mejor": 85,
+    "epocas": 105,
+    "f1_validacion": 0.8964285714285715,
+    "n_videos": 562,
     "signers": [
       "s01",
       "s02",
@@ -107,6 +123,7 @@
       "s18",
       "s19",
       "s20",
+      "s21",
       "s22",
       "s23",
       "s24",
@@ -114,12 +131,40 @@
       "s26",
       "s27",
       "s28",
-      "s29"
+      "s29",
+      "s30",
+      "s31",
+      "s32",
+      "s33",
+      "s34",
+      "s35",
+      "s36",
+      "s37",
+      "s38",
+      "s39",
+      "s40",
+      "s41",
+      "s42",
+      "s43",
+      "s44",
+      "s45",
+      "s46",
+      "s47",
+      "s48",
+      "s49",
+      "s50",
+      "s51",
+      "s52",
+      "s53",
+      "s54",
+      "s55",
+      "s56",
+      "s57"
     ],
     "signers_validacion": [
-      "s03",
-      "s19",
-      "s22"
+      "s08",
+      "s29",
+      "s44"
     ],
     "lotes": [
       "lote_00"

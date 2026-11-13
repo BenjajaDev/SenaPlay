@@ -4,8 +4,13 @@
 // protegiendo los datos. Diseño en docs/11-contenido-club-talca.md.
 //
 // Uso (Windows, desde la raíz del repo):
-//   node scripts/clubTalca/importClubTalca.mjs --dir <carpeta con manifest.json> --consent-ref "<código del permiso>" [--signer-alias "..."] [--dry-run] [--only clips|levels]
+//   node scripts/clubTalca/importClubTalca.mjs --dir <carpeta con manifest.json> --consent-ref "<código del permiso>" [--signer-alias "..."] [--dry-run] [--only clips|levels|dictionary] [--sobrescribir] [--detalle]
 //
+//   --only levels --sobrescribir   actualiza los niveles que ya existen con la semilla (conserva available y sort_order)
+//   --only dictionary              inserta/actualiza las señas del club en `signs` (sin tocar las filas MINEDUC)
+//   --dry-run                      en esos dos modos inicia sesión solo para LEER y muestra qué cambiaría; no escribe
+//
+// --dir y --consent-ref solo se piden para los clips.
 // --consent-ref se guarda en una tabla que lee el staff: usa un código opaco
 // (p. ej. «CLUB-TALCA-2026-01») que apunte al documento guardado aparte, nunca
 // nombres, RUT ni el folio personal de alguien.
@@ -18,9 +23,10 @@ import { createClient } from '@supabase/supabase-js';
 import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
-import { loadDomain, readLevelsSeed } from './import/domain.mjs';
+import { loadDomain, readClipsSeed, readHintsSeed, readLevelsSeed } from './import/domain.mjs';
 import { readDotEnv } from './import/env.mjs';
 import { importClips } from './import/importClips.mjs';
+import { importDictionary } from './import/importDictionary.mjs';
 import { importLevels } from './import/importLevels.mjs';
 import { promptHidden } from './import/prompt.mjs';
 
@@ -41,6 +47,8 @@ async function main() {
       'signer-alias': { type: 'string', default: DEFAULT_SIGNER_ALIAS },
       'dry-run': { type: 'boolean', default: false },
       only: { type: 'string' },
+      sobrescribir: { type: 'boolean', default: false },
+      detalle: { type: 'boolean', default: false },
     },
   });
   const options = {
@@ -48,11 +56,16 @@ async function main() {
     consentRef: (values['consent-ref'] ?? '').trim(),
     signerAlias: (values['signer-alias'] ?? '').trim() || DEFAULT_SIGNER_ALIAS,
     only: values.only,
+    overwrite: values.sobrescribir,
+    detail: values.detalle,
   };
-  if (!options.consentRef) fail('Falta --consent-ref "<referencia del permiso>": los videos muestran la cara de una persona.');
-  if (options.only && !['clips', 'levels'].includes(options.only)) fail('--only acepta "clips" o "levels".');
-  const doClips = options.only !== 'levels';
-  const doLevels = options.only !== 'clips';
+  if (options.only && !['clips', 'levels', 'dictionary'].includes(options.only)) fail('--only acepta "clips", "levels" o "dictionary".');
+  // Sin --only se importan clips y niveles; el diccionario es opt-in (necesita la migración de `source`).
+  const doClips = !options.only || options.only === 'clips';
+  const doLevels = !options.only || options.only === 'levels';
+  const doDictionary = options.only === 'dictionary';
+  if (options.overwrite && !doLevels) fail('--sobrescribir solo aplica a los niveles (--only levels).');
+  if (doClips && !options.consentRef) fail('Falta --consent-ref "<referencia del permiso>": los videos muestran la cara de una persona.');
 
   let dir = null;
   let manifest = null;
@@ -68,8 +81,11 @@ async function main() {
   const domain = await loadDomain();
   const levelsDoc = readLevelsSeed();
 
+  // La simulación de clips no consulta la base; la de sobrescribir niveles y la del
+  // diccionario sí (solo lectura) para poder decir qué cambiaría.
+  const needsSession = !options.dryRun || doDictionary || (doLevels && options.overwrite);
   let supabase = null;
-  if (!options.dryRun) {
+  if (needsSession) {
     const env = { ...readDotEnv(), ...process.env };
     const url = env.EXPO_PUBLIC_SUPABASE_URL;
     const anonKey = env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
@@ -84,13 +100,17 @@ async function main() {
 
   const stats = {
     clips: { inReview: 0, drafts: 0, skipped: 0, excluded: 0, failed: 0, wouldImport: 0 },
-    levels: { saved: 0, skipped: 0, failed: 0, wouldSave: 0 },
+    levels: { saved: 0, updated: 0, unchanged: 0, skipped: 0, failed: 0, wouldSave: 0, wouldUpdate: 0 },
+    dictionary: { inserted: 0, updated: 0, unchanged: 0, skipped: 0, failed: 0, wouldInsert: 0, wouldUpdate: 0 },
     errors: [],
   };
 
   try {
     if (doClips) await importClips({ supabase, dir, manifest, options, domain, stats });
     if (doLevels) await importLevels({ supabase, options, levelsDoc, domain, stats });
+    if (doDictionary) {
+      await importDictionary({ supabase, options, domain, clips: readClipsSeed().clips, levelsDoc, hints: readHintsSeed(), stats });
+    }
   } finally {
     if (supabase) await supabase.auth.signOut();
   }
@@ -106,10 +126,22 @@ async function main() {
   }
   if (doLevels) {
     const l = stats.levels;
+    if (options.dryRun && !supabase) {
+      console.log(`  Niveles: ${l.wouldSave} válidos, ${l.failed} con error`);
+    } else if (options.dryRun) {
+      console.log(`  Niveles: ${l.wouldSave} por crear, ${l.wouldUpdate} por actualizar, ${l.unchanged} sin cambios, ${l.skipped} se saltan, ${l.failed} con error`);
+    } else {
+      console.log(
+        `  Niveles: ${l.saved} guardados (no disponibles), ${l.updated} actualizados, ${l.unchanged} sin cambios, ${l.skipped} ya existían, ${l.failed} con error`,
+      );
+    }
+  }
+  if (doDictionary) {
+    const d = stats.dictionary;
     console.log(
       options.dryRun
-        ? `  Niveles: ${l.wouldSave} válidos, ${l.failed} con error`
-        : `  Niveles: ${l.saved} guardados (no disponibles), ${l.skipped} ya existían, ${l.failed} con error`,
+        ? `  Diccionario: ${d.wouldInsert} por agregar, ${d.wouldUpdate} por actualizar, ${d.unchanged} sin cambios, ${d.skipped} saltadas (ya existen como MINEDUC), ${d.failed} con error`
+        : `  Diccionario: ${d.inserted} agregadas, ${d.updated} actualizadas, ${d.unchanged} sin cambios, ${d.skipped} saltadas (ya existen como MINEDUC), ${d.failed} con error`,
     );
   }
   stats.errors.forEach((message) => console.error(`  - ${message}`));

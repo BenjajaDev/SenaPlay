@@ -2,7 +2,7 @@
 
 El Club de Sordos de Talca entregó 356 videos de señas (saludos, números, colores, animales, alimentos, verbos, tiempo, personas, lugares, transporte, ciudades y el alfabeto manual). Este documento cuenta cómo se convierten, cuánto pesan, qué decisiones se tomaron y cómo se importan a Supabase. El formato general de los clips está en [10](10-senas-en-video.md).
 
-**Pendiente antes de publicar:** el permiso escrito del club. Mientras no exista, todo entra como `in_review` o `draft`, con `published = false`, y nada llega a la app. Ver la sección 5.
+**Pendiente antes de publicar:** el permiso escrito del club. Mientras no exista, todo entra como `in_review` o `draft`, con `published = false`, y nada llega a la app. Ver la sección 6.
 
 ---
 
@@ -65,7 +65,7 @@ node scripts\clubTalca\importClubTalca.mjs --dir "D:\ClubTalca\salida" --consent
 
 `--consent-ref` debe ser un **código opaco** (como `CLUB-TALCA-2026-01`) que apunte al documento guardado aparte: nunca nombres, RUT ni el folio personal de alguien, porque la tabla la lee el staff.
 
-Opciones: `--only clips` o `--only levels`, y `--signer-alias "..."` (por defecto «Club de Sordos de Talca»). Se pueden repetir sin riesgo: un clip cuya clave y variante ya existen se salta, y un nivel que ya existe no se pisa (un admin pudo activarlo o editarlo). Si el registro de un clip falla, se borran los archivos que se habían subido. El script usa la clave pública (`EXPO_PUBLIC_SUPABASE_*`, del entorno o de `.env`) y la sesión de staff, nunca la service key.
+Opciones: `--only clips`, `--only levels` o `--only dictionary`, y `--signer-alias "..."` (por defecto «Club de Sordos de Talca»). Se pueden repetir sin riesgo: un clip cuya clave y variante ya existen se salta, y un nivel que ya existe no se pisa (un admin pudo activarlo o editarlo) salvo con `--sobrescribir` (sección 4). `--consent-ref` y `--dir` solo se piden cuando se importan clips. Si el registro de un clip falla, se borran los archivos que se habían subido. El script usa la clave pública (`EXPO_PUBLIC_SUPABASE_*`, del entorno o de `.env`) y la sesión de staff, nunca la service key.
 
 Orden recomendado:
 
@@ -77,15 +77,69 @@ Orden recomendado:
 
 Los niveles están en `src/features/levels/data/content/clubTalcaLevels.json`; son una semilla para Supabase y la app no los importa. Una prueba (`clubTalcaLevels.test.js`) comprueba que cada nivel pasa `LevelBuilder` en modo estricto y que solo usa claves que existen en `clubTalcaClips.json`, que no son letras y que no están excluidas.
 
-## 4. Verificación
+## 4. Distractores, pistas y diccionario
+
+### Distractores de los niveles
+
+Los 18 ejercicios `recognition` («Marca todas las palabras que corresponden a estas señas») llevan 2 o 3 distractores: palabras del mismo nivel que no corresponden a ninguna de las señas mostradas, mezcladas con una semilla por nivel y ejercicio. En `word-meaning` y `sign-choice` la respuesta se reparte por igual entre las tres posiciones (12 y 12 y 12). Todo sale de un generador reproducible, no se edita a mano:
+
+```
+node scripts\clubTalca\generarDistractores.mjs
+```
+
+Es idempotente (dos corridas dan el mismo JSON). `--check` no escribe y sale con error si el JSON no está al día. La lógica está en `scripts/clubTalca/import/distractors.mjs` y las pruebas de `clubTalcaLevels.test.js` la verifican.
+
+### Pistas observadas por seña
+
+`src/features/signs/data/content/clubTalcaHints.json` lo genera otra herramienta (landmarks de MediaPipe sobre los videos). Formato: `{ "fuente": "...", "pistas": { "<signKey>": { "manos": 1|2, "ubicacion": "...", "movimiento": "...", "texto": "..." } } }`. Una seña sin entrada usa las pistas de siempre.
+
+- `signDescription.describeSign` llena **Ubicación** y **Movimiento** con la pista observada y deja la **Configuración** vacía (no se inventa). La pista lleva siempre la nota «Observada en el video, pendiente de validación por una persona sorda», visible y leída por el lector de pantalla (`HintPopover`).
+- El botón de pista de un ejercicio usa la seña relevante sin nombrarla (`levels/domain/exerciseHint.js`): `word-meaning`, `true-false` y `recognition`, las señas mostradas (varias señas, una línea numerada por seña); `sign-choice`, la seña de la palabra pedida; `matching`, la primera seña sin emparejar («Una de las señas que faltan…», porque las filas van mezcladas). Sin pista observada se mantiene el `hint` genérico del ejercicio.
+- Mantener presionada una seña cuya glosa es la respuesta usa la pista observada de esa seña, con el título «Pista» (sin nombrarla).
+
+### Diccionario (modo «Señas reales»)
+
+Las señas del club (`kind = 'sign'`, sin frases ni letras ni las claves excluidas: 311 hoy) entran a `public.signs` con `word` en formato legible (la etiqueta del nivel si existe, si no la glosa en minúsculas con inicial: «Buenos días»; con sinónimos se conserva la glosa: «Caballo / Yegua»), `theme` con el nombre del tema (Saludos, Animales, Colores…), `type = 'Seña'`, `meaning` vacío (el club no entregó definiciones) y `how_to` con el `texto` de la pista observada, si existe.
+
+La fuente va en la columna nueva `signs.source` (migración `20261113000200_signs_source.sql`; la lectura sigue siendo pública y la escritura solo del staff). El detalle muestra «Fuente: Club de Sordos de Talca» y, si hay descripción, el aviso de que falta validarla; las filas MINEDUC siguen mostrando «Diccionario MINEDUC · pág. N». Los temas son los filtros (chips con desplazamiento horizontal) y se calculan de los datos. `supabase/signs.sql` ahora borra solo las filas sin `source`, así que regenerarlo no elimina las del club.
+
+### Comandos
+
+Los tres comandos usan la sesión de staff (`SENAPLAY_STAFF_EMAIL`, contraseña por terminal sin eco), nunca la service key. Con `--dry-run` inician sesión solo para **leer** y muestran qué cambiaría; no escriben.
+
+Niveles: actualizar los 18 existentes con la semilla nueva (conserva `available` y `sort_order` de la base, y salta los que ya son idénticos):
+
+```
+node scripts\clubTalca\importClubTalca.mjs --only levels --sobrescribir --dry-run
+```
+
+```
+node scripts\clubTalca\importClubTalca.mjs --only levels --sobrescribir
+```
+
+Diccionario: insertar o actualizar las señas del club sin duplicar (por palabra normalizada, sin tildes ni mayúsculas). Si la palabra ya existe como fila MINEDUC (o de otra fuente) se salta y se informa; nunca se modifican esas filas. Agrega `--detalle` para ver todas las filas en vez de las primeras 40.
+
+```
+node scripts\clubTalca\importClubTalca.mjs --only dictionary --dry-run
+```
+
+```
+node scripts\clubTalca\importClubTalca.mjs --only dictionary
+```
+
+Orden: aplicar la migración `20261113000200_signs_source.sql`, generar `clubTalcaHints.json` (si ya existe, el diccionario lo usa para `how_to`), simular y recién entonces escribir. Para actualizar `how_to` cuando cambie el archivo de pistas, vuelve a correr `--only dictionary`.
+
+## 5. Verificación
 
 - `pnpm test`, `pnpm verify:bundle`, y en `web/`: `pnpm typecheck`, `pnpm test`, `pnpm build`.
 - `pnpm test:sql` necesita un Postgres local (ver [09](09-guia-desarrollo.md)); los casos nuevos cubren los 10 s, la carpeta `man_ana/` y el tipo `sign-choice`.
 - En un teléfono con el dev client: la grilla de `sign-choice` a 360 px de ancho, el botón ▶ de cada tarjeta y TalkBack/VoiceOver (los nombres no deben decir la glosa).
 
-## 5. Pendiente
+## 6. Pendiente
 
 - **Permiso escrito del Club de Sordos de Talca** para usar y publicar los videos (cesión, uso en la app y el portal, y su alcance). El valor de `--consent-ref` es un código opaco que apunta a ese documento; el documento firmado no se guarda en el bucket público.
 - Consentimiento de las personas que aparecen (la tabla guarda `signer_alias` y `consent_ref`).
 - Validación lingüística: la hace una persona Sorda de la comunidad antes de publicar.
 - Revisar los clips con la glosa mal escrita en el origen («BUENOS DIAS», «CLINICA»); la clave de seña ya está normalizada.
+- Las pistas observadas y las descripciones del diccionario (`how_to`) las debe validar una persona Sorda antes de quitar la nota de «pendiente de validación».
+- El panel web (`web/`) aún no muestra ni edita la columna `signs.source`.

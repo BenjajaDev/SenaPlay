@@ -13,16 +13,19 @@ create table if not exists public.signs (
   meaning text,
   how_to text,
   theme text,
-  page integer
+  page integer,
+  source text
 );
+alter table public.signs add column if not exists source text;
 
 -- 2) Seguridad: lectura publica
 alter table public.signs enable row level security;
 drop policy if exists "signs_read" on public.signs;
 create policy "signs_read" on public.signs for select using (true);
 
--- 3) Datos (se reemplazan en cada ejecucion)
-truncate table public.signs;
+-- 3) Datos MINEDUC (se reemplazan en cada ejecucion; las filas con source, como las del
+--    Club de Sordos de Talca, se conservan: se cargan con scripts/clubTalca)
+delete from public.signs where source is null;
 
 insert into public.signs (word, type, meaning, how_to, theme, page) values ('ABEJA', 'Sustantivo', 'Insecto que vive en colmenas y produce miel.', 'Mano en forma de pinza (índice y pulgar) cerca de la mejilla, con un pequeño movimiento de picadura.', 'Animales', 21);
 insert into public.signs (word, type, meaning, how_to, theme, page) values ('ABOGADO', 'Sustantivo', 'Persona que trabaja en los tribunales de justicia.', 'Mano apoyada sobre el lado del pecho con un movimiento corto hacia abajo.', 'Profesiones', 21);

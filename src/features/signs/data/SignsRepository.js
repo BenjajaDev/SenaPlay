@@ -38,7 +38,7 @@ export function createSignsRepository({ supabase, storage, localDictionary, loca
     local: localVocabulary,
     fetchRemote: async () => {
       const { data, error } = await withTimeout(
-        supabase.from('signs').select('word, type, meaning, how_to, theme, page').order('word', { ascending: true }),
+        supabase.from('signs').select('word, type, meaning, how_to, theme, page, source').order('word', { ascending: true }),
       );
       if (error) throw error;
       // how_to (columna SQL) → howTo (forma que usa la app).

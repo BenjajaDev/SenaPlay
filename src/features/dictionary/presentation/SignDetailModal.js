@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useMemo } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,7 +15,7 @@ import SignImage from '../../signs/presentation/SignImage';
  * señas léxicas, que tienen formas distintas en los datos.
  *
  * detail = { signKey, title, subtitle?, badge?, badgeTone?, badgeIcon?,
- *            description?, howTo?, source? }
+ *            description?, howTo?, howToNote?, source? }
  */
 export default function SignDetailModal({ visible, detail, onClose }) {
   const theme = useAppTheme();
@@ -78,6 +79,15 @@ export default function SignDetailModal({ visible, detail, onClose }) {
                 <AppText variant="body" style={styles.howToText}>
                   {detail.howTo}
                 </AppText>
+                {/* `secondary` y no `muted`: sobre surfaceSunken el muted no llega a AA en modo claro. */}
+                {detail.howToNote ? (
+                  <View style={styles.noteRow} accessible accessibilityLabel={`Aviso: ${detail.howToNote}`}>
+                    <Ionicons name="information-circle-outline" size={16} color={theme.colors.textSecondary} style={styles.noteIcon} />
+                    <AppText variant="caption" tone="secondary" style={styles.flex}>
+                      {detail.howToNote}
+                    </AppText>
+                  </View>
+                ) : null}
               </View>
             ) : null}
 
@@ -139,5 +149,16 @@ function createStyles(theme) {
     },
     howToLabel: { letterSpacing: 0.5, marginBottom: spacing.xs },
     howToText: { fontSize: 14, lineHeight: 20 },
+    noteRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: spacing.xs,
+      marginTop: spacing.sm,
+      paddingTop: spacing.sm,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    noteIcon: { marginTop: 1 },
+    flex: { flex: 1 },
   });
 }

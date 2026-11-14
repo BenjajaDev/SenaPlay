@@ -1,13 +1,15 @@
 import { StyleSheet, View } from 'react-native';
 import { AppText } from '../../../../shared/ui';
 import SignImage from '../../../signs/presentation/SignImage';
+import { useSignNameHint } from '../../../signs/presentation/SignNameHint';
 import OptionTile from './OptionTile';
 import useSlots from './useSlots';
 
 const lower = (value) => String(value || '').toLocaleLowerCase('es');
 
 /** Ordenar señas alfabéticamente: se muestran señas, no letras. */
-export default function OrderingExercise({ exercise, onAnswerChange, disabled, onHint }) {
+export default function OrderingExercise({ exercise, onAnswerChange, disabled }) {
+  const { showSignName } = useSignNameHint();
   const { pool, slots, place, remove } = useSlots(exercise.letters, exercise.letters.length, onAnswerChange);
 
   return (
@@ -22,6 +24,7 @@ export default function OrderingExercise({ exercise, onAnswerChange, disabled, o
             state={token ? 'selected' : 'empty'}
             disabled={disabled || !token}
             onPress={() => remove(index)}
+            onLongPress={token ? () => showSignName(lower(token.value)) : undefined}
             accessibilityLabel={token ? `Casillero ${index + 1} ocupado, toca para quitar` : `Casillero ${index + 1} vacío`}
             style={styles.tile}
           >
@@ -41,9 +44,9 @@ export default function OrderingExercise({ exercise, onAnswerChange, disabled, o
             key={`pool-${token.id}`}
             disabled={disabled}
             onPress={() => place(token)}
-            onLongPress={() => onHint?.(lower(token.value))}
+            onLongPress={() => showSignName(lower(token.value))}
             accessibilityLabel="Seña disponible"
-            accessibilityHint="Toca para colocarla; mantén presionado para ver una pista"
+            accessibilityHint="Toca para colocarla; mantén presionado para ver su nombre"
             style={styles.tile}
           >
             <SignImage signKey={lower(token.value)} size={48} rounded={8} />

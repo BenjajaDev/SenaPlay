@@ -4,16 +4,15 @@ import { useAppTheme } from '../../../../shared/theme/ThemeProvider';
 import { SignSpotlight } from './SignStrip';
 
 /** Escribir la letra que corresponde a la seña mostrada. */
-export default function TypingExercise({ exercise, answer, onAnswerChange, disabled, onHint }) {
+export default function TypingExercise({ exercise, answer, onAnswerChange, disabled }) {
   const theme = useAppTheme();
   return (
     <View style={styles.block}>
       <SignSpotlight
         sign={exercise.sign}
-        onHint={onHint}
         caption={
           <AppText variant="caption" tone="secondary" align="center">
-            Escribe la letra · Mantén presionado para ver una pista
+            Escribe la letra · Mantén presionado para ver su nombre
           </AppText>
         }
       />

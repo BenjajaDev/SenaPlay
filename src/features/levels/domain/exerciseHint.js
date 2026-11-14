@@ -1,5 +1,4 @@
-// Qué pista muestra un ejercicio. Regla única para el botón de la ampolleta y
-// para mantener presionada una seña. JS puro (sin React).
+// Qué pista muestra el botón de la ampolleta de un ejercicio. JS puro (sin React).
 //
 // Si la seña relevante del ejercicio tiene una pista OBSERVADA en el video
 // (signs/domain/observedHints.js), esa pista reemplaza al `exercise.hint`
@@ -48,19 +47,13 @@ function observedHint(exercise, keys, observed) {
 }
 
 /**
- * Pista para mostrar, o null si no hay ninguna (la UI pone una frase general).
- *  - `signKey` + `conceal: false`: pista de esa seña, con su nombre en el título.
- *  - `signKey` + `conceal: true`: la glosa es la respuesta; se usa la pista
- *    observada de esa seña sin nombrarla, o la general del ejercicio.
- *  - sin `signKey`: botón de pista del ejercicio.
+ * Pista de la ampolleta, o null si no hay ninguna (la UI pone una frase
+ * general). Nunca nombra la seña: el nombre se ve aparte, manteniéndola
+ * presionada (signs/presentation/SignNameHint).
  * `matched` son los ids ya emparejados (solo importa en emparejar).
  */
-export function resolveHint(exercise, { signKey, conceal = false, matched = [] } = {}, observed = OBSERVED_HINTS) {
-  if (signKey && !conceal) {
-    const own = normalizeHint(null, signKey, observed);
-    return own && { ...own, title: `Pista: ${String(signKey).replace(/[-_]+/g, ' ').toLocaleUpperCase('es')}` };
-  }
-  const keys = signKey ? [signKey] : hintSignKeys(exercise, matched);
+export function resolveHint(exercise, { matched = [] } = {}, observed = OBSERVED_HINTS) {
+  const keys = hintSignKeys(exercise, matched);
   const seen = keys.length ? observedHint(exercise, keys, observed) : null;
   if (seen) return { ...seen, title: 'Pista' };
   const general = normalizeHint(exercise?.hint, exercise?.sign, observed);

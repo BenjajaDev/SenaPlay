@@ -45,7 +45,7 @@ Módulos: `auth`, `levels`, `progress`, `signs`, `dictionary`, `games`, `camera`
 
 ## Recetas
 
-- **Tipo de ejercicio nuevo**: `domain/exerciseTypes.js` → `domain/evaluateAnswer.js` (+ test) → componente en `presentation/exercises/` con contrato `{ exercise, answer, onAnswerChange, disabled, onHint }` → registrar en `exercises/index.js` → agregar al `check` de `supabase/migrations/*_content_admin.sql`. El editor del panel lo muestra solo.
+- **Tipo de ejercicio nuevo**: `domain/exerciseTypes.js` → `domain/evaluateAnswer.js` (+ test) → componente en `presentation/exercises/` con contrato `{ exercise, answer, onAnswerChange, disabled }` (mantener presionada una seña ya muestra su nombre con `useSignNameHint`) → registrar en `exercises/index.js` → agregar al `check` de `supabase/migrations/*_content_admin.sql`. El editor del panel lo muestra solo.
 - **Juego nuevo**: pantalla con `ScreenHeader`, entrada en `GAMES` de `games/presentation/GamesTabScreen.js` con `flag`, flag en `DEFAULT_FLAGS` y fila en `feature_flags`; montar en `MainAppScreen` (`CAMERA_GAMES` si usa cámara).
 - **Clave de config remota**: `DEFAULT_REMOTE_CONFIG` (remoteConfig/domain) → leer con `useRemoteConfig().config` → sección en `web/src/features/admin/config/RemoteConfigPage.tsx` y tipo en `web/src/lib/domain.ts` → documentar en `docs/08`.
 - **Flag**: `DEFAULT_FLAGS` + `useFeatureFlag('modulo.nombre')`.

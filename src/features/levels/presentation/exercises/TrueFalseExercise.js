@@ -6,7 +6,7 @@ import OptionTile from './OptionTile';
 import SignStrip, { SignSpotlight } from './SignStrip';
 
 /** Verdadero o falso sobre una afirmación; si trae `sign` o `signs`, las señas se muestran arriba. */
-export default function TrueFalseExercise({ exercise, answer, onAnswerChange, disabled, onHint }) {
+export default function TrueFalseExercise({ exercise, answer, onAnswerChange, disabled }) {
   const theme = useAppTheme();
   const options = [
     { value: 'true', label: 'Verdadero', icon: 'checkmark-circle', color: theme.colors.successText },
@@ -15,8 +15,8 @@ export default function TrueFalseExercise({ exercise, answer, onAnswerChange, di
 
   return (
     <View style={styles.block}>
-      {exercise.sign ? <SignSpotlight sign={exercise.sign} size={130} onHint={onHint} concealGloss /> : null}
-      {!exercise.sign && exercise.signs?.length ? <SignStrip signs={exercise.signs} onHint={onHint} concealGloss /> : null}
+      {exercise.sign ? <SignSpotlight sign={exercise.sign} size={130} concealGloss /> : null}
+      {!exercise.sign && exercise.signs?.length ? <SignStrip signs={exercise.signs} concealGloss /> : null}
       <Card variant="gradient" padding="lg">
         <AppText variant="bodyStrong" align="center" style={styles.statement}>
           “{exercise.statement}”

@@ -6,7 +6,7 @@ import { CrudPage } from './CrudPage';
 
 const DIFFICULTY_TONE: Record<string, 'success' | 'warning' | 'danger'> = { Fácil: 'success', Medio: 'warning', Difícil: 'danger' };
 
-/** Diccionario de deletreo (letras, números, acciones) → tabla `dictionary`. */
+/** Diccionario de deletreo (letras y acciones) → tabla `dictionary`. */
 export function DictionaryPage() {
   const { content } = useRepositories();
   return (

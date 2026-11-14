@@ -110,17 +110,15 @@ export default function useLevelSession({ level, startingLives, scoringRules, on
     dispatch({ type: SESSION_EVENTS.SUBMIT, result: { status: ANSWER_STATUS.INCORRECT, message: mistake.message } });
   }, []);
 
-  const showHint = useCallback(
-    (signKey, options = {}) => {
-      // Sin signKey = pista general del ejercicio (botón ampolleta). Con
-      // `conceal` la glosa es la respuesta y la pista no nombra la seña.
-      const resolved = resolveHint(exercise, { signKey, conceal: options.conceal, matched: answer });
-      setHint(resolved ?? { title: 'Pista', texto: 'Observa con calma la forma de la mano y la posición de los dedos.', parametros: [] });
-      dispatch({ type: SESSION_EVENTS.USE_HINT });
-      haptics.tap();
-    },
-    [exercise, answer],
-  );
+  // Pista de la ampolleta: describe la seña sin nombrarla y cuenta como pista
+  // usada. El nombre (mantener presionada una seña) es aparte y gratis: ver
+  // signs/presentation/SignNameHint.
+  const showHint = useCallback(() => {
+    const resolved = resolveHint(exercise, { matched: answer });
+    setHint(resolved ?? { title: 'Pista', texto: 'Observa con calma la forma de la mano y la posición de los dedos.', parametros: [] });
+    dispatch({ type: SESSION_EVENTS.USE_HINT });
+    haptics.tap();
+  }, [exercise, answer]);
 
   const actions = useMemo(
     () => ({
@@ -133,7 +131,6 @@ export default function useLevelSession({ level, startingLives, scoringRules, on
         setAttempt((prev) => prev + 1);
         dispatch({ type: SESSION_EVENTS.RESTART, lives });
       },
-      showHint,
       toggleHint: () => (hint ? setHint(null) : showHint()),
       closeHint: () => setHint(null),
     }),

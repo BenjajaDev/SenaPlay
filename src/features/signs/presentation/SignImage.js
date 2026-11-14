@@ -5,6 +5,7 @@ import { useAppTheme } from '../../../shared/theme/ThemeProvider';
 import { poppins } from '../../../shared/theme/fonts';
 import SignClip from './SignClip';
 import { useSignMedia } from './SignClipsProvider';
+import { useSignNameHint } from './SignNameHint';
 import useVariationSwipe from './useVariationSwipe';
 
 // Acciones del lector de pantalla (deslizar arriba/abajo sobre la seña).
@@ -42,8 +43,10 @@ const VARIATION_ACTIONS = [
  *            glosa en el lector de pantalla y en el texto del placeholder.
  *   variant  'card' para tarjetas de elección: sin chips propios (los gobierna la
  *            barra común) y las fotos fijas dejan pasar el toque a la tarjeta.
- *   onLongPress  «mantener presionado» sobre un video (la pista del contenedor):
- *            el video toma el toque para reproducirse, así que se le reenvía.
+ *   onLongPress  «mantener presionado» sobre un video. Por defecto muestra el
+ *            nombre de la seña (useSignNameHint): el video toma el toque para
+ *            reproducirse, así que el contenedor no lo recibiría. Las fotos no
+ *            capturan toques: ahí lo resuelve el Pressable del contenedor.
  */
 export default function SignImage({
   signKey,
@@ -59,6 +62,7 @@ export default function SignImage({
   const theme = useAppTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
+  const { showSignName } = useSignNameHint();
   const texto = accessibilityName ?? (label !== undefined ? label : String(signKey || '').toLocaleUpperCase('es'));
   const media = useSignMedia(signKey, texto);
   const assets = media.kind === 'still' ? media.sources : [];
@@ -100,7 +104,7 @@ export default function SignImage({
         size={size}
         rounded={rounded}
         variant={variant}
-        onLongPress={onLongPress}
+        onLongPress={onLongPress ?? (() => showSignName(signKey))}
         style={style}
       />
     );

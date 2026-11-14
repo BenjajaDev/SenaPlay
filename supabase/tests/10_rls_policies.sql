@@ -126,6 +126,7 @@ do $$ begin if exists (select 1 from storage.objects where bucket_id = 'sign-cli
 select 'bucket sign-clips: ' || file_size_limit || ' bytes · ' || array_to_string(allowed_mime_types, ', ') from storage.buckets where id = 'sign-clips';
 select 'anon lee config: ' || count(*) from public.app_config;
 select 'anon lee señas con fuente: ' || count(*) from public.signs where source is not null;
+do $$ begin if exists (select 1 from public.dictionary where category = 'Números') then raise notice 'FALLA: el deletreo trae números deletreados'; else raise notice 'OK el deletreo no trae números deletreados'; end if; end $$;
 select 'anon lee misión: ' || (select value ->> 'mission' from public.site_content where key = 'about');
 select 'anon ve integrantes publicados: ' || count(*) from public.team_members;
 select 'anon ve redes publicadas: ' || coalesce(sum(jsonb_array_length(socials)), 0) from public.team_members;

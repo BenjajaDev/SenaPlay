@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import announce from '../../../core/a11y/announce';
 import haptics from '../../../core/feedback/haptics';
 import { AppText, Button, Card, MessageDialog, ProgressBar, ScreenHeader } from '../../../shared/ui';
@@ -8,6 +8,7 @@ import { useAppTheme } from '../../../shared/theme/ThemeProvider';
 import OptionTile from '../../levels/presentation/exercises/OptionTile';
 import { useRemoteConfig } from '../../remoteConfig/presentation/RemoteConfigProvider';
 import SignImage from '../../signs/presentation/SignImage';
+import { useSignNameHint } from '../../signs/presentation/SignNameHint';
 
 const QUESTIONS = [
   { sign: 'a', options: ['A', 'B', 'C'], correct: 'A' },
@@ -27,6 +28,7 @@ const REVEAL_MS = 900;
  */
 export default function QuickQuizGameScreen({ onBack }) {
   const theme = useAppTheme();
+  const { showSignName } = useSignNameHint();
   const { config } = useRemoteConfig();
   const maxTime = Math.max(3, Number(config.difficulty?.quizSecondsPerQuestion) || 10);
 
@@ -140,7 +142,14 @@ export default function QuickQuizGameScreen({ onBack }) {
 
           <Card padding="lg" style={styles.questionCard}>
             <AppText variant="bodyStrong">¿Qué letra representa esta seña?</AppText>
-            <SignImage signKey={question.sign} size={120} rounded={theme.radius.xl} />
+            <Pressable
+              onLongPress={() => showSignName(question.sign)}
+              delayLongPress={400}
+              accessibilityRole="imagebutton"
+              accessibilityHint="Mantén presionado para ver su nombre"
+            >
+              <SignImage signKey={question.sign} size={120} rounded={theme.radius.xl} />
+            </Pressable>
           </Card>
 
           <View style={styles.options}>

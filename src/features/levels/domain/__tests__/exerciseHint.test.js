@@ -71,26 +71,10 @@ describe('pista de un ejercicio con señas del club', () => {
   });
 });
 
-describe('mantener presionada una seña', () => {
-  test('sin ocultar la glosa, el título nombra la seña', () => {
-    const hint = resolveHint(recognition, { signKey: 'hola', conceal: false }, observed);
-    expect(hint.title).toBe('Pista: HOLA');
-    expect(hint.nota).toBe(OBSERVED_NOTE);
-  });
-
-  test('ocultando la glosa, usa la pista observada de esa seña sin nombrarla', () => {
-    const hint = resolveHint(recognition, { signKey: 'chao', conceal: true }, observed);
+describe('letras', () => {
+  test('una letra usa la descripción del diccionario, sin nombrarla en el título', () => {
+    const hint = resolveHint({ type: 'multiple-choice', sign: 'a', options: ['a', 'b'], correct: 'a' }, {}, observed);
     expect(hint.title).toBe('Pista');
-    expect(hint.parametros.map((p) => p.valor)).toEqual(['frente al pecho', 'corto y repetido']);
-  });
-
-  test('ocultando la glosa sin pista observada cae a la general del ejercicio', () => {
-    expect(resolveHint(trueFalse, { signKey: 'gracias', conceal: true }, observed).texto).toBe(GENERIC);
-  });
-
-  test('una letra sigue usando el diccionario', () => {
-    const hint = resolveHint({ type: 'multiple-choice', sign: 'a', options: ['a', 'b'], correct: 'a' }, { signKey: 'a' }, observed);
-    expect(hint.title).toBe('Pista: A');
     expect(hint.parametros[0].label).toBe('Configuración');
   });
 });

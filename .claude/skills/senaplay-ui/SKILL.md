@@ -55,7 +55,7 @@ const { confirm, runBlocking, notify, showMessage } = useFeedback();
 ## 5. UX para aprender señas
 
 - La seña es protagonista: `SignImage` grande, fondo neutro, nada encima de la mano, nada se mueve solo.
-- Pistas: botón flotante con ampolleta (`HintFab` + `HintPopover`, no bloquean) y mantener presionada una seña.
+- Pistas: botón flotante con ampolleta (`HintFab` + `HintPopover`, no bloquean; describe sin nombrar y resta puntos). Mantener presionada una seña muestra su nombre abajo (`useSignNameHint().showSignName(clave)`), gratis y en toda la app; `SignImage` ya lo hace en los videos, y las fotos lo piden desde el `Pressable` del contenedor.
 - Errores amables ("Casi…", "¡Casi lo logras!"); pérdida de vida sutil (temblor 6 px + desvanecimiento).
 - Progreso visible y celebración al completar (confeti con flag `levels.celebration`).
 

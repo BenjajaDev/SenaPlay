@@ -39,7 +39,7 @@ const formatSeconds = (ms) => (ms / 1000).toLocaleString('es-CL', { maximumFract
  * falló la carga, reintenta. El ▶ de la esquina inferior derecha (fuera del
  * centro para no tapar la mano) es solo un indicador, y mientras corre no se
  * muestra nada sobre la seña: el video termina solo o se detiene al tocarlo.
- * `onLongPress` reenvía «mantener presionado» (la pista del contenedor).
+ * `onLongPress` recibe «mantener presionado» (SignImage muestra el nombre de la seña).
  *
  * `variant="card"` es para tarjetas de elección (SignChoiceExercise): sin
  * insignia ni chips (los gobierna una barra común con SignPlaybackControls y el
@@ -58,7 +58,7 @@ const formatSeconds = (ms) => (ms / 1000).toLocaleString('es-CL', { maximumFract
  *   rounded      radio del borde
  *   interactive  muestra el reproductor (por defecto según el tamaño)
  *   variant      'standalone' (por defecto) | 'card'
- *   onLongPress  «mantener presionado» sobre el video (p. ej. la pista del ejercicio)
+ *   onLongPress  «mantener presionado» sobre el video (por defecto, el nombre de la seña)
  */
 export default function SignClip({ clip, label, neutralName, size, rounded = 14, interactive = size >= CLIP_PLAYER_MIN_SIZE, variant = 'standalone', onLongPress, style }) {
   const theme = useAppTheme();
@@ -192,8 +192,8 @@ function ClipPlayer({ clip, sujeto, caja, size, card, onLongPress, styles, theme
         </View>
 
         {/* El video completo es el control: tocarlo reproduce, detiene o reintenta.
-            Mientras corre no hay nada encima de la seña. Mantener presionado sigue
-            siendo la pista del contenedor (se reenvía con onLongPress). */}
+            Mientras corre no hay nada encima de la seña. Mantener presionado
+            muestra el nombre de la seña (llega por onLongPress). */}
         <Pressable
           onPress={playing ? stop : play}
           onLongPress={onLongPress}
@@ -204,7 +204,11 @@ function ClipPlayer({ clip, sujeto, caja, size, card, onLongPress, styles, theme
           accessibilityLabel={
             playing ? `Detener ${sujeto}` : phase === 'error' ? `Reintentar cargar ${sujeto}` : `Ver ${sujeto} en movimiento`
           }
-          accessibilityHint={playing || phase === 'error' ? undefined : `Video de ${segundos} segundos, sin sonido`}
+          accessibilityHint={
+            playing || phase === 'error'
+              ? undefined
+              : `Video de ${segundos} segundos, sin sonido${onLongPress ? '. Mantén presionado para ver su nombre' : ''}`
+          }
           accessibilityState={{ busy: loading, disabled: loading }}
         />
 

@@ -52,7 +52,7 @@ flowchart LR
 | Flujo alternativo B | Respuesta incorrecta: se pierde una vida con una animación sutil y se reintenta el mismo ejercicio. |
 | Flujo alternativo C | Sin vidas: mensaje no punitivo con opción de reintentar o salir. |
 | Flujo alternativo D | Salir a mitad: confirmación «¿Salir del nivel?». |
-| Extensión | Pista: ampolleta flotante o mantener presionada una seña. Suma una penalización leve por ejercicio. |
+| Extensión | Pista: ampolleta flotante; describe la seña sin nombrarla y suma una penalización leve por ejercicio. Mantener presionada una seña muestra su nombre abajo, gratis (la app es para practicar). |
 | Postcondición | `LEVEL_COMPLETED` → progreso persistido y siguiente nivel desbloqueado. |
 
 ## 4.2 Administrador y editor (portal web)

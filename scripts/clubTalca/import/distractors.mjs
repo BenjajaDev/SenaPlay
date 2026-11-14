@@ -155,5 +155,8 @@ export function applyDistractors(doc, { toSignKey, clips, clubDictionary }) {
   return { ...doc, levels };
 }
 
-/** Mismo formato que el archivo original: 2 espacios, CRLF y sin salto final. */
-export const serializeLevels = (doc) => JSON.stringify(doc, null, 2).replace(/\n/g, '\r\n');
+/** Mismo formato que el archivo del repo: 2 espacios, LF y sin salto final. */
+export const serializeLevels = (doc) => JSON.stringify(doc, null, 2);
+
+/** Pasa CRLF a LF para comparar sin depender de cómo git hizo el checkout. */
+export const normalizeLineEndings = (text) => text.replace(/\r\n/g, '\n');

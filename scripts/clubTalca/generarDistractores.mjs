@@ -14,7 +14,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
-import { applyDistractors, serializeLevels } from './import/distractors.mjs';
+import { applyDistractors, normalizeLineEndings, serializeLevels } from './import/distractors.mjs';
 import { loadDomain, readClipsSeed, readLevelsSeed, ROOT } from './import/domain.mjs';
 
 const LEVELS_FILE = join(ROOT, 'src/features/levels/data/content/clubTalcaLevels.json');
@@ -42,7 +42,7 @@ async function main() {
   }
 
   const text = serializeLevels(next);
-  const current = readFileSync(LEVELS_FILE, 'utf8');
+  const current = normalizeLineEndings(readFileSync(LEVELS_FILE, 'utf8'));
   if (text === current) {
     console.log('Los niveles ya están al día.');
     return;

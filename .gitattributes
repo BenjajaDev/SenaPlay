@@ -1,0 +1,3 @@
+# El generador de niveles (scripts/clubTalca) escribe JSON con LF; así un
+# checkout en Windows no los convierte a CRLF.
+*.json text eol=lf

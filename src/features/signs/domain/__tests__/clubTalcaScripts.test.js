@@ -19,7 +19,11 @@ function loadScript(relativePath, names) {
 }
 
 const { importDictionary } = loadScript('scripts/clubTalca/import/importDictionary.mjs', ['importDictionary']);
-const { applyDistractors, serializeLevels } = loadScript('scripts/clubTalca/import/distractors.mjs', ['applyDistractors', 'serializeLevels']);
+const { applyDistractors, normalizeLineEndings, serializeLevels } = loadScript('scripts/clubTalca/import/distractors.mjs', [
+  'applyDistractors',
+  'normalizeLineEndings',
+  'serializeLevels',
+]);
 
 const { clips } = clubTalcaClips;
 const domain = { clubDictionary, signMedia: { toSignKey } };
@@ -167,7 +171,14 @@ describe('generador de distractores', () => {
     expect(once).toEqual(clubTalcaLevels);
     expect(generate(once)).toEqual(once);
     const file = readFileSync(join(ROOT, 'src/features/levels/data/content/clubTalcaLevels.json'), 'utf8');
-    expect(serializeLevels(once)).toBe(file);
+    expect(serializeLevels(once)).toBe(normalizeLineEndings(file));
+  });
+
+  test('serializa con LF y compara igual aunque el checkout traiga CRLF', () => {
+    const text = serializeLevels({ levels: [{ id: 1 }] });
+    expect(text).not.toMatch(/\r/);
+    expect(text.endsWith('\n')).toBe(false);
+    expect(normalizeLineEndings(text.replace(/\n/g, '\r\n'))).toBe(text);
   });
 
   test('recognition: distractores sin repetir aunque cambien tildes o mayúsculas, y nunca una respuesta', () => {

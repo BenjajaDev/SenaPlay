@@ -12,7 +12,7 @@ const upper = (value) => letterLabel(value || '');
  * Armar una palabra con letras: `build-word` (la palabra es visible) e
  * `interpret-signs` (hay que deducirla de las señas).
  */
-export default function WordBuilderExercise({ exercise, onAnswerChange, disabled, onHint }) {
+export default function WordBuilderExercise({ exercise, onAnswerChange, disabled }) {
   const { pool, slots, place, remove } = useSlots(exercise.letters, exercise.word.length, onAnswerChange);
   const interpret = exercise.type === 'interpret-signs';
 
@@ -23,7 +23,7 @@ export default function WordBuilderExercise({ exercise, onAnswerChange, disabled
           <AppText variant="subtitle" tone="secondary">
             Interpreta las señas y forma la palabra.
           </AppText>
-          <SignStrip signs={exercise.signs} onHint={onHint} />
+          <SignStrip signs={exercise.signs} />
         </>
       ) : (
         <AppText variant="subtitle" tone="secondary">

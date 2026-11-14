@@ -179,7 +179,6 @@ export default function LevelSessionScreen({
                   answer={answer}
                   onAnswerChange={actions.changeAnswer}
                   onPairResult={actions.reportMistake}
-                  onHint={hintsEnabled ? actions.showHint : undefined}
                   disabled={!answering}
                 />
               </FadeInView>

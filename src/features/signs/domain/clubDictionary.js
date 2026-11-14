@@ -116,15 +116,37 @@ export function usableSignClips(clips) {
   return [...byKey.values()];
 }
 
+/** Glosa del clip lista para mostrar, sin mirar los niveles: corrige tildes y respeta los nombres propios. */
+export function clipWord(clip) {
+  return GLOSS_FIXES[clip.key] ?? formatGloss(clip.gloss, { proper: clip.topic === CITY_TOPIC });
+}
+
 /** Palabra que ve la persona para un clip: etiqueta del nivel si existe, si no la glosa formateada. */
 export function wordFor(clip, labels, toSignKey) {
-  const fixed = GLOSS_FIXES[clip.key];
-  if (fixed) return fixed;
+  if (GLOSS_FIXES[clip.key]) return GLOSS_FIXES[clip.key];
   const label = labels.get(clip.key);
   const hasAlternatives = clip.gloss.includes('/');
   // El texto debe llevar de vuelta al mismo clip: «Café» (el color) llevaría a «cafe».
   if (label && !hasAlternatives && toSignKey(label) === clip.key) return label;
-  return formatGloss(clip.gloss, { proper: clip.topic === CITY_TOPIC });
+  return clipWord(clip);
+}
+
+/** Temas del club en el orden del curso (Saludos → … → Ciudades), sin repetir. */
+export const CLUB_THEME_ORDER = Object.freeze([...new Set(Object.values(TOPIC_THEMES))]);
+
+/**
+ * Índice del curso del club: posición de cada clave en el orden en que el club
+ * las enseña (así los números quedan 1, 2, 3… y la seña del tema va primero) y
+ * su palabra legible. Lo usan el diccionario (orden) y la pista del nombre.
+ */
+export function buildClubIndex(clips) {
+  const positionByKey = new Map();
+  const wordByKey = new Map();
+  usableSignClips(clips).forEach((clip, position) => {
+    positionByKey.set(clip.key, position);
+    wordByKey.set(clip.key, clipWord(clip));
+  });
+  return { positionByKey, wordByKey };
 }
 
 /**

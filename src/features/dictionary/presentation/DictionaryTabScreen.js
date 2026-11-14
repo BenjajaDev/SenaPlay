@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { memo, useCallback, useMemo, useState } from 'react';
-import { FlatList, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, SectionList, StyleSheet, View } from 'react-native';
 import useStaleWhileRevalidate from '../../../core/data/useStaleWhileRevalidate';
 import { useServices } from '../../../core/di/ServicesProvider';
 import {
@@ -15,10 +15,20 @@ import {
   TextField,
 } from '../../../shared/ui';
 import { useAppTheme } from '../../../shared/theme/ThemeProvider';
-import { DICTIONARY_ENTRIES, DICTIONARY_FILTERS } from '../../signs/data/local/dictionaryData';
+import { CLUB_INDEX } from '../../signs/data/local/clubCatalog';
+import { DICTIONARY_ENTRIES } from '../../signs/data/local/dictionaryData';
 import { REAL_SIGNS } from '../../signs/data/local/signsData';
 import SignImage from '../../signs/presentation/SignImage';
-import { ALL_THEMES, buildSearchIndex, filterSigns, normalizeText, signToDetail, themeFilters } from '../domain/vocabulary';
+import {
+  ALL_THEMES,
+  buildSearchIndex,
+  filterSigns,
+  groupSignsByTheme,
+  groupSpellingEntries,
+  signToDetail,
+  spellingFilters,
+  themeFilters,
+} from '../domain/vocabulary';
 import SignDetailModal from './SignDetailModal';
 
 const LOCAL_DICTIONARY = { entries: DICTIONARY_ENTRIES, source: 'local' };
@@ -89,9 +99,10 @@ const SignListCard = memo(function SignListCard({ item, onPress, styles, theme }
             </AppText>
             {item.type ? <Badge label={item.type} /> : null}
           </View>
-          {item.meaning || item.theme ? (
+          {/* El tema ya es el encabezado de la sección: solo se repite el significado. */}
+          {item.meaning ? (
             <AppText variant="caption" tone="secondary" numberOfLines={2}>
-              {item.meaning || item.theme}
+              {item.meaning}
             </AppText>
           ) : null}
           <View style={styles.moreRow}>
@@ -103,6 +114,27 @@ const SignListCard = memo(function SignListCard({ item, onPress, styles, theme }
         </View>
       </View>
     </Card>
+  );
+});
+
+// La grilla de deletreo va en filas de dos: SectionList no tiene numColumns.
+const GRID_COLUMNS = 2;
+const toRows = (items) =>
+  Array.from({ length: Math.ceil(items.length / GRID_COLUMNS) }, (_, row) => items.slice(row * GRID_COLUMNS, (row + 1) * GRID_COLUMNS));
+
+const countLabel = (count) => `${count} ${count === 1 ? 'seña' : 'señas'}`;
+
+/** Encabezado fijo de cada sección: el tema y cuántas señas tiene. */
+const SectionTitle = memo(function SectionTitle({ title, count, styles }) {
+  return (
+    <View style={styles.sectionHeader} accessible accessibilityRole="header" accessibilityLabel={`${title}, ${countLabel(count)}`}>
+      <AppText variant="heading" style={styles.shrink}>
+        {title}
+      </AppText>
+      <AppText variant="label" tone="secondary">
+        {count}
+      </AppText>
+    </View>
   );
 });
 
@@ -137,23 +169,31 @@ export default function DictionaryTabScreen() {
 
   // Los temas salen de los datos: si el remoto trae más (o menos) que lo guardado, los chips se ajustan.
   const themes = useMemo(() => themeFilters(signs), [signs]);
-  const filters = mode === 'deletreo' ? DICTIONARY_FILTERS : themes;
+  const filters = useMemo(() => (mode === 'deletreo' ? spellingFilters(entries) : themes), [mode, entries, themes]);
   const activeFilter = filters.includes(filter) ? filter : ALL_THEMES;
-  const search = normalizeText(query.trim());
 
-  const dictionaryItems = useMemo(
+  // Secciones con el número total de señas (no de filas): la grilla agrupa de a dos.
+  const spellingSections = useMemo(
     () =>
-      entries.filter(
-        (entry) =>
-          (activeFilter === 'Todos' || entry.category === activeFilter) &&
-          (!search || normalizeText(`${entry.letter} ${entry.description}`).includes(search)),
-      ),
-    [entries, activeFilter, search],
+      groupSpellingEntries(entries, { section: activeFilter, query }).map((section) => ({
+        title: section.title,
+        count: section.data.length,
+        data: toRows(section.data),
+      })),
+    [entries, activeFilter, query],
   );
 
   // El texto de búsqueda se normaliza una vez por lista de señas, no en cada tecla.
   const searchIndex = useMemo(() => buildSearchIndex(signs), [signs]);
-  const signItems = useMemo(() => filterSigns(searchIndex, { theme: activeFilter, query }), [searchIndex, activeFilter, query]);
+  const signSections = useMemo(
+    () =>
+      groupSignsByTheme(filterSigns(searchIndex, { theme: activeFilter, query }), CLUB_INDEX.positionByKey).map((section) => ({
+        ...section,
+        count: section.data.length,
+      })),
+    [searchIndex, activeFilter, query],
+  );
+  const signCount = useMemo(() => signSections.reduce((total, section) => total + section.count, 0), [signSections]);
 
   // Salida del estado vacío: vuelve a la lista completa sin borrar a mano.
   const clearSearch = useCallback(() => {
@@ -164,8 +204,14 @@ export default function DictionaryTabScreen() {
   const openEntryDetail = useCallback((item) => setDetail(entryToDetail(item)), []);
   const openSignDetail = useCallback((item) => setDetail(signToDetail(item)), []);
 
-  const renderDictionaryItem = useCallback(
-    ({ item }) => <DictionaryCard item={item} onPress={openEntryDetail} styles={styles} theme={theme} />,
+  const renderDictionaryRow = useCallback(
+    ({ item }) => (
+      <View style={styles.gridRow}>
+        {item.map((entry) => (
+          <DictionaryCard key={`${entry.letter}-${entry.sign}`} item={entry} onPress={openEntryDetail} styles={styles} theme={theme} />
+        ))}
+      </View>
+    ),
     [openEntryDetail, styles, theme],
   );
   const renderSignItem = useCallback(
@@ -173,14 +219,17 @@ export default function DictionaryTabScreen() {
     [openSignDetail, styles, theme],
   );
 
+  const renderSectionHeader = useCallback(
+    ({ section }) => <SectionTitle title={section.title} count={section.count} styles={styles} />,
+    [styles],
+  );
+
   const header = (
     <View style={styles.header}>
       <SectionHeader
         title="Diccionario de señas"
         subtitle={
-          mode === 'deletreo'
-            ? 'Letras, números y acciones por categoría'
-            : `Señas reales · ${signItems.length} ${signItems.length === 1 ? 'seña' : 'señas'}`
+          mode === 'deletreo' ? 'Abecedario y acciones, en orden' : `Señas reales · ${countLabel(signCount)} por tema, en el orden del curso`
         }
       />
       <SegmentedControl options={MODES} value={mode} onChange={handleModeChange} />
@@ -233,6 +282,8 @@ export default function DictionaryTabScreen() {
     contentContainerStyle: styles.listContent,
     showsVerticalScrollIndicator: false,
     keyboardShouldPersistTaps: 'handled',
+    // El tema queda fijo arriba mientras se recorre: se sabe siempre dónde se está.
+    stickySectionHeadersEnabled: true,
     // Solo se monta/decodifica lo visible (+colchón): con fotos reales de
     // ~300KB cada una, esto evita el jank al hacer scroll.
     initialNumToRender: 8,
@@ -244,21 +295,21 @@ export default function DictionaryTabScreen() {
   return (
     <View style={styles.container}>
       {mode === 'deletreo' ? (
-        <FlatList
+        <SectionList
           key="grid"
-          data={dictionaryItems}
-          keyExtractor={(item) => `${item.letter}-${item.sign}`}
-          numColumns={2}
-          columnWrapperStyle={styles.gridRow}
-          renderItem={renderDictionaryItem}
+          sections={spellingSections}
+          keyExtractor={(row) => row.map((entry) => `${entry.letter}-${entry.sign}`).join('|')}
+          renderItem={renderDictionaryRow}
+          renderSectionHeader={renderSectionHeader}
           {...listProps}
         />
       ) : (
-        <FlatList
+        <SectionList
           key="list"
-          data={signItems}
+          sections={signSections}
           keyExtractor={(item) => item.word}
           renderItem={renderSignItem}
+          renderSectionHeader={renderSectionHeader}
           {...listProps}
         />
       )}
@@ -280,7 +331,17 @@ function createStyles(theme) {
     filtersScrollView: { marginVertical: -spacing.xs },
     filtersScroll: { flexDirection: 'row', gap: spacing.sm, paddingRight: spacing.md, paddingVertical: spacing.xs },
     filtersRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-    gridRow: { justifyContent: 'space-between' },
+    gridRow: { flexDirection: 'row', justifyContent: 'space-between' },
+    sectionHeader: {
+      flexDirection: 'row',
+      alignItems: 'baseline',
+      justifyContent: 'space-between',
+      gap: spacing.sm,
+      paddingTop: spacing.md,
+      paddingBottom: spacing.sm,
+      // Fijo arriba: tapa lo que pasa por debajo con el mismo fondo de la pantalla.
+      backgroundColor: theme.colors.background,
+    },
     gridCard: { width: '48.5%', marginBottom: spacing.sm + 2 },
     listCard: { marginBottom: spacing.sm + 2 },
     cardTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing.sm },

@@ -9,7 +9,7 @@ const upper = (value) => String(value || '').toLocaleUpperCase('es');
  * Elegir una opción: `multiple-choice` (una seña → su letra) y
  * `word-meaning` (varias señas → su significado).
  */
-export default function ChoiceExercise({ exercise, answer, onAnswerChange, disabled, onHint }) {
+export default function ChoiceExercise({ exercise, answer, onAnswerChange, disabled }) {
   const isMeaning = exercise.type === 'word-meaning';
 
   return (
@@ -19,15 +19,14 @@ export default function ChoiceExercise({ exercise, answer, onAnswerChange, disab
           <AppText variant="subtitle" tone="secondary">
             Lee las señas y elige el significado correcto.
           </AppText>
-          <SignStrip signs={exercise.signs} onHint={onHint} concealGloss />
+          <SignStrip signs={exercise.signs} concealGloss />
         </>
       ) : (
         <SignSpotlight
           sign={exercise.sign}
-          onHint={onHint}
           caption={
             <AppText variant="caption" tone="secondary" align="center">
-              ¿Qué letra es? · Mantén presionado para ver una pista
+              ¿Qué letra es? · Mantén presionado para ver su nombre
             </AppText>
           }
         />

@@ -8,6 +8,7 @@ import { AppText, Button, Card, IconButton, MessageDialog, ScreenHeader, useFeed
 import { useAppTheme } from '../../../shared/theme/ThemeProvider';
 import { shuffle } from '../../levels/presentation/exercises/useSlots';
 import SignImage from '../../signs/presentation/SignImage';
+import { useSignNameHint } from '../../signs/presentation/SignNameHint';
 
 const BASE_PAIRS = ['a', 'b', 'c', 'd', 'e', 'f'];
 const MISMATCH_MS = 750;
@@ -25,6 +26,7 @@ function createCards() {
 export default function MemoryGameScreen({ onBack }) {
   const theme = useAppTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
+  const { showSignName } = useSignNameHint();
   const { confirm } = useFeedback();
   const [cards, setCards] = useState(createCards);
   const [flipped, setFlipped] = useState([]);
@@ -104,8 +106,12 @@ export default function MemoryGameScreen({ onBack }) {
     return (
       <Pressable
         onPress={() => handlePress(item)}
+        // Solo una seña ya dada vuelta: boca abajo no se revela nada.
+        onLongPress={faceUp && isSign ? () => showSignName(item.group) : undefined}
+        delayLongPress={400}
         accessibilityRole="button"
         accessibilityLabel={label}
+        accessibilityHint={faceUp && isSign ? 'Mantén presionado para ver su nombre' : undefined}
         accessibilityState={{ checked: matched }}
         style={({ pressed }) => [styles.cardWrap, pressed && !faceUp && styles.pressed]}
       >

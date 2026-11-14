@@ -8,7 +8,7 @@ import { canonicalLetter, letterLabel } from '../../domain/exerciseRotation';
 const upper = (value) => letterLabel(value || '');
 
 /** Seleccionar varias letras que corresponden a una secuencia de señas. */
-export default function RecognitionExercise({ exercise, answer, onAnswerChange, disabled, onHint }) {
+export default function RecognitionExercise({ exercise, answer, onAnswerChange, disabled }) {
   const selected = answer || [];
   const toggle = (letter) => {
     onAnswerChange(selected.includes(letter) ? selected.filter((item) => item !== letter) : [...selected, letter]);
@@ -22,7 +22,7 @@ export default function RecognitionExercise({ exercise, answer, onAnswerChange, 
       <AppText variant="subtitle" tone="secondary">
         {isLetters ? 'Selecciona las letras que representan estas señas.' : 'Selecciona lo que significan estas señas.'}
       </AppText>
-      <SignStrip signs={exercise.signs} onHint={onHint} concealGloss={!isLetters} />
+      <SignStrip signs={exercise.signs} concealGloss={!isLetters} />
       <View style={styles.row}>
         {exercise.options.map((letter) => (
           <OptionTile

@@ -46,7 +46,7 @@ const withoutPositions = (text) => String(text ?? '').replace(/^Seña \d+: /gm, 
 const hintWords = (hint) =>
   new Set([hint.title, withoutPositions(hint.texto), ...(hint.parametros || []).map((param) => param.valor)].flatMap(wordsOf));
 
-/** Todas las pistas que se pueden pedir en un ejercicio: botón, cada emparejamiento y mantener presionado. */
+/** Todas las pistas de la ampolleta en un ejercicio: al empezar y tras cada emparejamiento. */
 function requestsOf(exercise) {
   const requests = [{ label: 'botón', options: {} }];
   if (exercise.type === 'matching') {
@@ -54,10 +54,6 @@ function requestsOf(exercise) {
       const matched = exercise.letters.slice(0, index + 1).flatMap((__, done) => [`s-${done}`, `l-${done}`]);
       requests.push({ label: `botón con ${index + 1} parejas`, options: { matched } });
     });
-  }
-  // La UI pide con conceal en word-meaning, true-false y recognition de palabras.
-  if (['word-meaning', 'true-false', 'recognition'].includes(exercise.type)) {
-    shownKeys(exercise).forEach((signKey) => requests.push({ label: `mantener ${signKey}`, options: { signKey, conceal: true } }));
   }
   return requests;
 }
@@ -80,34 +76,38 @@ describe('pistas de los niveles del club con el archivo real', () => {
     expect(leaks).toEqual([]);
   });
 
-  test('cada seña suelta mostrada con la glosa oculta usa su propia pista observada, con la nota', () => {
-    levels.forEach((level) =>
-      level.exercises
-        .filter((exercise) => ['word-meaning', 'true-false', 'recognition'].includes(exercise.type))
-        .forEach((exercise) =>
-          shownKeys(exercise)
-            .filter((key) => OBSERVED_HINTS.forSign(key))
-            .forEach((signKey) => {
-              const hint = resolveHint(exercise, { signKey, conceal: true });
-              const seen = OBSERVED_HINTS.forSign(signKey);
-              expect(hint.nota).toBe(OBSERVED_NOTE);
-              // «trabajar» suma además la configuración del diccionario local.
-              expect(hint.parametros.map((param) => param.valor)).toEqual(expect.arrayContaining([seen.ubicacion, seen.movimiento]));
-              expect(hint.texto).toMatch(/^Se hace con (una|dos) manos?\.$/);
-            }),
-        ),
+  test('una seña sola con pista observada usa esa pista, con la nota', () => {
+    const singles = levels.flatMap((level) =>
+      level.exercises.filter(
+        (exercise) =>
+          ['word-meaning', 'true-false', 'recognition'].includes(exercise.type) &&
+          shownKeys(exercise).length === 1 &&
+          OBSERVED_HINTS.forSign(shownKeys(exercise)[0]),
+      ),
     );
+    expect(singles.length).toBeGreaterThan(0);
+    singles.forEach((exercise) => {
+      const seen = OBSERVED_HINTS.forSign(shownKeys(exercise)[0]);
+      const hint = resolveHint(exercise);
+      expect(hint.nota).toBe(OBSERVED_NOTE);
+      // «trabajar» suma además la configuración del diccionario local.
+      expect(hint.parametros.map((param) => param.valor)).toEqual(expect.arrayContaining([seen.ubicacion, seen.movimiento]));
+      expect(hint.texto).toMatch(/^Se hace con (una|dos) manos?\.$/);
+    });
   });
 
-  test('una seña sin pista observada (frase) cae a la pista general del ejercicio, sin nombrarla', () => {
+  test('sin ninguna pista observada (frases) cae a la pista general del ejercicio', () => {
     const phrases = levels.flatMap((level) =>
-      level.exercises.filter((exercise) => shownKeys(exercise).some((key) => !OBSERVED_HINTS.forSign(key))),
+      level.exercises.filter(
+        (exercise) =>
+          ['word-meaning', 'true-false', 'recognition'].includes(exercise.type) &&
+          shownKeys(exercise).length > 0 &&
+          shownKeys(exercise).every((key) => !OBSERVED_HINTS.forSign(key)),
+      ),
     );
-    expect(phrases.length).toBeGreaterThan(0);
     phrases.forEach((exercise) => {
-      const missing = shownKeys(exercise).find((key) => !OBSERVED_HINTS.forSign(key));
-      const hint = resolveHint(exercise, { signKey: missing, conceal: true });
       const general = normalizeHint(exercise.hint, exercise.sign);
+      const hint = resolveHint(exercise);
       if (general) expect(hint).toEqual({ ...general, title: 'Pista' });
       else expect(hint).toBeNull();
     });

@@ -29,7 +29,7 @@ El MP4 pesa de 3 a 5 veces menos que el WebP animado y más de 20 veces menos qu
 - **Privacidad de los clips.** La app lee la vista `public.sign_clips_public` (solo clips publicados y sin `consent_ref`, `signer_alias`, `edit_params` ni `created_by`); la tabla `sign_clips` y el listado del bucket quedan solo para el staff. Las rutas de los archivos deben ser exactamente `<carpeta>/<variante>-<uuid>.<ext>`. El importador además quita del `edit_params` la ruta del archivo original.
 - **Carpeta segura en Storage.** Supabase Storage solo acepta `[A-Za-z0-9_/!.*'() &$=@;:+,?-]` en las rutas, así que `mañana/1-uuid.mp4` falla. La carpeta se calcula con `toStorageFolder` (`mañana` → `man_ana`, `n~` → `_`), y la migración usa la función SQL equivalente `public.sign_clip_folder`. También arregla la subida desde el panel.
 - **Niveles 13 a 30**, disponibles con `available = false`: un admin los activa cuando los clips estén publicados. Quien ya completó el nivel 12 igual los verá desbloqueados, porque el desbloqueo se calcula al leer (`resolveUnlockedIds`) y no depende de que el nivel estuviera activo al completar el anterior.
-- **Ejercicio nuevo `sign-choice`** («¿Cuál es la seña de PERRO?»): grilla de 2 columnas con un reproductor por tarjeta. Cuando la glosa es la respuesta (`sign-choice`, `word-meaning`, `true-false`, `recognition` con palabras y `matching` de palabras), el reproductor y el placeholder usan un nombre neutro («Seña de la opción 2», «Seña a interpretar») y la pista al mantener presionado es la general del ejercicio.
+- **Ejercicio nuevo `sign-choice`** («¿Cuál es la seña de PERRO?»): grilla de 2 columnas con un reproductor por tarjeta. Cuando la glosa es la respuesta (`sign-choice`, `word-meaning`, `true-false`, `recognition` con palabras y `matching` de palabras), el reproductor y el placeholder usan un nombre neutro («Seña de la opción 2», «Seña a interpretar») y solo lo nombra el aviso de abajo cuando la persona mantiene presionada la seña (`SignNameHint`, gratis).
 
 ## 3. Convertir e importar (Windows)
 
@@ -95,7 +95,7 @@ Es idempotente (dos corridas dan el mismo JSON). `--check` no escribe y sale con
 
 - `signDescription.describeSign` llena **Ubicación** y **Movimiento** con la pista observada y deja la **Configuración** vacía (no se inventa). La pista lleva siempre la nota «Observada en el video, pendiente de validación por una persona sorda», visible y leída por el lector de pantalla (`HintPopover`).
 - El botón de pista de un ejercicio usa la seña relevante sin nombrarla (`levels/domain/exerciseHint.js`): `word-meaning`, `true-false` y `recognition`, las señas mostradas (varias señas, una línea numerada por seña); `sign-choice`, la seña de la palabra pedida; `matching`, la primera seña sin emparejar («Una de las señas que faltan…», porque las filas van mezcladas). Sin pista observada se mantiene el `hint` genérico del ejercicio.
-- Mantener presionada una seña cuya glosa es la respuesta usa la pista observada de esa seña, con el título «Pista» (sin nombrarla).
+- Mantener presionada una seña muestra su nombre, también cuando la glosa es la respuesta: la app es para practicar y el nombre sirve para comprobar. La pista que no la nombra (la observada de la seña, con el título «Pista») queda en la ampolleta.
 
 ### Diccionario (modo «Señas reales»)
 

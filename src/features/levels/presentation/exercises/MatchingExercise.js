@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { AppText } from '../../../../shared/ui';
 import SignImage from '../../../signs/presentation/SignImage';
+import { useSignNameHint } from '../../../signs/presentation/SignNameHint';
 import { isWordMatching } from '../../domain/exerciseTypes';
 import { CLIP_PLAYER_MIN_SIZE } from '../../../signs/presentation/SignClip';
 import OptionTile from './OptionTile';
@@ -30,7 +31,8 @@ export default function MatchingExercise(props) {
 }
 
 /** Señas con letras: se evalúa pareja por pareja (ver usePairSelection). */
-function LetterMatching({ exercise, answer, onAnswerChange, onPairResult, disabled, onHint }) {
+function LetterMatching({ exercise, answer, onAnswerChange, onPairResult, disabled }) {
+  const { showSignName } = useSignNameHint();
   const [cards] = useState(() => buildCards(exercise.letters));
   const matched = answer || [];
   const dense = exercise.letters.length > 5;
@@ -39,7 +41,7 @@ function LetterMatching({ exercise, answer, onAnswerChange, onPairResult, disabl
   return (
     <View style={styles.block}>
       <AppText variant="subtitle" tone="secondary">
-        Toca una seña y luego su letra. Mantén presionada una seña para ver su pista.
+        Toca una seña y luego su letra. Mantén presionada una seña para ver su nombre.
       </AppText>
       <View style={styles.grid}>
         {cards.map((card) => {
@@ -52,7 +54,7 @@ function LetterMatching({ exercise, answer, onAnswerChange, onPairResult, disabl
               state={state}
               disabled={disabled || isMatched}
               onPress={() => handlePress(card)}
-              onLongPress={isSign ? () => onHint?.(card.pair) : undefined}
+              onLongPress={isSign ? () => showSignName(card.pair) : undefined}
               accessibilityLabel={isSign ? 'Carta de seña' : `Carta de letra ${upper(card.pair)}`}
               style={[styles.card, dense && styles.cardDense]}
             >

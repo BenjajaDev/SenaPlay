@@ -12,7 +12,7 @@ import { useAppTheme } from '../../../../shared/theme/ThemeProvider';
  *   state: 'idle' | 'selected' | 'matched' | 'empty'
  *
  * 'selected' y 'matched' agregan icono (✓ / borde de marca), no solo color.
- * `onLongPress` se usa para pedir la pista de una seña.
+ * `onLongPress` muestra el nombre de la seña de la casilla.
  */
 export default function OptionTile({
   children,

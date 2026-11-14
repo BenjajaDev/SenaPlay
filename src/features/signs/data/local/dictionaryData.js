@@ -1,5 +1,6 @@
-// Diccionario de senas (letras, numeros y acciones). Sirve como respaldo local
-// y como fuente para generar el SQL de la tabla public.dictionary en Supabase.
+// Diccionario de deletreo (letras y acciones). Sirve como respaldo local y como
+// fuente para generar el SQL de la tabla public.dictionary en Supabase. Los
+// números no van aquí: son señas reales del club (modo «Señas reales»).
 export const DICTIONARY_ENTRIES = [
   // Letras A-M
   { letter: 'A', sign: 'a', description: 'Mano cerrada, pulgar apoyado al costado', category: 'A-M', difficulty: 'Fácil' },
@@ -32,18 +33,6 @@ export const DICTIONARY_ENTRIES = [
   { letter: 'Y', sign: 'y', description: 'Pulgar y meñique extendidos', category: 'N-Z', difficulty: 'Difícil' },
   { letter: 'Z', sign: 'z', description: 'Meñique levantado (como la I); dibuja una Z en el aire', category: 'N-Z', difficulty: 'Difícil' },
 
-  // Números (deletreados)
-  { letter: 'UNO (1)', sign: 'uno', description: 'Se deletrea U-N-O', category: 'Números', difficulty: 'Fácil' },
-  { letter: 'DOS (2)', sign: 'dos', description: 'Se deletrea D-O-S', category: 'Números', difficulty: 'Fácil' },
-  { letter: 'TRES (3)', sign: 'tres', description: 'Se deletrea T-R-E-S', category: 'Números', difficulty: 'Fácil' },
-  { letter: 'CUATRO (4)', sign: 'cuatro', description: 'Se deletrea C-U-A-T-R-O', category: 'Números', difficulty: 'Medio' },
-  { letter: 'CINCO (5)', sign: 'cinco', description: 'Mano abierta, todos los dedos extendidos', category: 'Números', difficulty: 'Fácil' },
-  { letter: 'SEIS (6)', sign: 'seis', description: 'Se deletrea S-E-I-S', category: 'Números', difficulty: 'Medio' },
-  { letter: 'SIETE (7)', sign: 'siete', description: 'Se deletrea S-I-E-T-E', category: 'Números', difficulty: 'Medio' },
-  { letter: 'OCHO (8)', sign: 'ocho', description: 'Se deletrea O-C-H-O', category: 'Números', difficulty: 'Medio' },
-  { letter: 'NUEVE (9)', sign: 'nueve', description: 'Se deletrea N-U-E-V-E', category: 'Números', difficulty: 'Medio' },
-  { letter: 'DIEZ (10)', sign: 'diez', description: 'Se deletrea D-I-E-Z', category: 'Números', difficulty: 'Medio' },
-
   // Acciones / verbos
   { letter: 'COMER', sign: 'comer', description: 'Llevar la mano cerrada hacia la boca', category: 'Acciones', difficulty: 'Fácil' },
   { letter: 'BEBER', sign: 'beber', description: 'Simular tomar un vaso con la mano', category: 'Acciones', difficulty: 'Fácil' },
@@ -56,5 +45,3 @@ export const DICTIONARY_ENTRIES = [
   { letter: 'HABLAR', sign: 'hablar', description: 'Dedos abriendo y cerrando frente a la boca', category: 'Acciones', difficulty: 'Medio' },
   { letter: 'TRABAJAR', sign: 'trabajar', description: 'Puños cerrados, uno golpea el otro', category: 'Acciones', difficulty: 'Difícil' },
 ];
-
-export const DICTIONARY_FILTERS = ['Todos', 'A-M', 'N-Z', 'Números', 'Acciones'];

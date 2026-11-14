@@ -1,6 +1,6 @@
 -- ============================================================
 -- Diccionario de senas de SeñaPlay (generado automaticamente)
--- Generado el: 2026-06-06T19:59:29.199Z
+-- Generado el: 2026-11-14T00:42:41.327Z
 -- Pegar completo en Supabase -> SQL Editor -> Run
 -- ============================================================
 
@@ -50,23 +50,13 @@ insert into public.dictionary (letter, sign, description, category, difficulty, 
 insert into public.dictionary (letter, sign, description, category, difficulty, sort_order) values ('X', 'x', 'Índice levantado; dibuja una X en el aire', 'N-Z', 'Difícil', 24);
 insert into public.dictionary (letter, sign, description, category, difficulty, sort_order) values ('Y', 'y', 'Pulgar y meñique extendidos', 'N-Z', 'Difícil', 25);
 insert into public.dictionary (letter, sign, description, category, difficulty, sort_order) values ('Z', 'z', 'Meñique levantado (como la I); dibuja una Z en el aire', 'N-Z', 'Difícil', 26);
-insert into public.dictionary (letter, sign, description, category, difficulty, sort_order) values ('UNO (1)', 'uno', 'Se deletrea U-N-O', 'Números', 'Fácil', 27);
-insert into public.dictionary (letter, sign, description, category, difficulty, sort_order) values ('DOS (2)', 'dos', 'Se deletrea D-O-S', 'Números', 'Fácil', 28);
-insert into public.dictionary (letter, sign, description, category, difficulty, sort_order) values ('TRES (3)', 'tres', 'Se deletrea T-R-E-S', 'Números', 'Fácil', 29);
-insert into public.dictionary (letter, sign, description, category, difficulty, sort_order) values ('CUATRO (4)', 'cuatro', 'Se deletrea C-U-A-T-R-O', 'Números', 'Medio', 30);
-insert into public.dictionary (letter, sign, description, category, difficulty, sort_order) values ('CINCO (5)', 'cinco', 'Mano abierta, todos los dedos extendidos', 'Números', 'Fácil', 31);
-insert into public.dictionary (letter, sign, description, category, difficulty, sort_order) values ('SEIS (6)', 'seis', 'Se deletrea S-E-I-S', 'Números', 'Medio', 32);
-insert into public.dictionary (letter, sign, description, category, difficulty, sort_order) values ('SIETE (7)', 'siete', 'Se deletrea S-I-E-T-E', 'Números', 'Medio', 33);
-insert into public.dictionary (letter, sign, description, category, difficulty, sort_order) values ('OCHO (8)', 'ocho', 'Se deletrea O-C-H-O', 'Números', 'Medio', 34);
-insert into public.dictionary (letter, sign, description, category, difficulty, sort_order) values ('NUEVE (9)', 'nueve', 'Se deletrea N-U-E-V-E', 'Números', 'Medio', 35);
-insert into public.dictionary (letter, sign, description, category, difficulty, sort_order) values ('DIEZ (10)', 'diez', 'Se deletrea D-I-E-Z', 'Números', 'Medio', 36);
-insert into public.dictionary (letter, sign, description, category, difficulty, sort_order) values ('COMER', 'comer', 'Llevar la mano cerrada hacia la boca', 'Acciones', 'Fácil', 37);
-insert into public.dictionary (letter, sign, description, category, difficulty, sort_order) values ('BEBER', 'beber', 'Simular tomar un vaso con la mano', 'Acciones', 'Fácil', 38);
-insert into public.dictionary (letter, sign, description, category, difficulty, sort_order) values ('DORMIR', 'dormir', 'Mano apoyada en la mejilla, cabeza inclinada', 'Acciones', 'Medio', 39);
-insert into public.dictionary (letter, sign, description, category, difficulty, sort_order) values ('CORRER', 'correr', 'Movimiento alternado de manos como brazos al correr', 'Acciones', 'Medio', 40);
-insert into public.dictionary (letter, sign, description, category, difficulty, sort_order) values ('CAMINAR', 'caminar', 'Dedos índice y medio simulando pasos', 'Acciones', 'Medio', 41);
-insert into public.dictionary (letter, sign, description, category, difficulty, sort_order) values ('JUGAR', 'jugar', 'Manos con pulgar y meñique extendidos, sacudidas', 'Acciones', 'Medio', 42);
-insert into public.dictionary (letter, sign, description, category, difficulty, sort_order) values ('LEER', 'leer', 'Dos dedos en V apuntando a la palma como ojos leyendo', 'Acciones', 'Medio', 43);
-insert into public.dictionary (letter, sign, description, category, difficulty, sort_order) values ('ESCRIBIR', 'escribir', 'Simular escribir con una mano sobre la palma', 'Acciones', 'Medio', 44);
-insert into public.dictionary (letter, sign, description, category, difficulty, sort_order) values ('HABLAR', 'hablar', 'Dedos abriendo y cerrando frente a la boca', 'Acciones', 'Medio', 45);
-insert into public.dictionary (letter, sign, description, category, difficulty, sort_order) values ('TRABAJAR', 'trabajar', 'Puños cerrados, uno golpea el otro', 'Acciones', 'Difícil', 46);
+insert into public.dictionary (letter, sign, description, category, difficulty, sort_order) values ('COMER', 'comer', 'Llevar la mano cerrada hacia la boca', 'Acciones', 'Fácil', 27);
+insert into public.dictionary (letter, sign, description, category, difficulty, sort_order) values ('BEBER', 'beber', 'Simular tomar un vaso con la mano', 'Acciones', 'Fácil', 28);
+insert into public.dictionary (letter, sign, description, category, difficulty, sort_order) values ('DORMIR', 'dormir', 'Mano apoyada en la mejilla, cabeza inclinada', 'Acciones', 'Medio', 29);
+insert into public.dictionary (letter, sign, description, category, difficulty, sort_order) values ('CORRER', 'correr', 'Movimiento alternado de manos como brazos al correr', 'Acciones', 'Medio', 30);
+insert into public.dictionary (letter, sign, description, category, difficulty, sort_order) values ('CAMINAR', 'caminar', 'Dedos índice y medio simulando pasos', 'Acciones', 'Medio', 31);
+insert into public.dictionary (letter, sign, description, category, difficulty, sort_order) values ('JUGAR', 'jugar', 'Manos con pulgar y meñique extendidos, sacudidas', 'Acciones', 'Medio', 32);
+insert into public.dictionary (letter, sign, description, category, difficulty, sort_order) values ('LEER', 'leer', 'Dos dedos en V apuntando a la palma como ojos leyendo', 'Acciones', 'Medio', 33);
+insert into public.dictionary (letter, sign, description, category, difficulty, sort_order) values ('ESCRIBIR', 'escribir', 'Simular escribir con una mano sobre la palma', 'Acciones', 'Medio', 34);
+insert into public.dictionary (letter, sign, description, category, difficulty, sort_order) values ('HABLAR', 'hablar', 'Dedos abriendo y cerrando frente a la boca', 'Acciones', 'Medio', 35);
+insert into public.dictionary (letter, sign, description, category, difficulty, sort_order) values ('TRABAJAR', 'trabajar', 'Puños cerrados, uno golpea el otro', 'Acciones', 'Difícil', 36);

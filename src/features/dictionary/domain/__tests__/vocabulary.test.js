@@ -1,12 +1,19 @@
+import clubTalcaClips from '../../../signs/data/content/clubTalcaClips.json';
+import { DICTIONARY_ENTRIES } from '../../../signs/data/local/dictionaryData';
+import { buildClubIndex, CLUB_SOURCE, CLUB_THEME_ORDER } from '../../../signs/domain/clubDictionary';
 import { OBSERVED_NOTE } from '../../../signs/domain/observedHints';
 import {
   ALL_THEMES,
   buildSearchIndex,
   filterSigns,
+  groupSignsByTheme,
+  groupSpellingEntries,
   normalizeText,
   signSourceLabel,
   signToDetail,
+  spellingFilters,
   themeFilters,
+  UNTHEMED,
 } from '../vocabulary';
 
 const mineduc = { word: 'ABEJA', type: 'Sustantivo', meaning: 'Insecto que produce miel.', howTo: 'Mano en pinza.', theme: 'Animales', page: 21, source: null };
@@ -42,11 +49,9 @@ describe('temas y búsqueda con ~300 señas', () => {
     source: 'Club de Sordos de Talca',
   })).concat([mineduc, club, clubBare]);
 
-  test('los temas salen de los datos, sin repetir y con «Todos» primero', () => {
-    const result = themeFilters(signs);
-    expect(result[0]).toBe(ALL_THEMES);
-    expect(result.slice(1)).toEqual([...new Set(result.slice(1))].sort((a, b) => a.localeCompare(b, 'es')));
-    expect(result).toEqual(expect.arrayContaining(['Animales', 'Saludos', 'Tiempo']));
+  test('los temas salen de los datos, sin repetir, con «Todos» primero y en el orden del curso', () => {
+    const result = themeFilters([...signs, { word: 'ABOGADO', theme: 'Profesiones' }]);
+    expect(result).toEqual([ALL_THEMES, 'Saludos', 'Colores', 'Animales', 'Verbos', 'Tiempo', 'Lugares', 'Profesiones']);
     expect(themeFilters([])).toEqual([ALL_THEMES]);
   });
 
@@ -71,5 +76,68 @@ describe('temas y búsqueda con ~300 señas', () => {
   test('normalizeText', () => {
     expect(normalizeText('Cómo ESTÁS')).toBe('como estas');
     expect(normalizeText(null)).toBe('');
+  });
+});
+
+describe('señas reales por tema, en el orden del curso', () => {
+  const { positionByKey } = buildClubIndex(clubTalcaClips.clips);
+  const clubSign = (word, theme) => ({ word, theme, type: 'Seña', source: CLUB_SOURCE });
+  const signs = [
+    clubSign('10', 'Números'),
+    clubSign('2', 'Números'),
+    clubSign('Números', 'Números'),
+    clubSign('1', 'Números'),
+    { ...mineduc, word: 'ZORRO' },
+    mineduc,
+    clubSign('Perro', 'Animales'),
+    clubSign('Animales', 'Animales'),
+    { word: 'CAMINAR', theme: 'Acciones', source: null },
+    { word: 'ABRAZAR', theme: 'Acciones', source: null },
+    { word: 'Sin tema', theme: null, source: null },
+    clubSign('Chao', 'Saludos'),
+    clubSign('Hola', 'Saludos'),
+  ];
+  const sections = groupSignsByTheme(signs, positionByKey);
+
+  test('temas del club en su orden, después los demás de la A a la Z y al final las señas sin tema', () => {
+    const titles = sections.map((section) => section.title);
+    expect(titles).toEqual(['Saludos', 'Números', 'Animales', 'Acciones', UNTHEMED]);
+    expect(CLUB_THEME_ORDER.indexOf('Números')).toBeLessThan(CLUB_THEME_ORDER.indexOf('Animales'));
+  });
+
+  test('dentro del tema: primero el club en el orden del curso (números 1, 2… 10), luego el resto alfabético', () => {
+    const words = (title) => sections.find((section) => section.title === title).data.map((sign) => sign.word);
+    expect(words('Números')).toEqual(['Números', '1', '2', '10']);
+    expect(words('Saludos')).toEqual(['Hola', 'Chao']);
+    expect(words('Animales')).toEqual(['Animales', 'Perro', 'ABEJA', 'ZORRO']);
+    // Una del MINEDUC con la misma palabra que una del club no se adelanta.
+    expect(words('Acciones')).toEqual(['ABRAZAR', 'CAMINAR']);
+  });
+
+  test('sin datos no hay secciones, y no cambia la lista recibida', () => {
+    expect(groupSignsByTheme([])).toEqual([]);
+    const copy = [...signs];
+    groupSignsByTheme(signs, positionByKey);
+    expect(signs).toEqual(copy);
+  });
+});
+
+describe('deletreo por secciones', () => {
+  test('el abecedario va junto (A–Z con la Ñ), sin números deletreados', () => {
+    const sections = groupSpellingEntries(DICTIONARY_ENTRIES);
+    expect(sections.map((section) => section.title)).toEqual(['Abecedario', 'Acciones']);
+    const letters = sections[0].data.map((entry) => entry.letter);
+    expect(letters).toHaveLength(27);
+    expect(letters.slice(12, 16)).toEqual(['M', 'N', 'Ñ', 'O']);
+    expect(DICTIONARY_ENTRIES.some((entry) => /deletrea/i.test(entry.description))).toBe(false);
+    expect(DICTIONARY_ENTRIES.some((entry) => entry.category === 'Números')).toBe(false);
+  });
+
+  test('filtra por sección y por texto, y descarta las secciones vacías', () => {
+    expect(spellingFilters(DICTIONARY_ENTRIES)).toEqual([ALL_THEMES, 'Abecedario', 'Acciones']);
+    expect(groupSpellingEntries(DICTIONARY_ENTRIES, { section: 'Acciones' }).map((section) => section.title)).toEqual(['Acciones']);
+    const found = groupSpellingEntries(DICTIONARY_ENTRIES, { query: 'BÓCA' });
+    expect(found.flatMap((section) => section.data).map((entry) => entry.letter)).toEqual(['COMER', 'HABLAR']);
+    expect(groupSpellingEntries(DICTIONARY_ENTRIES, { query: 'no existe' })).toEqual([]);
   });
 });

@@ -5,6 +5,7 @@ import haptics from '../../../../core/feedback/haptics';
 import { useAppTheme } from '../../../../shared/theme/ThemeProvider';
 import { AppText } from '../../../../shared/ui';
 import SignImage from '../../../signs/presentation/SignImage';
+import { useSignNameHint } from '../../../signs/presentation/SignNameHint';
 
 /** Borde fijo (también en reposo) para que elegir no mueva el contenido. */
 export const CARD_BORDER = 3;
@@ -22,6 +23,7 @@ export default function SignChoiceCard({ sign, number, chosen, disabled, onChoos
   const theme = useAppTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const [pressed, setPressed] = useState(false);
+  const { showSignName } = useSignNameHint();
   const dim = disabled && !chosen ? styles.dimDisabled : pressed ? styles.dimPressed : null;
 
   return (
@@ -32,11 +34,14 @@ export default function SignChoiceCard({ sign, number, chosen, disabled, onChoos
           haptics.selection();
           onChoose(sign);
         }}
+        // Las fotos fijas dejan pasar el toque a la tarjeta; el video lo resuelve SignImage.
+        onLongPress={() => showSignName(sign)}
+        delayLongPress={400}
         onPressIn={() => setPressed(true)}
         onPressOut={() => setPressed(false)}
         accessibilityRole="radio"
         accessibilityLabel={`Opción ${number}`}
-        accessibilityHint="Toca para elegir esta seña"
+        accessibilityHint="Toca para elegir esta seña. Mantén presionado para ver su nombre"
         accessibilityState={{ checked: chosen, selected: chosen, disabled: Boolean(disabled) }}
         style={[styles.tile, chosen && styles.tileChosen]}
       >

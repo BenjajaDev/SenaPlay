@@ -2,10 +2,11 @@ import { createCachedResource } from '../../../core/data/cachedResource';
 import { withTimeout } from '../../../core/net/withTimeout';
 import { storageKey } from '../../../core/storage/jsonStorage';
 
-const CACHE_KEYS = { dictionary: storageKey('dictionary', 'v1'), vocabulary: storageKey('vocabulary', 'v1') };
+// v2: el deletreo dejó de traer números; una caché v1 los seguiría mostrando sin conexión.
+const CACHE_KEYS = { dictionary: storageKey('dictionary', 'v2'), vocabulary: storageKey('vocabulary', 'v1') };
 
 /**
- * Repositorio de contenido de señas: diccionario (letras, números, acciones)
+ * Repositorio de contenido de señas: diccionario (letras y acciones)
  * y vocabulario léxico (palabras del diccionario MINEDUC). Misma estrategia
  * remoto → caché → local que el catálogo de niveles, y la lectura remota se
  * recuerda unos minutos: entrar y salir del Diccionario no repite consultas.

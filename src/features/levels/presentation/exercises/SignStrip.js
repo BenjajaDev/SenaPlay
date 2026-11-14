@@ -4,6 +4,7 @@ import { useAppTheme } from '../../../../shared/theme/ThemeProvider';
 import { useSignClips } from '../../../signs/presentation/SignClipsProvider';
 import SignClipSheet from '../../../signs/presentation/SignClipSheet';
 import SignImage from '../../../signs/presentation/SignImage';
+import { useSignNameHint } from '../../../signs/presentation/SignNameHint';
 import { CLIP_PLAYER_MIN_SIZE } from '../../../signs/presentation/SignClip';
 
 // Con clips, una o dos señas se muestran grandes para que el reproductor
@@ -13,19 +14,22 @@ const DEFAULT_SIZE = 72;
 
 const neutralStripName = (index, total) => (total === 1 ? 'Seña a interpretar' : `Seña ${index + 1} de ${total}`);
 
+const LONG_PRESS_HINT = 'Mantén presionado para ver su nombre';
+
 /**
- * Fila de señas a interpretar. Mantener presionada una seña abre su pista
- * (misma interacción en todos los ejercicios). Si una seña tiene clip y su
- * casilla es chica (frases de tres o más señas), tocarla abre el clip en
- * una hoja inferior: la fila nunca reproduce varios videos a la vez.
+ * Fila de señas a interpretar. Mantener presionada una seña muestra su nombre
+ * abajo (useSignNameHint), en todos los ejercicios y sin costo: la app es para
+ * practicar. Si una seña tiene clip y su casilla es chica (frases de tres o
+ * más señas), tocarla abre el clip en una hoja inferior: la fila nunca
+ * reproduce varios videos a la vez.
  *
  * Con `concealGloss` (la glosa es la respuesta: «¿Qué significa esta seña?») ni
- * el nombre accesible, ni la hoja, ni la pista al mantener presionado nombran
- * la seña. `onHint(sign, { conceal })` le pide a quien decide la pista que no
- * la nombre: usa la observada en el video de esa seña, si existe, o la general.
+ * el nombre accesible ni la hoja nombran la seña: solo la dice quien la pide
+ * manteniéndola presionada.
  */
-export default function SignStrip({ signs, size, onHint, concealGloss = false }) {
+export default function SignStrip({ signs, size, concealGloss = false }) {
   const theme = useAppTheme();
+  const { showSignName } = useSignNameHint();
   const { clipFor } = useSignClips();
   const [openClip, setOpenClip] = useState(null);
   const clips = signs.map(clipFor);
@@ -49,20 +53,17 @@ export default function SignStrip({ signs, size, onHint, concealGloss = false })
           <Pressable
             key={`${sign}-${index}`}
             onPress={clip ? () => setOpenClip(clip) : undefined}
-            onLongPress={() => onHint?.(sign, { conceal: concealGloss })}
+            onLongPress={() => showSignName(sign)}
             delayLongPress={400}
             accessibilityRole="imagebutton"
             accessibilityLabel={`Seña ${index + 1} de ${signs.length}`}
-            accessibilityHint={
-              clip ? 'Toca para verla en movimiento. Mantén presionado para ver una pista' : 'Mantén presionado para ver una pista'
-            }
+            accessibilityHint={clip ? `Toca para verla en movimiento. ${LONG_PRESS_HINT}` : LONG_PRESS_HINT}
           >
             <SignImage
               signKey={sign}
               size={resolvedSize}
               rounded={theme.radius.md}
               accessibilityName={concealGloss ? neutralStripName(index, signs.length) : undefined}
-              onLongPress={() => onHint?.(sign, { conceal: concealGloss })}
             />
           </Pressable>
         );
@@ -72,14 +73,15 @@ export default function SignStrip({ signs, size, onHint, concealGloss = false })
   );
 }
 
-export function SignSpotlight({ sign, caption, size = 150, onHint, concealGloss = false }) {
+export function SignSpotlight({ sign, caption, size = 150, concealGloss = false }) {
   const theme = useAppTheme();
+  const { showSignName } = useSignNameHint();
   return (
     <Pressable
-      onLongPress={() => onHint?.(sign, { conceal: concealGloss })}
+      onLongPress={() => showSignName(sign)}
       delayLongPress={400}
       accessibilityRole="imagebutton"
-      accessibilityHint="Mantén presionado para ver una pista"
+      accessibilityHint={LONG_PRESS_HINT}
       style={[
         styles.spotlight,
         { backgroundColor: theme.colors.surfaceSunken, borderColor: theme.colors.border, borderRadius: theme.radius.xl },
@@ -90,7 +92,6 @@ export function SignSpotlight({ sign, caption, size = 150, onHint, concealGloss 
         size={size}
         rounded={theme.radius.xl}
         accessibilityName={concealGloss ? 'Seña a interpretar' : undefined}
-        onLongPress={() => onHint?.(sign, { conceal: concealGloss })}
       />
       {caption}
     </Pressable>

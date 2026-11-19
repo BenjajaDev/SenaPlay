@@ -1,22 +1,27 @@
-# Compatibilidad del servidor de `feat/ia-comparacion-temporal` con la app
+# Compatibilidad de la TCN exportada con la app
 
-Revisado el 2026-10-31 contra `src/features/camera/presentation/signCamera.js` y
-`ai_module/server.py` de `gestilingo-dev`, y probado con uvicorn y datos sintéticos (sin videos
-de personas) usando el modelo exportado (LSTM, 9 clases). Detalle de las respuestas en
-`prueba_rutas_sinteticas.json`.
+Revisado el 2026-11-19 contra `src/features/camera/presentation/signCamera.js` y
+`ai_module/server.py` de `gestilingo-dev` (commit `9ddce9a`), con `MODELO_DINAMICO=exportado`
+(TCN de 14 clases reentrenada con 562 videos). Prueba en proceso con `TestClient` y datos
+sintéticos, sin videos de personas. Respuestas completas en `prueba_rutas_sinteticas.json`.
 
-| Ruta que usa la app | Entrada que manda la app | Estado | Por qué |
+| Ruta que usa la app | Entrada que manda la app | Estado | Detalle |
 |---|---|---|---|
-| `POST /clasificar` | `{landmarks}`: 21 × 3 crudos de MediaPipe | Formato compatible, modelo distinto | Responde `{seña, confianza}` igual que producción, pero con el `estatico.pkl` antiguo de 26 letras; producción usa el de 21 (sin G, J, Ñ, S, X ni Z). |
-| `POST /clasificar_frames` | `{frames, fps}`: cuadros JPEG en base64 del visor | **Incompatible** | La ruta no existe (404). La app cae a la heurística de trayectoria (solo J y Z). |
-| `POST /clasificar_video` | `{video_base64, mime}` | Compatible a medias | Misma entrada. La respuesta trae `seña`, `confianza`, `frames_procesados` y `ratio_con_mano`, pero no `es_seña`, `motivo` ni `alternativas`. Con un clip sintético sin manos (`ratio_con_mano` = 0) respondió «Nombre» con confianza 0,87. |
-| `POST /clasificar_secuencia` (la app no la usa) | `{frames}`: vectores de 527 valores | Compatible | La LSTM usa `marco_manos: local`, así que acepta el formato 1.0; una forma inválida responde 422. |
+| `POST /clasificar` | `{landmarks}`: 21 × 3 crudos de MediaPipe | Compatible | Responde `{seña, confianza}`; usa el modelo estático, que no cambia con el dinámico. |
+| `POST /clasificar_frames` | `{frames, fps}`: cuadros JPEG en base64 del visor | Compatible | 30 cuadros sintéticos sin personas: 200, `es_seña` = false, `motivo` = `sin_mano`, `ratio_con_mano` = 0, con `alternativas`. Un tramo vacío responde 422. |
+| `POST /clasificar_video` | `{video_base64, mime}` | No probada en esta revisión | Comparte `_respuesta_dinamica` con `/clasificar_frames`, así que devuelve los mismos campos. |
+| `POST /clasificar_secuencia` (la app no la usa) | `{frames}`: vectores de 527 valores | Compatible | Una matriz (30, 527) responde 200; una forma inválida, 422. |
 
-| Barrera de rechazo de producción | En esta rama |
+| Barrera de rechazo | Con la TCN exportada |
 |---|---|
-| `sin_mano` (fracción de cuadros con mano < 0,3) | No existe |
-| `poco_movimiento` (desplazamiento de muñeca < 0,08) | No existe |
-| `modelo_sin_seña` (clase `ninguna`) | No existe; el modelo exportado tampoco tiene esa clase |
+| `sin_mano` (fracción de cuadros con mano < 0,3) | Activa |
+| `poco_movimiento` (desplazamiento de muñeca < 0,08) | Activa |
+| `modelo_sin_seña` (clase `ninguna`) | Activa: el modelo tiene la clase `ninguna` |
 
-Conclusión: la rama no se une con `gestilingo-dev` ni se despliega hasta cerrar las tareas de
-`docs/ai/pendientes_integracion.md` (en `feat/ia-comparacion-temporal`).
+Las 13 señas del modelo (sin contar `ninguna`) coinciden con la lista de
+`src/features/camera/presentation/DynamicSignMonitorScreen.js`.
+
+Conclusión: la TCN exportada se puede servir con `MODELO_DINAMICO=exportado` sin cambios en la
+app. **No está desplegada**: producción sigue con la TCN legada (`MODELO_DINAMICO=tcn`, valor
+por defecto). Antes de cambiarla falta probarla con cuadros reales del teléfono, como en
+`docs/ai/integracion_verificacion.md` §2.

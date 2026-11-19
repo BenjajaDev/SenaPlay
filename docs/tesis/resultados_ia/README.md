@@ -5,10 +5,10 @@ señas dinámicas, de la ablación sin aumento de datos y de la evaluación del 
 Solo hay métricas, conteos y figuras: no se incluyen videos, landmarks, predicciones por video
 ni particiones.
 
-`dinamico/` y `tablas/` se **regeneraron el 2026-11-19** en `gestilingo-dev` con el conjunto
-ampliado (562 videos útiles, 57 señantes, 14 clases). `ablacion/`, `estatico/`,
-`modelo_exportado/` e `integracion/` siguen siendo los del **2026-10-31** (233 videos, 9 clases)
-y no son comparables con los dinámicos actuales.
+`dinamico/`, `tablas/`, `ablacion/`, `modelo_exportado/` y la latencia de `integracion/` se
+**regeneraron el 2026-11-19** en `gestilingo-dev` con el conjunto ampliado (562 videos útiles,
+57 señantes, 14 clases). `estatico/` y la equivalencia de `integracion/` siguen siendo del
+**2026-10-31**: no dependen de los videos dinámicos.
 
 ## Entorno
 
@@ -25,9 +25,11 @@ cada carpeta.
 |---|---|---|
 | Comparación TCN / LSTM / GRU | `python -m training.run_all` | `86bf2c9` |
 | Selección | `python -m training.select_model --solo-seleccionar` | `86bf2c9` |
-| Exportación de la TCN | `python -m training.select_model --arquitectura tcn` | `86bf2c9` (el `.pt` no se versiona aquí) |
+| Exportación de la TCN | `python -m training.select_model --arquitectura tcn` | entrenada en `86bf2c9`, commiteada en `9ddce9a` |
 | Figuras | `python -m training.curvas` y `python -m training.figuras_tesis` | `86bf2c9` |
-| Ablación sin aumento (2026-10-31) | `python -m training.run_all --experimento config/experimentos/ablaciones/sin_aumento.yaml` | `354c16c` |
+| Ablación sin aumento | `python -m training.run_all --experimento config/experimentos/ablaciones/sin_aumento.yaml` | `a72e09c` (mismo código que `86bf2c9`) |
+| Figura de la ablación | `python -m training.figuras_tesis --experimento ablacion_sin_aumento --salida comparacion_f1_macro_sin_aumento.png` | `a72e09c` |
+| Latencia del servidor | `python -m scripts.medir_latencia` | `9ddce9a` |
 | Modelo estático (2026-10-31) | `python -m training.eval_static_produccion` | `4794e36` |
 
 ## Protocolo de las señas dinámicas
@@ -72,17 +74,23 @@ mediciones.
   4 videos útiles y no se deben interpretar.**
 - Curvas por arquitectura en `dinamico/<arquitectura>/curvas_entrenamiento.png`.
 
-## Ablación sin aumento de datos (2026-10-31, 233 videos)
+## Ablación sin aumento de datos
 
-`ablacion/ablacion_sin_aumento.csv`. Se reporta como ablación; no cambia el modelo elegido.
+`ablacion/ablacion_sin_aumento.csv`. Mismas particiones y semillas que el experimento principal;
+solo se apaga el aumento. Se reporta como ablación; no cambia el modelo elegido.
 
 | Arquitectura | F1 macro con aumento | F1 macro sin aumento | Diferencia (con − sin) | Con aumento gana |
 |---|---|---|---|---|
-| TCN | 0,627 ± 0,077 | 0,656 ± 0,072 | −0,029 ± 0,070 | 4 de 15 entrenamientos; 2 de 5 pliegues |
-| LSTM | 0,585 ± 0,095 | 0,565 ± 0,064 | +0,020 ± 0,081 | 7 de 15; 3 de 5 |
-| GRU | 0,631 ± 0,066 | 0,607 ± 0,062 | +0,024 ± 0,075 | 8 de 15; 4 de 5 |
+| TCN | 0,714 ± 0,058 | 0,776 ± 0,052 | −0,062 ± 0,051 | 3 de 15 entrenamientos; 0 de 5 pliegues |
+| LSTM | 0,632 ± 0,103 | 0,645 ± 0,076 | −0,013 ± 0,121 | 8 de 15; 1 de 5 |
+| GRU | 0,701 ± 0,073 | 0,670 ± 0,070 | +0,032 ± 0,063 | 11 de 15; 5 de 5 |
 
-Ninguna diferencia supera la variabilidad; el aumento no muestra un efecto consistente.
+- **La TCN rinde mejor sin aumento** en los 5 pliegues (diferencia de −0,062, del orden de una
+  DE) y su mejor época llega más tarde (47 frente a 28).
+- A la GRU el aumento sí la ayuda (5 de 5 pliegues, +0,032); en la LSTM no hay un efecto
+  consistente.
+- Con 233 videos (2026-10-31) el aumento no mostraba un efecto consistente en ninguna de las
+  tres; el resultado cambió con el conjunto ampliado.
 
 ## Modelo estático
 
@@ -105,33 +113,21 @@ entrenamiento. Intervalo de Wilson al 95 % para la accuracy.
 - El modelo desplegado entrena con Roboflow + Kaggle; este protocolo mide el modelo sin Kaggle,
   la única forma de tener personas no vistas.
 
-## Modelo exportado (2026-10-31, LSTM)
+## Modelo exportado
 
-La TCN reentrenada el 2026-11-19 con los 562 videos queda en `ai_module/models_saved/` y no se
-documenta aquí todavía.
+`modelo_exportado/dinamico.meta.json` (copia de `ai_module/models_saved/dinamico.meta.json`):
+TCN de 259 134 parámetros (1,02 MB), 14 clases (`Alergia, Dolor, G, J, Mi, Mucho, Nombre,
+Presento, S, Tengo, X, Yo, Z, ninguna`), T = 30, `feature_spec_version` 2.0, reentrenada con
+los 562 videos (mejor época 85 de 105, F1 de validación 0,896 sobre s08, s29 y s44).
 
-`modelo_exportado/dinamico.meta.json`: LSTM, clases `G, J, Mi, Nombre, Presento, S, X, Yo, Z`,
-T = 30, `feature_spec_version` 2.0, manos en marco local, reentrenada con los 233 videos (mejor
-época 34, F1 de validación 0,821 sobre s03, s19 y s22).
+El servidor la sirve con `MODELO_DINAMICO=exportado`. **No está desplegada**: el valor por
+defecto sigue siendo `tcn` (la TCN legada de `data/models/dinamico_tcn.pt`).
 
-Latencia frente al TCN anterior (`data/models/dinamico_tcn.pt` de `gestilingo-dev`, 10 clases,
-T = 60, 527 valores), medidos igual: CPU con 1 hilo, 20 de calentamiento y 200 mediciones
-(`modelo_exportado/latencia_exportado_vs_tcn.csv`).
-
-| Modelo | Medida | Media (ms) | Mediana (ms) | p95 (ms) |
-|---|---|---|---|---|
-| LSTM exportada | solo el modelo | 1,87 | 2,04 | 2,73 |
-| | preprocesamiento + modelo | 3,57 | 3,57 | 5,14 |
-| TCN anterior | solo el modelo | 7,16 | 6,91 | 9,38 |
-| | preprocesamiento + modelo | 7,59 | 7,52 | 10,33 |
-
-La medición «preprocesamiento + modelo» parte de 45 vectores sintéticos de 527 valores ya
-extraídos: **no incluye la extracción con MediaPipe ni la red**, que dominan la latencia que
-percibe la app.
-
-El servidor de esta rama todavía **no es compatible** con la app (falta `/clasificar_frames`,
-no hay barreras de rechazo y trae el modelo estático antiguo): ver
-`modelo_exportado/compatibilidad_app.md`. Lo desplegado sigue usando el TCN anterior.
+- Compatibilidad con la app (`modelo_exportado/compatibilidad_app.md` y
+  `prueba_rutas_sinteticas.json`): las rutas que usa la app responden con el formato esperado,
+  las tres barreras de rechazo quedan activas porque el modelo tiene la clase `ninguna`, y sus
+  13 señas coinciden con las de `DynamicSignMonitorScreen.js`.
+- La latencia frente a la TCN legada está en `integracion/` (etapa `modelo`).
 
 ## Contenido
 
@@ -140,20 +136,29 @@ no hay barreras de rechazo y trae el modelo estático antiguo): ver
 | `dinamico/` | `selection.md`, `summary_all.csv`, `summary_all.md`, `comparacion_f1_macro_tesis.png` (figura de la tesis), `comparacion_f1_macro.png` (la genera `evaluate.py`), `commit.txt`, `entorno.json`, y por arquitectura `summary.csv`, `metrics_per_fold.csv`, `metrics_per_class.csv`, `confusion_matrix.png`, `f1_per_signer.png`, `latency.csv`, `curvas_entrenamiento.png` |
 | `ablacion/` | `ablacion_sin_aumento.csv`, `comparacion_f1_macro_sin_aumento.png` y, por arquitectura, `summary.csv`, `metrics_per_fold.csv`, `confusion_matrix.png` |
 | `estatico/` | `metricas.csv`, `metricas_por_clase.csv`, `metricas_por_pliegue.csv`, 4 matrices de confusión, `commit.txt`, `entorno.json` |
-| `modelo_exportado/` | `dinamico.meta.json`, `latencia_exportado_vs_tcn.csv`, `prueba_rutas_sinteticas.json`, `compatibilidad_app.md` |
+| `modelo_exportado/` | `dinamico.meta.json`, `prueba_rutas_sinteticas.json`, `compatibilidad_app.md` |
 | `tablas/` | `comparacion_pareada.csv`, `por_clase.csv`, `por_senante.csv`, `latencia_mediana.csv`, `descartes.csv` |
 
 ## Integración con la app (`integracion/`)
 
-Generado el 2026-10-31 en la rama `feat/integracion-pipeline`, que une este pipeline con
-`gestilingo-dev`. Detalle e interpretación en `docs/ai/integracion_verificacion.md`.
+Detalle e interpretación en `docs/ai/integracion_verificacion.md`.
 
-| Archivo | Qué es | Script | Commit |
+| Archivo | Qué es | Script | Fecha y commit |
 |---|---|---|---|
-| `equivalencia.csv`, `equivalencia_resumen.json`, `entorno_equivalencia.json` | El servidor nuevo con `MODELO_DINAMICO=tcn` frente al de producción (`gestilingo-dev@d9f6cd4`), en 666 casos sintéticos: 662 iguales, 4 diferencias aprobadas, ninguna distinta | `scripts/verificar_equivalencia.py` | `3a28e44` |
-| `latencia_servidor.csv`, `latencia_servidor_resumen.csv`, `entorno_latencia.json` | Latencia de `/clasificar_frames` por etapa (decodificación, detector, MediaPipe, modelo y total), 30 cuadros sintéticos, 200 mediciones por modelo. **No incluye la red ni el teléfono**; MediaPipe sin personas es una cota inferior | `scripts/medir_latencia.py` | `832ca2b` |
+| `equivalencia.csv`, `equivalencia_resumen.json`, `entorno_equivalencia.json` | El servidor nuevo con `MODELO_DINAMICO=tcn` frente al de producción (`gestilingo-dev@d9f6cd4`), en 666 casos sintéticos: 662 iguales, 4 diferencias aprobadas, ninguna distinta. Solo compara la TCN legada, que no cambió | `scripts/verificar_equivalencia.py` | 2026-10-31, `3a28e44` |
+| `latencia_servidor.csv`, `latencia_servidor_resumen.csv`, `entorno_latencia.json` | Latencia de `/clasificar_frames` por etapa (decodificación, detector, MediaPipe, modelo y total), 30 cuadros sintéticos, 200 mediciones por modelo, con la TCN legada (`tcn`) y la TCN nueva (`exportado`). **No incluye la red ni el teléfono**; MediaPipe sin personas es una cota inferior | `scripts/medir_latencia.py` | 2026-11-19, `9ddce9a` |
 
-Python 3.11.15, `requirements-server.txt` de `3a28e44` (mediapipe 0.10.35, scikit-learn 1.9.0,
-torch 2.14.0 CPU). Las mediciones con cuadros reales del teléfono están en
-`docs/ai/integracion_verificacion.md` §2 y no tienen archivo aquí: el registro se borró después
-de pasarlo al documento.
+Latencia del servidor (mediana y p95 en ms, CPU con 1 hilo para PyTorch):
+
+| Etapa | TCN legada | TCN nueva |
+|---|---|---|
+| Decodificación | 32,9 / 34,5 | 33,0 / 34,7 |
+| Crear detector | 160,7 / 171,2 | 160,6 / 173,0 |
+| MediaPipe | 492,9 / 511,2 | 491,5 / 506,6 |
+| Modelo (features + red) | 5,2 / 5,6 | 4,6 / 4,9 |
+| Total de la petición | 728,6 / 807,5 | 725,0 / 772,1 |
+
+El modelo pesa menos del 1 % de la petición: MediaPipe y la creación del detector dominan. La
+medición de 2026-11-19 se hizo con Python 3.11.0 en otro equipo que la del 2026-10-31, así que
+los tiempos absolutos no son comparables con los anteriores. Las mediciones con cuadros reales
+del teléfono están en `docs/ai/integracion_verificacion.md` §2 y no tienen archivo aquí.

@@ -1,57 +1,97 @@
-[
-  {
-    "ruta": "GET /",
-    "codigo": 200,
-    "respuesta": {
-      "app": "SeñaPlay IA de Señas",
-      "modelo_estatico_listo": true,
-      "modelo_dinamico_listo": true,
-      "total_señas": 7
+{
+  "modelo_dinamico": "exportado",
+  "clase_rechazo": "ninguna",
+  "casos": [
+    {
+      "ruta": "GET /",
+      "codigo": 200,
+      "ms": 2297.0,
+      "respuesta": {
+        "app": "SeñaPlay IA de Señas",
+        "modelo_estatico_listo": true,
+        "modelo_dinamico_listo": true,
+        "total_señas": 7,
+        "modelo_dinamico": "exportado",
+        "clases_dinamicas": [
+          "Alergia",
+          "Dolor",
+          "G",
+          "J",
+          "Mi",
+          "Mucho",
+          "Nombre",
+          "Presento",
+          "S",
+          "Tengo",
+          "X",
+          "Yo",
+          "Z",
+          "ninguna"
+        ],
+        "barreras_activas": {
+          "sin_mano": true,
+          "poco_movimiento": true,
+          "modelo_sin_seña": true
+        }
+      }
+    },
+    {
+      "ruta": "POST /clasificar",
+      "codigo": 200,
+      "ms": 103.5,
+      "respuesta": {
+        "seña": "Y",
+        "confianza": 0.1451
+      }
+    },
+    {
+      "ruta": "POST /clasificar_secuencia",
+      "codigo": 200,
+      "ms": 20.2,
+      "respuesta": {
+        "seña": "Z",
+        "confianza": 0.9841
+      }
+    },
+    {
+      "ruta": "POST /clasificar_secuencia",
+      "codigo": 422,
+      "ms": 2.5,
+      "respuesta": {
+        "detail": "Se esperaba una matriz (N, 527) con N ≥ 1; llegó (5, 10)"
+      }
+    },
+    {
+      "ruta": "POST /clasificar_frames",
+      "codigo": 200,
+      "ms": 1963.9,
+      "respuesta": {
+        "seña": "Alergia",
+        "confianza": 0.9634,
+        "es_seña": false,
+        "motivo": "sin_mano",
+        "alternativas": [
+          {
+            "seña": "Mi",
+            "confianza": 0.0342
+          },
+          {
+            "seña": "J",
+            "confianza": 0.0024
+          }
+        ],
+        "movimiento_muñeca": null,
+        "frames_procesados": 30,
+        "ratio_con_mano": 0.0
+      }
+    },
+    {
+      "ruta": "POST /clasificar_frames",
+      "codigo": 422,
+      "ms": 2.7,
+      "respuesta": {
+        "detail": "El tramo no trae cuadros"
+      }
     }
-  },
-  {
-    "ruta": "/clasificar",
-    "codigo": 200,
-    "ms": 425.1,
-    "respuesta": {
-      "seña": "Z",
-      "confianza": 0.2132
-    }
-  },
-  {
-    "ruta": "/clasificar_secuencia",
-    "codigo": 200,
-    "ms": 56.6,
-    "respuesta": {
-      "seña": "Presento",
-      "confianza": 0.9906
-    }
-  },
-  {
-    "ruta": "/clasificar_secuencia",
-    "codigo": 422,
-    "ms": 7.4,
-    "respuesta": {
-      "detail": "Se esperaba una matriz (T, 527); llegó (5, 10)"
-    }
-  },
-  {
-    "ruta": "/clasificar_video",
-    "codigo": 200,
-    "ms": 5185.4,
-    "respuesta": {
-      "seña": "Nombre",
-      "confianza": 0.8668,
-      "frames_procesados": 60,
-      "ratio_con_mano": 0.0
-    }
-  },
-  {
-    "ruta": "/clasificar_frames",
-    "codigo": 404,
-    "ms": 2.7,
-    "respuesta": {
-      "detail": "Not Found"
-    }
-  }
-]
+  ]
+}

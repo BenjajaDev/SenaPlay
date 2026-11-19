@@ -1,6 +1,6 @@
 # Selección del modelo dinámico
 
-Generado el 2026-10-31 03:18 a partir de `results` (experimento `comparacion_temporal`, validación `kfold`).
+Generado el 2026-11-19 15:47 a partir de `results` (experimento `comparacion_temporal`, validación `kfold`).
 
 ## Criterio
 
@@ -12,13 +12,13 @@ Generado el 2026-10-31 03:18 a partir de `results` (experimento `comparacion_tem
 
 | Arquitectura | F1 macro | Latencia media (ms) | Latencia p95 (ms) | Parámetros | Empatada con la mejor |
 |---|---:|---:|---:|---:|:---:|
-| GRU | 63.1 ± 6.6 | 7.19 | 13.66 | 226697 | sí |
-| TCN | 62.7 ± 7.7 | 12.81 | 29.51 | 258729 | sí |
-| LSTM | 58.5 ± 9.5 | 5.59 | 14.43 | 268169 | sí |
+| TCN | 71.4 ± 5.8 | 2.94 | 3.05 | 259134 | sí |
+| GRU | 70.1 ± 7.3 | 3.91 | 4.00 | 227342 | sí |
+| LSTM | 63.2 ± 10.3 | 1.28 | 1.35 | 268814 | no |
 
 ## Resultado
 
-- Mayor F1 macro: **GRU** (63.1 ± 6.6). Umbral de empate: 56.5.
-- Empatadas: TCN, LSTM, GRU.
-- **Elegida: LSTM** (menor latencia entre las empatadas).
-- Corrida de referencia: `results/20261031-015148_lstm` (commit `8391f05b00eb`).
+- Mayor F1 macro: **TCN** (71.4 ± 5.8). Umbral de empate: 65.6.
+- Empatadas: TCN, GRU.
+- **Elegida: TCN** (menor latencia entre las empatadas).
+- Corrida de referencia: `results/20261119-144628_tcn` (commit `86bf2c9b5765`).

@@ -2,14 +2,19 @@
 
 Evidencias agregadas de la comparación de arquitecturas temporales (TCN, LSTM y GRU) para las
 señas dinámicas, de la ablación sin aumento de datos y de la evaluación del modelo estático.
-Generadas el **2026-10-31** en la rama `feat/ia-comparacion-temporal`. Solo hay métricas,
-conteos y figuras: no se incluyen videos, landmarks, predicciones por video ni particiones.
+Solo hay métricas, conteos y figuras: no se incluyen videos, landmarks, predicciones por video
+ni particiones.
+
+`dinamico/` y `tablas/` se **regeneraron el 2026-11-19** en `gestilingo-dev` con el conjunto
+ampliado (562 videos útiles, 57 señantes, 14 clases). `ablacion/`, `estatico/`,
+`modelo_exportado/` e `integracion/` siguen siendo los del **2026-10-31** (233 videos, 9 clases)
+y no son comparables con los dinámicos actuales.
 
 ## Entorno
 
-Python **3.12.10**, PyTorch y scikit-learn 1.9.0, en CPU (ver `dinamico/entorno.json` y
-`estatico/entorno.json`). El encabezado de `ai_module/requirements.txt` todavía dice 3.11; las
-versiones que valen son las registradas en `entorno.json`.
+Comparación dinámica del 2026-11-19: Python **3.11.0**, PyTorch 2.14.0 (CPU) y scikit-learn
+1.9.0 (ver `dinamico/entorno.json`). El modelo estático del 2026-10-31 se evaluó con Python
+3.12.10 (`estatico/entorno.json`).
 
 ## Corridas y commits
 
@@ -18,20 +23,20 @@ cada carpeta.
 
 | Qué | Comando (desde `ai_module/`) | Commit |
 |---|---|---|
-| Comparación TCN / LSTM / GRU | `python -m training.run_all --con-estatico` | `8391f05` |
-| Selección (sin exportar) | `python -m training.select_model --solo-seleccionar` | `8391f05` |
-| Ablación sin aumento | `python -m training.run_all --experimento config/experimentos/ablaciones/sin_aumento.yaml` | `354c16c` |
-| Modelo estático | `python -m training.eval_static_produccion` | `4794e36` |
-| Exportación de la LSTM | `python -m training.select_model --arquitectura lstm` | entrenada en `4794e36`, commiteada en `09aceae` |
-| Figuras | `python -m training.curvas` y `python -m training.figuras_tesis` | `354c16c` |
+| Comparación TCN / LSTM / GRU | `python -m training.run_all` | `86bf2c9` |
+| Selección | `python -m training.select_model --solo-seleccionar` | `86bf2c9` |
+| Exportación de la TCN | `python -m training.select_model --arquitectura tcn` | `86bf2c9` (el `.pt` no se versiona aquí) |
+| Figuras | `python -m training.curvas` y `python -m training.figuras_tesis` | `86bf2c9` |
+| Ablación sin aumento (2026-10-31) | `python -m training.run_all --experimento config/experimentos/ablaciones/sin_aumento.yaml` | `354c16c` |
+| Modelo estático (2026-10-31) | `python -m training.eval_static_produccion` | `4794e36` |
 
 ## Protocolo de las señas dinámicas
 
-- **Datos:** 256 videos de 29 señantes; 233 útiles de 28 señantes (23 descartados por más de
-  30 % de cuadros sin manos; **s21 quedó fuera** porque se descartaron sus 3 videos). Detalle en
-  `tablas/descartes.csv`.
-- **Videos útiles por clase:** G 27 · J 26 · Mi 26 · Nombre 22 · Presento 30 · S 29 · X 27 ·
-  Yo 22 · Z 24 (desbalance 1,36; sin pesos de clase).
+- **Datos:** 575 videos de 57 señantes en las 14 clases; 562 útiles (13 descartados por más de
+  50 % de cuadros sin manos). Ningún señante quedó fuera. Detalle en `tablas/descartes.csv`.
+- **Videos útiles por clase:** Alergia 27 · Dolor 73 · G 39 · J 40 · Mi 30 · Mucho 41 ·
+  Nombre 27 · Presento 30 · S 43 · Tengo 34 · X 44 · Yo 49 · Z 39 · ninguna 46 (desbalance
+  2,70 > 1,5: se usan pesos de clase).
 - **Validación:** `StratifiedGroupKFold(5)` agrupado por señante (ningún señante en
   entrenamiento y prueba a la vez), 3 señantes de validación por pliegue para la detención
   temprana, semillas 0, 1 y 2 (15 entrenamientos por arquitectura). Entrada `[B, 30, 1577]`
@@ -39,7 +44,7 @@ cada carpeta.
 - **Criterio de selección (fijado antes de ver los datos):** mayor F1 macro medio; las
   arquitecturas con media ≥ mejor − DE de la mejor se consideran empatadas y gana la de menor
   latencia media.
-- La clase de rechazo `ninguna` queda **fuera** del experimento.
+- La clase de rechazo `ninguna` **entra** al experimento como una clase más.
 
 ## Resultados dinámicos
 
@@ -48,26 +53,26 @@ mediciones.
 
 | Arquitectura | F1 macro | Accuracy | Latencia media / mediana / p95 (ms) | Parámetros | Tamaño |
 |---|---|---|---|---|---|
-| TCN | 0,627 ± 0,077 | 0,648 ± 0,072 | 12,81 / 11,67 / 29,51 | 258 729 | 1,01 MB |
-| LSTM | 0,585 ± 0,095 | 0,606 ± 0,092 | 5,59 / 4,17 / 14,43 | 268 169 | 1,03 MB |
-| GRU | 0,631 ± 0,066 | 0,642 ± 0,065 | 7,19 / 6,21 / 13,66 | 226 697 | 0,87 MB |
+| TCN | 0,714 ± 0,058 | 0,724 ± 0,061 | 2,94 / 2,91 / 3,05 | 259 134 | 1,01 MB |
+| LSTM | 0,632 ± 0,103 | 0,639 ± 0,100 | 1,28 / 1,27 / 1,35 | 268 814 | 1,03 MB |
+| GRU | 0,701 ± 0,073 | 0,703 ± 0,074 | 3,91 / 3,88 / 4,00 | 227 342 | 0,87 MB |
 
-- Umbral de empate 0,631 − 0,066 = 0,565: las tres empatan y **se elige la LSTM** por menor
-  latencia (`dinamico/selection.md`). La TCN no gana.
-- Comparación pareada (`tablas/comparacion_pareada.csv`): TCN − LSTM = +0,042 (gana en 8 de 15
-  entrenamientos y en 5 de 5 pliegues); GRU − LSTM = +0,046 (11 de 15; 4 de 5);
-  TCN − GRU = −0,004 (7 de 15; 2 de 5). Las diferencias son menores que la variabilidad entre
-  pliegues y semillas.
-- La latencia es una sola medición por arquitectura y es ruidosa (la LSTM midió 5,59 ms aquí y
-  1,72 ms en la ablación); las tres están muy por debajo de 33 ms (un cuadro a 30 fps).
-- Por clase (`tablas/por_clase.csv`): Presento ≈ 0,96–0,98; las más difíciles son Z
-  (0,25–0,40), X y S (se confunden entre sí) y Mi ↔ Yo.
-- Por señante (`tablas/por_senante.csv`): **s20 (1 video) y s25 (2 videos) tienen menos de 4
-  videos útiles y no se deben interpretar.**
-- Curvas (`dinamico/<arquitectura>/curvas_entrenamiento.png`): la pérdida de validación sube
-  desde la época 15–25 mientras el F1 se mantiene (sobreconfianza con señantes nuevos).
+- Umbral de empate 0,714 − 0,058 = 0,656: empatan TCN y GRU (la LSTM queda fuera) y **se elige
+  la TCN** por menor latencia entre las empatadas (`dinamico/selection.md`).
+- Comparación pareada (`tablas/comparacion_pareada.csv`): TCN − LSTM = +0,082 (gana en 11 de 15
+  entrenamientos y en 5 de 5 pliegues); TCN − GRU = +0,013 (7 de 15; 3 de 5);
+  GRU − LSTM = +0,069 (11 de 15; 5 de 5). La diferencia TCN − GRU es menor que la variabilidad
+  entre pliegues y semillas.
+- Las métricas coinciden con las de la corrida del 2026-11-13 sobre los mismos datos: el
+  entrenamiento es reproducible. La latencia sí varía entre mediciones; las tres están muy por
+  debajo de 33 ms (un cuadro a 30 fps).
+- Por clase (`tablas/por_clase.csv`, F1 de la TCN): Mucho 0,95 y Presento 0,92 son las más
+  fáciles; las más difíciles son S (0,42), Z (0,44) y X (0,54).
+- Por señante (`tablas/por_senante.csv`): **s19 (1 video), s20 (3) y s24 (2) tienen menos de
+  4 videos útiles y no se deben interpretar.**
+- Curvas por arquitectura en `dinamico/<arquitectura>/curvas_entrenamiento.png`.
 
-## Ablación sin aumento de datos
+## Ablación sin aumento de datos (2026-10-31, 233 videos)
 
 `ablacion/ablacion_sin_aumento.csv`. Se reporta como ablación; no cambia el modelo elegido.
 
@@ -100,7 +105,10 @@ entrenamiento. Intervalo de Wilson al 95 % para la accuracy.
 - El modelo desplegado entrena con Roboflow + Kaggle; este protocolo mide el modelo sin Kaggle,
   la única forma de tener personas no vistas.
 
-## Modelo exportado
+## Modelo exportado (2026-10-31, LSTM)
+
+La TCN reentrenada el 2026-11-19 con los 562 videos queda en `ai_module/models_saved/` y no se
+documenta aquí todavía.
 
 `modelo_exportado/dinamico.meta.json`: LSTM, clases `G, J, Mi, Nombre, Presento, S, X, Yo, Z`,
 T = 30, `feature_spec_version` 2.0, manos en marco local, reentrenada con los 233 videos (mejor
@@ -129,7 +137,7 @@ no hay barreras de rechazo y trae el modelo estático antiguo): ver
 
 | Carpeta | Archivos |
 |---|---|
-| `dinamico/` | `selection.md`, `comparacion_f1_macro_tesis.png` (figura de la tesis), `comparacion_f1_macro.png` (la genera `evaluate.py`), `commit.txt`, `entorno.json`, y por arquitectura `summary.csv`, `metrics_per_fold.csv`, `metrics_per_class.csv`, `confusion_matrix.png`, `f1_per_signer.png`, `latency.csv`, `curvas_entrenamiento.png` |
+| `dinamico/` | `selection.md`, `summary_all.csv`, `summary_all.md`, `comparacion_f1_macro_tesis.png` (figura de la tesis), `comparacion_f1_macro.png` (la genera `evaluate.py`), `commit.txt`, `entorno.json`, y por arquitectura `summary.csv`, `metrics_per_fold.csv`, `metrics_per_class.csv`, `confusion_matrix.png`, `f1_per_signer.png`, `latency.csv`, `curvas_entrenamiento.png` |
 | `ablacion/` | `ablacion_sin_aumento.csv`, `comparacion_f1_macro_sin_aumento.png` y, por arquitectura, `summary.csv`, `metrics_per_fold.csv`, `confusion_matrix.png` |
 | `estatico/` | `metricas.csv`, `metricas_por_clase.csv`, `metricas_por_pliegue.csv`, 4 matrices de confusión, `commit.txt`, `entorno.json` |
 | `modelo_exportado/` | `dinamico.meta.json`, `latencia_exportado_vs_tcn.csv`, `prueba_rutas_sinteticas.json`, `compatibilidad_app.md` |

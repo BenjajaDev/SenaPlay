@@ -94,8 +94,8 @@
   },
   "parametros": 259134,
   "entrenamiento": {
-    "fecha": "2026-11-13T07:50:24",
-    "commit": "b82dc9a6d13c3b93be8454948b6e8e464f2c52d4",
+    "fecha": "2026-11-19T15:51:43",
+    "commit": "86bf2c9b576509d716d8998792c96a315ca2e709",
     "experimento": "comparacion_temporal",
     "semilla": 0,
     "epoca_mejor": 85,

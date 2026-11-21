@@ -1,41 +1,126 @@
 import { Monitor, Moon, Smartphone, Sun } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
-import type { SectionKey } from '@/data/types';
-import { isPreviewReady, PREVIEW_PATH, previewUpdate, type PreviewTheme } from '@/lib/sectionPreview';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { createRoot, type Root } from 'react-dom/client';
+import { MemoryRouter } from 'react-router-dom';
+import { useRepositories } from '@/data/RepositoriesProvider';
+import { mergeSections } from '@/data/repositories';
+import type { Publication, PublicStats, SectionKey } from '@/data/types';
+import { SectionView } from '@/features/landing/sections/SectionView';
 
 type Device = 'desktop' | 'mobile';
+type Theme = 'light' | 'dark';
 
 // Ancho al que se dibuja la página en cada modo; luego se escala al panel.
 const DEVICE_WIDTH: Record<Device, number> = { desktop: 1280, mobile: 390 };
 const FRAME_HEIGHT = 620;
+const ROOT_ID = 'vista-previa';
 
-const currentTheme = (): PreviewTheme => (document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
+/*
+ * Documento vacío del iframe. No se carga ninguna URL: así no lo bloquea la
+ * cabecera `frame-ancestors 'none'` del sitio (que protege contra clickjacking)
+ * y el iframe hereda la CSP y el origen del panel.
+ */
+const FRAME_DOC = `<!doctype html><html lang="es"><head><meta charset="utf-8"></head><body><div id="${ROOT_ID}"></div></body></html>`;
+
+const currentTheme = (): Theme => (document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
+
+/** Copia al iframe las hojas de estilo del panel (tokens, landing y fuentes). */
+function copyStyles(target: Document) {
+  document.querySelectorAll('link[rel="stylesheet"], style').forEach((node) => target.head.appendChild(target.importNode(node, true)));
+}
+
+/** Prepara el documento del iframe una sola vez y devuelve el nodo donde montar React. */
+function prepareFrame(frame: HTMLIFrameElement): HTMLElement | null {
+  const doc = frame.contentDocument;
+  if (!doc?.body) return null;
+  if (doc.body.dataset.ready === 'true') return doc.getElementById(ROOT_ID);
+  copyStyles(doc);
+  let mount = doc.getElementById(ROOT_ID);
+  if (!mount) {
+    mount = doc.createElement('div');
+    mount.id = ROOT_ID;
+    doc.body.appendChild(mount);
+  }
+  doc.body.dataset.ready = 'true';
+  return mount;
+}
 
 /**
- * Vista previa en vivo de la sección que se está editando. Muestra el
- * borrador (aún sin publicar) con los mismos componentes de la landing, en
- * escritorio o celular y en tema claro u oscuro.
+ * Vista previa en vivo de la sección que se está editando: el borrador (aún
+ * sin publicar) con los mismos componentes de la landing. Se dibuja en un
+ * iframe para que su ancho active los mismos cortes responsivos que la página
+ * real, en escritorio o celular y en tema claro u oscuro.
  */
 export function SectionPreview({ sectionKey, label, value }: Readonly<{ sectionKey: SectionKey; label: string; value: unknown }>) {
+  const { stats, publications } = useRepositories();
   const frameRef = useRef<HTMLIFrameElement>(null);
   const boxRef = useRef<HTMLDivElement>(null);
-  // Cada «listo» del iframe (incluida una recarga) vuelve a enviar el borrador.
-  const [readyTick, setReadyTick] = useState(0);
+  const rootRef = useRef<Root | null>(null);
+  const mountedDoc = useRef<Document | null>(null);
+  const [frameVersion, setFrameVersion] = useState(0);
   const [device, setDevice] = useState<Device>('desktop');
-  const [theme, setTheme] = useState<PreviewTheme>(currentTheme);
+  const [theme, setTheme] = useState<Theme>(currentTheme);
   const [boxWidth, setBoxWidth] = useState(0);
+  const [data, setData] = useState<PublicStats | null | undefined>(undefined);
+  const [posts, setPosts] = useState<Publication[]>([]);
 
   useEffect(() => {
-    const onMessage = (event: MessageEvent) => {
-      if (event.origin === window.location.origin && event.source === frameRef.current?.contentWindow && isPreviewReady(event.data)) setReadyTick((tick) => tick + 1);
+    let alive = true;
+    stats.publicStats().then((result) => alive && setData(result));
+    publications.listPublished().then((result) => alive && setPosts(result));
+    return () => {
+      alive = false;
     };
-    window.addEventListener('message', onMessage);
-    return () => window.removeEventListener('message', onMessage);
-  }, []);
+  }, [stats, publications]);
+
+  // El borrador pasa por los mismos sanitizadores que lo publicado: campos a
+  // medio escribir no rompen la vista previa.
+  const sections = useMemo(() => mergeSections([{ key: sectionKey, value }]), [sectionKey, value]);
+  const hidden = (value as { visible?: unknown } | null)?.visible === false;
+
+  // Cada carga del iframe trae un documento nuevo (srcdoc reemplaza al
+  // about:blank inicial): se monta React de nuevo sobre ese documento.
+  const mount = () => {
+    const frame = frameRef.current;
+    // Mismo documento (load repetido): React ya está montado ahí.
+    if (!frame?.contentDocument || frame.contentDocument === mountedDoc.current) return;
+    const node = prepareFrame(frame);
+    if (!node) return;
+    const previous = rootRef.current;
+    if (previous) setTimeout(() => previous.unmount(), 0);
+    rootRef.current = createRoot(node);
+    mountedDoc.current = frame.contentDocument;
+    setFrameVersion((version) => version + 1);
+  };
+
+  useEffect(
+    () => () => {
+      const root = rootRef.current;
+      rootRef.current = null;
+      // Desmontar fuera del render en curso evita el aviso de React.
+      if (root) setTimeout(() => root.unmount(), 0);
+    },
+    [],
+  );
 
   useEffect(() => {
-    if (readyTick) frameRef.current?.contentWindow?.postMessage(previewUpdate(sectionKey, value, theme), window.location.origin);
-  }, [readyTick, sectionKey, value, theme]);
+    const root = rootRef.current;
+    const doc = frameRef.current?.contentDocument;
+    if (!frameVersion || !root || !doc) return;
+    doc.documentElement.dataset.theme = theme;
+    root.render(
+      <MemoryRouter>
+        <div className="preview-page">
+          {hidden ? (
+            <p className="preview-page__notice" role="status">
+              Esta sección está oculta: no se ve en la landing.
+            </p>
+          ) : null}
+          <SectionView sectionKey={sectionKey} sections={sections} data={{ stats: data, posts }} />
+        </div>
+      </MemoryRouter>,
+    );
+  }, [frameVersion, theme, sectionKey, sections, hidden, data, posts]);
 
   useEffect(() => {
     const box = boxRef.current;
@@ -76,9 +161,10 @@ export function SectionPreview({ sectionKey, label, value }: Readonly<{ sectionK
           <iframe
             ref={frameRef}
             title={`Vista previa: ${label}`}
-            src={PREVIEW_PATH}
+            srcDoc={FRAME_DOC}
             className="section-preview__frame"
             style={{ width, height: FRAME_HEIGHT / scale, transform: `scale(${scale})` }}
+            onLoad={mount}
           />
         </div>
       </div>

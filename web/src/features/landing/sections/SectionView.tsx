@@ -1,4 +1,5 @@
 import type { LandingSections, Publication, PublicStats, SectionKey } from '@/data/types';
+import { CollaboratorsSection } from '../CollaboratorsSection';
 import { landingNavLinks } from '../landingNav';
 import { PhoneShowcase } from '../PhoneShowcase';
 import { SiteFooter } from '../SiteFooter';
@@ -37,6 +38,12 @@ export function SectionView({ sectionKey, sections, data }: Readonly<{ sectionKe
       return <TerritorySection config={sections.territory} />;
     case 'publications':
       return <PublicationsSection config={sections.publications} items={data.posts} />;
+    case 'club':
+      return (
+        <section className="section section--tinted">
+          <CollaboratorsSection config={sections.club} />
+        </section>
+      );
     case 'funding':
       return <FundingSection config={sections.funding} />;
     case 'download':

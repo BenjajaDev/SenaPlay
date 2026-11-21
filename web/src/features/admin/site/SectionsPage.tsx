@@ -134,6 +134,20 @@ const SPECS: Record<SectionKey, SectionSpec> = {
       { field: 'intro', label: 'Introducción', kind: 'textarea', rows: 2, hint: 'Opcional.' },
     ],
   },
+  club: {
+    label: 'Club de Sordos',
+    description: 'Bloque «Colaboran con nosotros» dentro de Nosotros: quién es el Club de Sordos de Talca y su rol en el proyecto. El logo es fijo.',
+    fields: [
+      { field: 'visible', label: 'Mostrar el bloque', kind: 'switch' },
+      { field: 'name', label: 'Nombre', kind: 'text', required: true },
+      { field: 'motto', label: 'Lema', kind: 'text', hint: 'Opcional. Se muestra bajo el nombre.' },
+      { field: 'paragraphs', label: 'Descripción', kind: 'stringList', itemLabel: 'Párrafo', multiline: true, max: LANDING_LIMITS.paragraphs, required: true },
+      { field: 'facts', label: 'Datos destacados', kind: 'items', hint: 'Ej: miembros activos, sede, tipo de organización.' },
+      { field: 'roleTitle', label: 'Título del rol en el proyecto', kind: 'text' },
+      { field: 'roleText', label: 'Texto del rol', kind: 'textarea', rows: 3 },
+      { field: 'roles', label: 'Aportes al proyecto', kind: 'stringList', itemLabel: 'Aporte', max: LANDING_LIMITS.tags },
+    ],
+  },
   funding: {
     label: 'Financiamiento',
     description: 'Fuente de los fondos del proyecto e instituciones que lo respaldan.',

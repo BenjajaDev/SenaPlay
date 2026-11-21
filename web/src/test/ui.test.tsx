@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, test, vi } from 'vitest';
@@ -6,7 +6,6 @@ import { AppRoutes } from '@/App';
 import { AuthProvider } from '@/auth/AuthProvider';
 import { RepositoriesProvider } from '@/data/RepositoriesProvider';
 import { DEFAULT_SECTIONS } from '@/data/repositories';
-import { previewUpdate } from '@/lib/sectionPreview';
 import { FeedbackProvider } from '@/ui';
 import { fakeRepositories } from './fakes';
 
@@ -52,6 +51,12 @@ describe('portal web', () => {
     expect(screen.getByText('Una sociedad donde comunicarse en señas sea cotidiano.')).toBeInTheDocument();
     expect(await screen.findByRole('heading', { name: 'Ana Pérez' })).toBeInTheDocument();
     expect(screen.queryByText('Luis Soto')).not.toBeInTheDocument();
+    const club = document.getElementById('colaboradores') as HTMLElement;
+    expect(within(club).getByRole('heading', { name: 'Club de Sordos de Talca' })).toBeInTheDocument();
+    expect(within(club).getByText('35 miembros activos')).toBeInTheDocument();
+    expect(within(club).getByText('5 Sur esquina 1 Oriente, Talca')).toBeInTheDocument();
+    expect(within(club).getByRole('heading', { name: /codiseñador de SeñaPlay/ })).toBeInTheDocument();
+    expect(within(club).getByText('Entrenamiento de la inteligencia artificial')).toBeInTheDocument();
   });
 
   test('la landing muestra las seis cifras por separado', async () => {
@@ -403,7 +408,6 @@ describe('portal web', () => {
     const user = userEvent.setup();
     const repos = renderAt('/admin/site/sections');
     await user.click(await screen.findByRole('tab', { name: 'El problema' }));
-    expect(screen.getByTitle('Vista previa: El problema')).toHaveAttribute('src', '/vista-previa');
 
     const [mainValue, secondValue] = screen.getAllByLabelText('Cifra *');
     await user.clear(mainValue);
@@ -438,36 +442,27 @@ describe('portal web', () => {
     expect(switches[3]).toBeEnabled();
   });
 
-  test('la vista previa muestra el borrador que envía el panel e ignora mensajes de otros orígenes', async () => {
-    const parent = { postMessage: vi.fn() };
-    const original = Object.getOwnPropertyDescriptor(window, 'parent');
-    Object.defineProperty(window, 'parent', { configurable: true, value: parent });
-    try {
-      renderAt('/vista-previa');
-      await waitFor(() => expect(parent.postMessage).toHaveBeenCalledWith({ type: 'senaplay:preview:ready' }, window.location.origin));
-      const send = (origin: string, source: unknown, title: string) => {
-        const event = new MessageEvent('message', {
-          origin,
-          data: previewUpdate('problem', { ...DEFAULT_SECTIONS.problem, title, visible: false }, 'dark'),
-        });
-        Object.defineProperty(event, 'source', { value: source });
-        act(() => {
-          window.dispatchEvent(event);
-        });
-      };
+  test('la vista previa dibuja el borrador sin publicar dentro de su iframe, en el tema elegido', async () => {
+    const user = userEvent.setup();
+    renderAt('/admin/site/sections');
+    await user.click(await screen.findByRole('tab', { name: 'Club de Sordos' }));
+    const frame = screen.getByTitle('Vista previa: Club de Sordos') as HTMLIFrameElement;
+    // No carga ninguna URL del sitio: la cabecera frame-ancestors 'none' no la bloquea.
+    expect(frame).not.toHaveAttribute('src');
+    fireEvent.load(frame);
+    const preview = () => within(frame.contentDocument!.body);
+    expect(await preview().findByRole('heading', { name: 'Club de Sordos de Talca' })).toBeInTheDocument();
+    expect(preview().getByText('35 miembros activos')).toBeInTheDocument();
 
-      send('https://otro-sitio.cl', parent, 'Texto ajeno');
-      send(window.location.origin, {}, 'Otra ventana');
-      expect(screen.queryByRole('heading', { name: 'Texto ajeno' })).not.toBeInTheDocument();
-      expect(screen.queryByRole('heading', { name: 'Otra ventana' })).not.toBeInTheDocument();
+    const motto = screen.getByLabelText('Lema');
+    await user.clear(motto);
+    await user.type(motto, 'Codiseñadores de SeñaPlay');
+    expect(await preview().findByText('Codiseñadores de SeñaPlay')).toBeInTheDocument();
 
-      send(window.location.origin, parent, 'Borrador sin publicar');
-      expect(await screen.findByRole('heading', { name: 'Borrador sin publicar' })).toBeInTheDocument();
-      expect(screen.getByRole('status')).toHaveTextContent('Esta sección está oculta');
-      expect(document.documentElement.dataset.theme).toBe('dark');
-    } finally {
-      if (original) Object.defineProperty(window, 'parent', original);
-      delete document.documentElement.dataset.theme;
-    }
+    await user.click(screen.getByRole('switch', { name: 'Mostrar el bloque' }));
+    expect(await preview().findByRole('status')).toHaveTextContent('Esta sección está oculta');
+
+    await user.click(screen.getByRole('button', { name: /Oscuro/ }));
+    await waitFor(() => expect(frame.contentDocument!.documentElement.dataset.theme).toBe('dark'));
   });
 });

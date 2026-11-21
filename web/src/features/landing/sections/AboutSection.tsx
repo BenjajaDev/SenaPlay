@@ -1,6 +1,6 @@
 import { Eye, Target } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import type { AboutContent, TeamMember } from '@/data/types';
+import type { AboutContent, LandingSections, TeamMember } from '@/data/types';
 import { keyed } from '@/lib/listKeys';
 import { SOCIAL_NETWORKS, SocialIcon, socialHref } from '@/lib/social';
 import { Card, Skeleton, SkeletonRows } from '@/ui';
@@ -131,7 +131,11 @@ function TeamRows({ team }: Readonly<{ team: TeamMember[] }>) {
 }
 
 /** Sección «Nosotros»: textos y equipo editables desde el panel (Sitio web → Nosotros). */
-export function AboutSection({ about, team }: { about: AboutContent | undefined; team: TeamMember[] | undefined }) {
+export function AboutSection({
+  about,
+  team,
+  club,
+}: Readonly<{ about: AboutContent | undefined; team: TeamMember[] | undefined; club: LandingSections['club'] | undefined }>) {
   return (
     <section id="nosotros" className="section section--tinted" aria-labelledby="nosotros-title">
       <div className="about">
@@ -171,7 +175,7 @@ export function AboutSection({ about, team }: { about: AboutContent | undefined;
         </>
       ) : null}
 
-      <CollaboratorsSection />
+      {club?.visible ? <CollaboratorsSection config={club} /> : null}
     </section>
   );
 }

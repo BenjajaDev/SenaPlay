@@ -577,6 +577,29 @@ export const DEFAULT_SECTIONS: LandingSections = {
     title: 'Avances del proyecto',
     intro: 'Congresos, actividades con la comunidad Sorda, pruebas con usuarios y novedades del proyecto.',
   },
+  club: {
+    visible: true,
+    name: 'Club de Sordos de Talca',
+    motto: 'Difundiendo la LSCh',
+    paragraphs: [
+      'El Club de Sordos de Talca es una organización comunitaria sin fines de lucro de la Región del Maule, orientada principalmente a personas sordas y con discapacidad auditiva, que promueve la Cultura Sorda, la Lengua de Señas Chilena (LSCh), la inclusión y la participación social.',
+      'Su sede, en 5 Sur esquina 1 Oriente, Talca, permite centralizar sus reuniones, talleres y diversas actividades dirigidas a la comunidad sorda.',
+    ],
+    facts: [
+      { icon: 'users', title: '35 miembros activos', text: 'Además de sus familias.' },
+      { icon: 'mapPin', title: '5 Sur esquina 1 Oriente, Talca', text: 'Sede para reuniones, talleres y actividades.' },
+      { icon: 'heart', title: 'Sin fines de lucro', text: 'Organización comunitaria de la Región del Maule.' },
+    ],
+    roleTitle: 'Actor clave y codiseñador de SeñaPlay',
+    roleText: 'En el desarrollo de la aplicación cumple un rol fundamental como codiseñador y participa activamente en distintas tareas, entre ellas:',
+    roles: [
+      'Entrenamiento de la inteligencia artificial',
+      'Entrega de variantes lingüísticas',
+      'Difusión de la Cultura Sorda',
+      'Validación de la tecnología',
+      'Señas en video de los niveles',
+    ],
+  },
   funding: {
     visible: true,
     title: 'Financiamiento',
@@ -773,6 +796,8 @@ const FIELD_SANITIZERS: Record<string, FieldSanitizer> = {
   direct: sanitizeAudience,
   indirect: sanitizeAudience,
   sponsors: sanitizeSponsors,
+  facts: sanitizeItems,
+  roles: (value, fallback: string[]) => (Array.isArray(value) ? stringList(value, LANDING_LIMITS.tags) : fallback),
   signDecks: sanitizeDecks,
   screens: sanitizeScreens,
   socials: (value) => cleanSocials(value),

@@ -244,6 +244,17 @@ export type LandingSections = {
   showcase: { visible: boolean; title: string; text: string; interval: number; screens: PhoneScreen[] };
   territory: { visible: boolean; badge: string; title: string; place: AudienceCard; direct: AudienceCard; indirect: AudienceCard; bridge: string };
   publications: { visible: boolean; title: string; intro: string };
+  /** Club de Sordos de Talca, dentro de «Nosotros» (bloque «Colaboran con nosotros»). El logo es fijo. */
+  club: {
+    visible: boolean;
+    name: string;
+    motto: string;
+    paragraphs: string[];
+    facts: SectionItem[];
+    roleTitle: string;
+    roleText: string;
+    roles: string[];
+  };
   funding: { visible: boolean; title: string; lead: string; text: string; sponsors: Sponsor[] };
   download: { visible: boolean; title: string; text: string };
   /** Siempre visible: Google Play exige una política de privacidad pública. `body` es la versión completa de /privacidad. */

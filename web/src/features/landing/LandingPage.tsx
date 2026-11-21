@@ -115,7 +115,7 @@ export function LandingPage() {
         {sections && showShowcase ? <PhoneShowcase config={sections.showcase} /> : null}
         {sections?.territory.visible ? <TerritorySection config={sections.territory} /> : null}
         {sections && posts && showPublications ? <PublicationsSection config={sections.publications} items={posts} /> : null}
-        <AboutSection about={about} team={team} />
+        <AboutSection about={about} team={team} club={sections?.club} />
         {sections?.funding.visible ? <FundingSection config={sections.funding} /> : null}
         {sections?.download.visible ? <DownloadSection config={sections.download} /> : null}
         {sections ? <PrivacySection config={sections.privacy} /> : null}

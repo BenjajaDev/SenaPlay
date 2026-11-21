@@ -9,14 +9,14 @@ import { Button, Card, SelectField, TextField, useFeedback } from '@/ui';
 
 type Errors = Record<string, string>;
 
-function moveItem<T>(items: T[], index: number, delta: number): T[] {
+export function moveItem<T>(items: T[], index: number, delta: number): T[] {
   const next = [...items];
   [next[index], next[index + delta]] = [next[index + delta], next[index]];
   return next;
 }
 
 /** Botón que sube una imagen al bucket y entrega su URL y ruta. */
-function ImageUploadButton({
+export function ImageUploadButton({
   label,
   disabled,
   onUploaded,
@@ -69,7 +69,7 @@ function ImageUploadButton({
 }
 
 /** Botones de orden y borrado de un elemento de lista. */
-function RowActions({
+export function RowActions({
   name,
   index,
   total,

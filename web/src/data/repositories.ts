@@ -8,8 +8,11 @@ import type {
   ConfigRow,
   DictionaryEntry,
   ExerciseDraft,
+  AudienceCard,
   FeatureFlag,
+  FeatureItem,
   FooterLink,
+  Highlight,
   Level,
   LevelWithExercises,
   MediaItem,
@@ -30,6 +33,8 @@ import type {
   SignClipStatus,
   SignSlide,
   SiteIconKey,
+  Sponsor,
+  TaggedItem,
   TeamMember,
   VocabularySign,
 } from './types';
@@ -443,6 +448,13 @@ export const SITE_ICON_KEYS: SiteIconKey[] = [
   'smartphone',
   'megaphone',
   'graduation',
+  'landmark',
+  'scale',
+  'mapPin',
+  'shield',
+  'database',
+  'target',
+  'userCheck',
 ];
 
 /**
@@ -466,16 +478,58 @@ export const DEFAULT_SECTIONS: LandingSections = {
     ],
   },
   metrics: { visible: true, title: 'SeñaPlay en números' },
+  problem: {
+    visible: true,
+    badge: 'El problema',
+    title: 'Una brecha comunicacional que vulnera derechos',
+    paragraphs: [
+      'En Chile persisten barreras que afectan la autonomía, la inclusión y el ejercicio de derechos de las personas sordas. La más crítica es la brecha comunicacional al acceder a servicios públicos y privados: lo que para una persona oyente es una gestión cotidiana, para una persona sorda es un desafío constante.',
+      'La comunidad y estudios como el de Minte et al. (2025) advierten que esto es especialmente grave en salud, donde se dificulta comprender diagnósticos, tratamientos y trámites administrativos. La causa principal es la escasez de intérpretes de LSCh.',
+    ],
+    citation: 'Minte et al. (2025)',
+    highlights: [
+      {
+        value: '488.511',
+        label: 'personas con algún grado de discapacidad auditiva, de 17,91 millones de habitantes en Chile.',
+        note: 'La cifra no incluye condiciones asociadas a la edad, como la presbiacusia.',
+        source: 'Engloba, 2026',
+        total: 17910000,
+      },
+      {
+        value: '24/7',
+        label: 'Es la cobertura de interpretación en LSCh que hoy no existe en Chile: no hay un servicio continuo.',
+        note: '',
+        source: '',
+        total: null,
+      },
+    ],
+    questions: [
+      { icon: 'users', title: '¿A quién afecta?', text: 'A la comunidad sorda en todas las etapas de la vida: niños, niñas, jóvenes y personas adultas.' },
+      {
+        icon: 'landmark',
+        title: '¿Dónde ocurre?',
+        text: 'En todos los ámbitos de la vida cotidiana. Es más grave en instituciones públicas esenciales (centros de salud, juzgados, municipalidades y servicios asistenciales), pero también en el sector privado, la educación, el trabajo y los espacios sociales y culturales.',
+      },
+      {
+        icon: 'scale',
+        title: '¿Por qué importa?',
+        text: 'No es solo un inconveniente logístico: es una vulneración sistemática de derechos fundamentales. Sin comunicación autónoma en salud, en un juzgado o en el trabajo se afectan la autodeterminación, la privacidad y la salud física y emocional.',
+      },
+    ],
+  },
   features: {
     visible: true,
-    title: 'Todo lo que necesitas para practicar LSCh',
+    badge: 'La solución',
+    title: 'Practica LSCh como un juego',
+    intro:
+      'SeñaPlay convierte la práctica de la Lengua de Señas Chilena en una experiencia accesible, gratuita y disponible a cualquier hora, para complementar la escasa oferta de intérpretes y formación.',
     items: [
-      { icon: 'layers', title: 'Niveles progresivos', text: 'Del alfabeto dactilológico a vocabulario real, con desbloqueo por logros.' },
-      { icon: 'camera', title: 'Práctica con IA', text: 'La cámara reconoce tu mano y te da retroalimentación sobre la seña en tiempo real.' },
-      { icon: 'book', title: 'Diccionario LSCh', text: 'Señas con fotos, parámetros y referencias al diccionario del MINEDUC.' },
-      { icon: 'gamepad', title: 'Juegos', text: 'Memoria, quiz contrarreloj y deletreo para entrenar y mantener activa la LSCh.' },
-      { icon: 'video', title: 'Videos con subtítulos', text: 'Contenido audiovisual accesible para personas oyentes y no oyentes.' },
-      { icon: 'sparkles', title: 'Motivación diaria', text: 'Rachas, estrellas y celebraciones que hacen del hábito un juego.' },
+      { icon: 'layers', title: 'Niveles de juego', text: 'Avance progresivo desde señas básicas hacia frases de uso cotidiano.', highlight: true },
+      { icon: 'book', title: 'Diccionario de LSCh', text: 'Consulta de señas cuando la persona la necesite.', highlight: true },
+      { icon: 'camera', title: 'Práctica con inteligencia artificial', text: 'Retroalimentación para entrenar y corregir las señas.', highlight: true },
+      { icon: 'gamepad', title: 'Juegos', text: 'Memoria, quiz contrarreloj y deletreo para entrenar y mantener activa la LSCh.', highlight: false },
+      { icon: 'video', title: 'Videos con subtítulos', text: 'Contenido audiovisual accesible para personas oyentes y no oyentes.', highlight: false },
+      { icon: 'sparkles', title: 'Motivación diaria', text: 'Rachas, estrellas y celebraciones que hacen del hábito un juego.', highlight: false },
     ],
   },
   accessibility: {
@@ -494,44 +548,178 @@ export const DEFAULT_SECTIONS: LandingSections = {
     interval: 5,
     screens: [],
   },
+  territory: {
+    visible: true,
+    badge: 'Territorio y comunidad',
+    title: 'Territorio y comunidad beneficiaria',
+    place: {
+      label: 'Territorio situado',
+      title: 'Universidad Autónoma de Chile, sede Talca · Región del Maule',
+      text: 'El proyecto piloto se desarrolla desde Talca y su alcance digital está pensado en las variantes lingüísticas de la LSCh de Talca.',
+      tags: ['Proyecto piloto 2026', 'Variante de Talca'],
+    },
+    direct: {
+      label: 'Beneficiarios directos',
+      title: 'Quienes aprenden y practican LSCh con la app',
+      text: '',
+      tags: ['Estudiantes', 'Familias', 'Funcionarios y funcionarias de atención a público', 'Equipos de salud', 'Público general'],
+    },
+    indirect: {
+      label: 'Beneficiarios indirectos',
+      title: 'La comunidad sorda',
+      text: 'Cada persona que aprende LSCh amplía los espacios donde una persona sorda puede comunicarse sin depender de un intérprete.',
+      tags: ['Salud', 'Trámites', 'Educación', 'Trabajo'],
+    },
+    bridge: 'Cada persona que aprende abre espacios',
+  },
   publications: {
     visible: true,
-    title: 'Publicaciones',
+    title: 'Avances del proyecto',
     intro: 'Congresos, actividades con la comunidad Sorda, pruebas con usuarios y novedades del proyecto.',
+  },
+  funding: {
+    visible: true,
+    title: 'Financiamiento',
+    lead: 'Fuente de financiamiento.',
+    text: 'Este proyecto se obtuvo mediante el concurso «Iniciativas innovadoras piloto 2026», realizado por el Centro de Innovación Social y Políticas Públicas de la Universidad Autónoma de Chile, sede Talca, y financiado por la Agencia Nacional de Investigación y Desarrollo (ANID).',
+    sponsors: [
+      { name: 'Agencia Nacional de Investigación y Desarrollo (ANID)', url: 'https://anid.cl', image_url: '', image_path: null },
+      { name: 'Universidad Autónoma de Chile, sede Talca', url: 'https://www.uautonoma.cl', image_url: '', image_path: null },
+      { name: 'Centro de Innovación Social y Políticas Públicas', url: '', image_url: '', image_path: null },
+    ],
   },
   download: {
     visible: true,
     title: '¡Empieza hoy!',
     text: 'Disponible para Android. Crea tu cuenta y completa tu primer entrenamiento en 5 minutos.',
   },
+  privacy: {
+    badge: 'Privacidad',
+    title: 'Política de protección y privacidad de datos',
+    intro:
+      'SeñaPlay respeta la privacidad de quienes la usan y trata los datos personales conforme a la legislación chilena vigente sobre protección de la vida privada y datos personales.',
+    laws: ['Ley N° 19.628', 'Ley N° 21.719'],
+    items: [
+      { icon: 'database', title: 'Qué datos recogemos', text: 'Solo los necesarios para que la aplicación funcione.', tags: ['Correo de registro', 'Nombre de usuario', 'Contraseña (cifrada)'] },
+      {
+        icon: 'camera',
+        title: 'Uso de la cámara y de la IA',
+        text: 'La app pide la cámara para practicar señas con la IA. No usamos imágenes de las personas para fines distintos de la práctica sin su consentimiento expreso.',
+        tags: [],
+      },
+      {
+        icon: 'target',
+        title: 'Para qué los usamos',
+        text: 'Para ofrecer y mejorar la experiencia de aprendizaje y generar estadísticas anónimas y agregadas del piloto. No vendemos ni cedemos datos personales a terceros con fines comerciales.',
+        tags: [],
+      },
+      {
+        icon: 'userCheck',
+        title: 'Tus derechos',
+        text: 'Puedes retirar tu consentimiento en cualquier momento y solicitar:',
+        tags: ['Acceso', 'Rectificación', 'Supresión', 'Oposición', 'Portabilidad'],
+      },
+    ],
+    body: [
+      '## Responsable',
+      'SeñaPlay es un proyecto piloto desarrollado desde la Universidad Autónoma de Chile, sede Talca. Trata los datos personales conforme a la Ley N° 19.628 sobre protección de la vida privada y a la Ley N° 21.719, que regula la protección y el tratamiento de los datos personales.',
+      '## Qué datos recogemos',
+      'Solo los datos necesarios para el funcionamiento de la aplicación: el correo de registro, el nombre de usuario y la contraseña. La contraseña se guarda cifrada y nadie del equipo puede verla.',
+      '## Uso de la cámara y de la inteligencia artificial',
+      'Dentro de las funciones de la aplicación se solicita el uso de la cámara, con el fin de ofrecer una mejor experiencia en la práctica de señas junto a la IA. No usamos imágenes de las personas para fines distintos de la práctica sin su consentimiento expreso.',
+      '## Para qué usamos los datos',
+      'Para ofrecer y mejorar la experiencia de aprendizaje y para generar estadísticas anónimas y agregadas del proyecto piloto. No vendemos ni cedemos datos personales a terceros con fines comerciales.',
+      '## Tus derechos',
+      'Puedes solicitar acceso, rectificación, supresión, oposición y portabilidad de tus datos, y retirar tu consentimiento en cualquier momento, a través de los canales de contacto de este sitio.',
+    ].join('\n\n'),
+  },
   footer: {
     text: 'Hecho con la comunidad Sorda de Chile',
     email: '',
     location: 'Chile',
-    note: 'Practica, juega y fomenta la Lengua de Señas Chilena.',
-    socials: [],
+    note: 'Proyecto piloto financiado por ANID · Universidad Autónoma de Chile, sede Talca.',
+    socials: [{ network: 'instagram', url: 'https://www.instagram.com/senaplay.oficial', animation: 'pop' }],
     links: [],
   },
 };
 
 /** Límites de los carruseles y listas de la landing (también los usa el panel). */
-export const LANDING_LIMITS = { signDecks: 3, slidesPerDeck: 8, screens: 8, footerLinks: 6, interval: { min: 2, max: 20 } };
+export const LANDING_LIMITS = {
+  signDecks: 3,
+  slidesPerDeck: 8,
+  screens: 8,
+  footerLinks: 6,
+  interval: { min: 2, max: 20 },
+  items: 9,
+  highlightedFeatures: 3,
+  highlights: 4,
+  paragraphs: 4,
+  tags: 8,
+  laws: 6,
+  sponsors: 6,
+};
 
 export const SECTION_KEYS = Object.keys(DEFAULT_SECTIONS) as SectionKey[];
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
 
-function sanitizeItems(value: unknown, fallback: SectionItem[]): SectionItem[] {
-  if (!Array.isArray(value)) return fallback;
-  return value.filter(isRecord).map((item) => ({
+const text = (value: unknown) => (typeof value === 'string' ? value : '');
+const imagePath = (value: unknown) => (typeof value === 'string' && value ? value : null);
+
+function toItem(item: Record<string, unknown>): SectionItem {
+  return {
     icon: SITE_ICON_KEYS.includes(item.icon as SiteIconKey) ? (item.icon as SiteIconKey) : 'sparkles',
-    title: typeof item.title === 'string' ? item.title : '',
-    text: typeof item.text === 'string' ? item.text : '',
+    title: text(item.title),
+    text: text(item.text),
+  };
+}
+
+const records = (value: unknown[], max: number) => value.filter(isRecord).slice(0, max);
+
+/** Lista de textos: descarta lo que no sea texto. */
+function stringList(value: unknown, max: number): string[] {
+  return Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === 'string').slice(0, max) : [];
+}
+
+function sanitizeItems(value: unknown, fallback: SectionItem[]): SectionItem[] {
+  return Array.isArray(value) ? records(value, LANDING_LIMITS.items).map(toItem) : fallback;
+}
+
+/** Tarjetas guardadas antes de existir «destacar» llegan sin el campo: quedan sin destacar. */
+function sanitizeFeatureItems(value: unknown, fallback: FeatureItem[]): FeatureItem[] {
+  if (!Array.isArray(value)) return fallback;
+  return records(value, LANDING_LIMITS.items).map((item) => ({ ...toItem(item), highlight: item.highlight === true }));
+}
+
+function sanitizeTaggedItems(value: unknown, fallback: TaggedItem[]): TaggedItem[] {
+  if (!Array.isArray(value)) return fallback;
+  return records(value, LANDING_LIMITS.items).map((item) => ({ ...toItem(item), tags: stringList(item.tags, LANDING_LIMITS.tags) }));
+}
+
+function sanitizeHighlights(value: unknown, fallback: Highlight[]): Highlight[] {
+  if (!Array.isArray(value)) return fallback;
+  return records(value, LANDING_LIMITS.highlights).map((item) => ({
+    value: text(item.value),
+    label: text(item.label),
+    note: text(item.note),
+    source: text(item.source),
+    total: typeof item.total === 'number' && Number.isFinite(item.total) && item.total > 0 ? item.total : null,
   }));
 }
 
-const text = (value: unknown) => (typeof value === 'string' ? value : '');
-const imagePath = (value: unknown) => (typeof value === 'string' && value ? value : null);
+function sanitizeAudience(value: unknown, fallback: AudienceCard): AudienceCard {
+  if (!isRecord(value)) return fallback;
+  return { label: text(value.label), title: text(value.title), text: text(value.text), tags: stringList(value.tags, LANDING_LIMITS.tags) };
+}
+
+/** Un logo con URL insegura se descarta, pero la institución se conserva (se muestran sus iniciales). */
+function sanitizeSponsors(value: unknown, fallback: Sponsor[]): Sponsor[] {
+  if (!Array.isArray(value)) return fallback;
+  return records(value, LANDING_LIMITS.sponsors).map((item) => {
+    const safe = isSafeImageUrl(item.image_url);
+    return { name: text(item.name), url: text(item.url), image_url: safe ? (item.image_url as string) : '', image_path: safe ? imagePath(item.image_path) : null };
+  });
+}
 
 function sanitizeSlides(value: unknown): SignSlide[] {
   if (!Array.isArray(value)) return [];
@@ -567,9 +755,24 @@ function sanitizeLinks(value: unknown): FooterLink[] {
     .slice(0, LANDING_LIMITS.footerLinks);
 }
 
-/** Campos con estructura propia: se validan uno a uno en vez de solo por tipo. */
-const FIELD_SANITIZERS: Record<string, (value: unknown, fallback: never) => unknown> = {
+type FieldSanitizer = (value: unknown, fallback: never) => unknown;
+
+/**
+ * Campos con estructura propia: se validan uno a uno en vez de solo por tipo.
+ * Primero se busca «sección.campo» (mismo nombre, otra forma) y luego el campo.
+ */
+const FIELD_SANITIZERS: Record<string, FieldSanitizer> = {
   items: sanitizeItems,
+  'features.items': sanitizeFeatureItems,
+  'privacy.items': sanitizeTaggedItems,
+  questions: sanitizeItems,
+  highlights: sanitizeHighlights,
+  paragraphs: (value, fallback: string[]) => (Array.isArray(value) ? stringList(value, LANDING_LIMITS.paragraphs) : fallback),
+  laws: (value, fallback: string[]) => (Array.isArray(value) ? stringList(value, LANDING_LIMITS.laws) : fallback),
+  place: sanitizeAudience,
+  direct: sanitizeAudience,
+  indirect: sanitizeAudience,
+  sponsors: sanitizeSponsors,
   signDecks: sanitizeDecks,
   screens: sanitizeScreens,
   socials: (value) => cleanSocials(value),
@@ -592,7 +795,7 @@ export function mergeSections(rows: { key: string; value: unknown }[]): LandingS
     const section: Record<string, unknown> = { ...defaults };
     if (isRecord(value)) {
       Object.keys(defaults).forEach((field) => {
-        const sanitize = FIELD_SANITIZERS[field];
+        const sanitize = FIELD_SANITIZERS[`${key}.${field}`] ?? FIELD_SANITIZERS[field];
         if (sanitize) section[field] = sanitize(value[field], defaults[field] as never);
         else if (typeof defaults[field] === 'number') section[field] = Number.isFinite(value[field]) ? clampInterval(value[field] as number) : defaults[field];
         else if (typeof value[field] === typeof defaults[field]) section[field] = value[field];

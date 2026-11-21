@@ -25,6 +25,8 @@ const AboutPage = lazy(() => import('@/features/admin/site/AboutPage').then((m) 
 const SectionsPage = lazy(() => import('@/features/admin/site/SectionsPage').then((m) => ({ default: m.SectionsPage })));
 const PublicationsPage = lazy(() => import('@/features/admin/site/PublicationsPage').then((m) => ({ default: m.PublicationsPage })));
 const ProfilePage = lazy(() => import('@/features/admin/account/ProfilePage').then((m) => ({ default: m.ProfilePage })));
+const PrivacyPage = lazy(() => import('@/features/landing/PrivacyPage').then((m) => ({ default: m.PrivacyPage })));
+const SectionPreviewPage = lazy(() => import('@/features/landing/SectionPreviewPage').then((m) => ({ default: m.SectionPreviewPage })));
 const UsersPage = lazy(() => import('@/features/admin/users/UsersPage').then((m) => ({ default: m.UsersPage })));
 
 const fallback = (
@@ -38,7 +40,17 @@ export function AppRoutes() {
     <Suspense fallback={fallback}>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/privacidad" element={<PrivacyPage />} />
         <Route path="/login" element={<LoginPage />} />
+        {/* Vista previa del editor de secciones (se abre en un iframe del panel). */}
+        <Route
+          path="/vista-previa"
+          element={
+            <RequireStaff>
+              <SectionPreviewPage />
+            </RequireStaff>
+          }
+        />
         <Route
           path="/admin"
           element={

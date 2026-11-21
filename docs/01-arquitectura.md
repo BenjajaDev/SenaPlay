@@ -188,3 +188,10 @@ flowchart LR
 ```
 
 Las rutas del panel son `/admin` (resumen), `/admin/levels`, `/admin/levels/:id`, `/admin/dictionary`, `/admin/vocabulary` y `/admin/media`. Las rutas `/admin/config`, `/admin/flags`, `/admin/audit` y `/admin/users` son solo para administradores. El panel se carga bajo demanda: la landing no descarga ese código.
+
+### Landing por secciones
+
+La landing sigue este orden: portada, cifras, **el problema**, **la solución** (antes «Características»), accesibilidad, la app, **territorio y comunidad**, avances (publicaciones), nosotros, **financiamiento**, descarga, **privacidad** y pie de página. Cada sección es un componente de `features/landing/sections/` que recibe solo sus textos, y los textos se guardan en `site_content` con una clave por sección (`problem`, `features`, `territory`, `funding`, `privacy`…). Agregar una sección no requiere migración: basta con su tipo en `data/types.ts`, su valor por defecto y su sanitizador en `data/repositories.ts` (`mergeSections`) y su ficha en `SPECS` de `SectionsPage.tsx`.
+
+- `/privacidad` muestra la política completa (campo `privacy.body`). Es la URL que se declara en Google Play, por eso la sección de privacidad no se puede ocultar.
+- **Vista previa del editor.** `Sitio web → Secciones` monta un iframe de `/vista-previa` (solo para el equipo) y le envía el borrador con `postMessage` (`lib/sectionPreview.ts`). La página de vista previa solo acepta mensajes del mismo origen y de su ventana padre, y pasa el contenido por `mergeSections` antes de dibujarlo con el mismo `SectionView` que usa la landing. Al ser una página aparte, el ancho del iframe (escritorio 1280 px o celular 390 px) activa los mismos cortes responsivos que la landing real.

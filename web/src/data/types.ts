@@ -171,9 +171,32 @@ export type SiteIconKey =
   | 'star'
   | 'smartphone'
   | 'megaphone'
-  | 'graduation';
+  | 'graduation'
+  | 'landmark'
+  | 'scale'
+  | 'mapPin'
+  | 'shield'
+  | 'database'
+  | 'target'
+  | 'userCheck';
 
 export type SectionItem = { icon: SiteIconKey; title: string; text: string };
+
+/** Tarjeta de «La solución»: las destacadas van grandes; el resto, como chips. */
+export type FeatureItem = SectionItem & { highlight: boolean };
+
+/** Tarjeta con etiquetas cortas debajo del texto (privacidad). */
+export type TaggedItem = SectionItem & { tags: string[] };
+
+/**
+ * Cifra destacada de «El problema». `value` es el texto tal cual se muestra
+ * («488.511», «24/7»); con `total` (población de referencia) la landing
+ * calcula «≈ 1 de cada N».
+ */
+export type Highlight = { value: string; label: string; note: string; source: string; total: number | null };
+
+/** Tarjeta de territorio o de beneficiarios: etiqueta, título, texto y grupos. */
+export type AudienceCard = { label: string; title: string; text: string; tags: string[] };
 
 /**
  * Imagen de un carrusel de la landing. `image_path` es la ruta en el bucket
@@ -190,6 +213,9 @@ export type PhoneScreen = SlideImage & { caption: string };
 
 export type FooterLink = { label: string; url: string };
 
+/** Institución que financia o patrocina. `image_url` vacío = sin logo (se muestran sus iniciales). */
+export type Sponsor = SlideImage & { name: string; url: string };
+
 export type LandingSections = {
   hero: {
     badge: string;
@@ -203,11 +229,25 @@ export type LandingSections = {
     signDecks: SignSlide[][];
   };
   metrics: { visible: boolean; title: string };
-  features: { visible: boolean; title: string; items: SectionItem[] };
+  problem: {
+    visible: boolean;
+    badge: string;
+    title: string;
+    paragraphs: string[];
+    citation: string;
+    /** La primera va grande; las demás, como tarjetas pequeñas junto al texto. */
+    highlights: Highlight[];
+    questions: SectionItem[];
+  };
+  features: { visible: boolean; badge: string; title: string; intro: string; items: FeatureItem[] };
   accessibility: { visible: boolean; title: string; items: SectionItem[] };
   showcase: { visible: boolean; title: string; text: string; interval: number; screens: PhoneScreen[] };
+  territory: { visible: boolean; badge: string; title: string; place: AudienceCard; direct: AudienceCard; indirect: AudienceCard; bridge: string };
   publications: { visible: boolean; title: string; intro: string };
+  funding: { visible: boolean; title: string; lead: string; text: string; sponsors: Sponsor[] };
   download: { visible: boolean; title: string; text: string };
+  /** Siempre visible: Google Play exige una política de privacidad pública. `body` es la versión completa de /privacidad. */
+  privacy: { badge: string; title: string; intro: string; laws: string[]; items: TaggedItem[]; body: string };
   footer: { text: string; email: string; location: string; note: string; socials: SocialLink[]; links: FooterLink[] };
 };
 

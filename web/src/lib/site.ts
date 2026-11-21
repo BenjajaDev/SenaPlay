@@ -6,20 +6,27 @@ import {
   Film,
   Gamepad2,
   GraduationCap,
+  Database,
   Hand,
   HeartHandshake,
+  Landmark,
   Layers,
+  MapPin,
   Megaphone,
+  Scale,
+  ShieldCheck,
   Smartphone,
   Sparkles,
   Star,
+  Target,
   Type,
+  UserCheck,
   Users,
   Vibrate,
   Video,
   type LucideIcon,
 } from 'lucide-react';
-import type { PublicationCategory, PublicStats, SiteIconKey } from '@/data/types';
+import type { FeatureItem, PublicationCategory, PublicStats, SiteIconKey } from '@/data/types';
 import type { Tone } from '@/ui';
 
 /**
@@ -59,7 +66,71 @@ export const SITE_ICONS: Record<SiteIconKey, { icon: LucideIcon; label: string }
   smartphone: { icon: Smartphone, label: 'Teléfono' },
   megaphone: { icon: Megaphone, label: 'Anuncio' },
   graduation: { icon: GraduationCap, label: 'Educación' },
+  landmark: { icon: Landmark, label: 'Institución' },
+  scale: { icon: Scale, label: 'Derechos' },
+  mapPin: { icon: MapPin, label: 'Lugar' },
+  shield: { icon: ShieldCheck, label: 'Protección' },
+  database: { icon: Database, label: 'Datos' },
+  target: { icon: Target, label: 'Objetivo' },
+  userCheck: { icon: UserCheck, label: 'Persona con derechos' },
 };
+
+/** Más allá de este N, «1 de cada N» deja de dibujarse como fila de puntos (solo texto). */
+export const RATIO_DOTS_MAX = 60;
+
+/**
+ * «≈ 1 de cada N»: cuántas personas de `total` hay por cada una de la cifra.
+ * La cifra debe ser un entero escrito a la chilena («488.511» o «488511»);
+ * algo como «24/7» no es una cantidad y devuelve null. También devuelve null
+ * si no aporta (N < 2).
+ */
+export function oneInEvery(value: string, total: number | null): number | null {
+  const trimmed = value.trim();
+  if (!/^(\d{1,3}(\.\d{3})+|\d+)$/.test(trimmed)) return null;
+  const count = Number(trimmed.replace(/\./g, ''));
+  if (!total || !count || count >= total) return null;
+  const ratio = Math.round(total / count);
+  return ratio >= 2 ? ratio : null;
+}
+
+/**
+ * Reparte las tarjetas de «La solución» entre destacadas y chips. Si ninguna
+ * está marcada (contenido guardado antes de existir la opción), se destacan
+ * las primeras para que la sección no quede solo con chips.
+ */
+export function splitFeatures(items: FeatureItem[], max: number): { featured: FeatureItem[]; extras: FeatureItem[] } {
+  const marked = items.filter((item) => item.highlight).slice(0, max);
+  const featured = marked.length ? marked : items.slice(0, max);
+  return { featured, extras: items.filter((item) => !featured.includes(item)) };
+}
+
+export type PolicyBlock = { kind: 'heading' | 'paragraph'; text: string };
+
+/**
+ * Texto largo de la política (/privacidad) en bloques: se separan por una
+ * línea en blanco y los que empiezan con «## » son subtítulos. Se renderiza
+ * como texto de React, nunca como HTML.
+ */
+export function policyBlocks(body: string): PolicyBlock[] {
+  return body
+    .split(/\n\s*\n/)
+    .map((block) => block.trim())
+    .filter(Boolean)
+    .map((block) => (block.startsWith('## ') ? { kind: 'heading', text: block.slice(3).trim() } : { kind: 'paragraph', text: block }));
+}
+
+/** Iniciales para el lugar del logo cuando una institución no tiene imagen. */
+export function initialsOf(name: string, max = 3): string {
+  const acronym = name.match(/\(([^)]+)\)/)?.[1];
+  if (acronym) return acronym.slice(0, 5).toUpperCase();
+  return name
+    .split(/\s+/)
+    .filter((word) => word.length > 2 && word[0] === word[0].toUpperCase())
+    .slice(0, max)
+    .map((word) => word[0])
+    .join('')
+    .toUpperCase();
+}
 
 export const PUBLICATION_CATEGORIES: Record<PublicationCategory, { label: string; plural: string; tone: Tone }> = {
   congreso: { label: 'Congreso', plural: 'Congresos', tone: 'brand' },

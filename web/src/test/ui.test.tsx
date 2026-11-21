@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, test, vi } from 'vitest';
@@ -6,6 +6,7 @@ import { AppRoutes } from '@/App';
 import { AuthProvider } from '@/auth/AuthProvider';
 import { RepositoriesProvider } from '@/data/RepositoriesProvider';
 import { DEFAULT_SECTIONS } from '@/data/repositories';
+import { previewUpdate } from '@/lib/sectionPreview';
 import { FeedbackProvider } from '@/ui';
 import { fakeRepositories } from './fakes';
 
@@ -69,7 +70,7 @@ describe('portal web', () => {
     renderAt('/');
     expect(await screen.findByRole('heading', { name: 'Congreso de Lengua de Señas' })).toBeInTheDocument();
     expect(screen.queryByText('Prueba con estudiantes')).not.toBeInTheDocument();
-    expect(within(screen.getByRole('navigation', { name: 'Principal' })).getByRole('link', { name: 'Publicaciones' })).toHaveAttribute('href', '#publicaciones');
+    expect(within(screen.getByRole('navigation', { name: 'Principal' })).getByRole('link', { name: 'Avances' })).toHaveAttribute('href', '#publicaciones');
     await user.click(screen.getByRole('button', { name: 'Leer más sobre Congreso de Lengua de Señas' }));
     const dialog = await screen.findByRole('dialog', { name: 'Congreso de Lengua de Señas' });
     expect(within(dialog).getByText('Compartimos la app y recibimos comentarios.')).toBeInTheDocument();
@@ -86,7 +87,7 @@ describe('portal web', () => {
     renderAt('/', repos);
     expect(await screen.findByRole('heading', { level: 1, name: 'Practica señas cada día' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: DEFAULT_SECTIONS.features.title })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Características' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Solución' })).not.toBeInTheDocument();
   });
 
   test('editar una sección de la landing pide confirmación y guarda solo esa sección', async () => {
@@ -101,10 +102,10 @@ describe('portal web', () => {
     await waitFor(() => expect(repos.site.saveSection).toHaveBeenCalledWith('hero', expect.objectContaining({ title: 'Practica LSCh jugando' })));
   });
 
-  test('una tarjeta de características sin texto no se puede publicar', async () => {
+  test('una tarjeta de la solución sin texto no se puede publicar', async () => {
     const user = userEvent.setup();
     const repos = renderAt('/admin/site/sections');
-    await user.click(await screen.findByRole('tab', { name: 'Características' }));
+    await user.click(await screen.findByRole('tab', { name: 'La solución' }));
     await user.click(screen.getByRole('button', { name: 'Agregar elemento' }));
     await user.click(screen.getByRole('button', { name: 'Guardar y publicar' }));
     expect((await screen.findAllByText('Campo obligatorio.')).length).toBeGreaterThan(0);
@@ -355,5 +356,118 @@ describe('portal web', () => {
     await user.click(screen.getByRole('button', { name: 'Guardar y publicar' }));
     expect(await screen.findByText(/Usa https/)).toBeInTheDocument();
     expect(repos.site.saveSection).not.toHaveBeenCalled();
+  });
+
+  test('la landing cuenta el problema con cifras y preguntas, y enlaza la política completa', async () => {
+    renderAt('/');
+    const problem = await screen.findByRole('region', { name: 'Una brecha comunicacional que vulnera derechos' });
+    expect(within(problem).getByText('488.511')).toBeInTheDocument();
+    expect(within(problem).getByText('≈ 1 de cada 37 habitantes')).toBeInTheDocument();
+    expect(within(problem).getByText('Fuente: Engloba, 2026')).toBeInTheDocument();
+    expect(within(problem).getByText('24/7')).toBeInTheDocument();
+    ['¿A quién afecta?', '¿Dónde ocurre?', '¿Por qué importa?'].forEach((name) => expect(within(problem).getByRole('heading', { name })).toBeInTheDocument());
+
+    const nav = screen.getByRole('navigation', { name: 'Principal' });
+    expect(within(nav).getAllByRole('link').map((link) => link.textContent)).toEqual([
+      'Problema',
+      'Solución',
+      'Territorio y comunidad',
+      'Avances',
+      'Nosotros',
+      'Financiamiento',
+      'Privacidad',
+    ]);
+
+    const solution = screen.getByRole('region', { name: 'Practica LSCh como un juego' });
+    expect(within(solution).getByRole('heading', { name: 'Práctica con inteligencia artificial' })).toBeInTheDocument();
+    expect(within(solution).queryByRole('heading', { name: 'Juegos' })).not.toBeInTheDocument();
+    expect(within(solution).getByText('Juegos')).toBeInTheDocument();
+
+    const funding = screen.getByRole('region', { name: 'Financiamiento' });
+    expect(within(funding).getByRole('link', { name: /Agencia Nacional de Investigación y Desarrollo/ })).toHaveAttribute('href', 'https://anid.cl/');
+
+    const privacy = screen.getByRole('region', { name: 'Política de protección y privacidad de datos' });
+    expect(within(privacy).getByText('Ley N° 21.719')).toBeInTheDocument();
+    expect(within(privacy).getByRole('link', { name: /Leer la política completa/ })).toHaveAttribute('href', '/privacidad');
+  });
+
+  test('la política de privacidad completa tiene su propia página', async () => {
+    renderAt('/privacidad');
+    expect(await screen.findByRole('heading', { level: 1, name: 'Política de protección y privacidad de datos' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Tus derechos' })).toBeInTheDocument();
+    expect(screen.getByText(/se guarda cifrada/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Volver al inicio/ })).toHaveAttribute('href', '/');
+  });
+
+  test('el panel edita las cifras del problema, valida «1 de cada N» y publica solo esa sección', async () => {
+    const user = userEvent.setup();
+    const repos = renderAt('/admin/site/sections');
+    await user.click(await screen.findByRole('tab', { name: 'El problema' }));
+    expect(screen.getByTitle('Vista previa: El problema')).toHaveAttribute('src', '/vista-previa');
+
+    const [mainValue, secondValue] = screen.getAllByLabelText('Cifra *');
+    await user.clear(mainValue);
+    await user.type(mainValue, '500.000');
+    expect(screen.getByText('Se mostrará «≈ 1 de cada 36 habitantes».')).toBeInTheDocument();
+
+    // «24/7» no es una cantidad: con un total no se puede calcular.
+    await user.type(screen.getAllByLabelText('Total de referencia')[1], '100');
+    expect(secondValue).toHaveValue('24/7');
+    await user.click(screen.getByRole('button', { name: 'Guardar y publicar' }));
+    expect(await screen.findByText(/la cifra debe ser un número menor que el total/)).toBeInTheDocument();
+    expect(repos.site.saveSection).not.toHaveBeenCalled();
+
+    await user.clear(screen.getAllByLabelText('Total de referencia')[1]);
+    await user.click(screen.getByRole('button', { name: 'Guardar y publicar' }));
+    await user.click(await screen.findByRole('button', { name: 'Publicar' }));
+    await waitFor(() => expect(repos.site.saveSection).toHaveBeenCalled());
+    const [key, problem] = vi.mocked(repos.site.saveSection).mock.calls[0] as [string, typeof DEFAULT_SECTIONS.problem];
+    expect(key).toBe('problem');
+    expect(problem.highlights[0]).toMatchObject({ value: '500.000', total: 17910000 });
+    expect(problem.highlights[1].total).toBeNull();
+  });
+
+  test('la solución destaca como máximo tres tarjetas', async () => {
+    const user = userEvent.setup();
+    renderAt('/admin/site/sections');
+    await user.click(await screen.findByRole('tab', { name: 'La solución' }));
+    const switches = screen.getAllByRole('switch', { name: /Destacar en grande/ });
+    expect(switches.filter((input) => (input as HTMLInputElement).checked)).toHaveLength(3);
+    expect(switches[3]).toBeDisabled();
+    await user.click(switches[0]);
+    expect(switches[3]).toBeEnabled();
+  });
+
+  test('la vista previa muestra el borrador que envía el panel e ignora mensajes de otros orígenes', async () => {
+    const parent = { postMessage: vi.fn() };
+    const original = Object.getOwnPropertyDescriptor(window, 'parent');
+    Object.defineProperty(window, 'parent', { configurable: true, value: parent });
+    try {
+      renderAt('/vista-previa');
+      await waitFor(() => expect(parent.postMessage).toHaveBeenCalledWith({ type: 'senaplay:preview:ready' }, window.location.origin));
+      const send = (origin: string, source: unknown, title: string) => {
+        const event = new MessageEvent('message', {
+          origin,
+          data: previewUpdate('problem', { ...DEFAULT_SECTIONS.problem, title, visible: false }, 'dark'),
+        });
+        Object.defineProperty(event, 'source', { value: source });
+        act(() => {
+          window.dispatchEvent(event);
+        });
+      };
+
+      send('https://otro-sitio.cl', parent, 'Texto ajeno');
+      send(window.location.origin, {}, 'Otra ventana');
+      expect(screen.queryByRole('heading', { name: 'Texto ajeno' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('heading', { name: 'Otra ventana' })).not.toBeInTheDocument();
+
+      send(window.location.origin, parent, 'Borrador sin publicar');
+      expect(await screen.findByRole('heading', { name: 'Borrador sin publicar' })).toBeInTheDocument();
+      expect(screen.getByRole('status')).toHaveTextContent('Esta sección está oculta');
+      expect(document.documentElement.dataset.theme).toBe('dark');
+    } finally {
+      if (original) Object.defineProperty(window, 'parent', original);
+      delete document.documentElement.dataset.theme;
+    }
   });
 });

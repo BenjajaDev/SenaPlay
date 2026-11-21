@@ -1,23 +1,52 @@
-import { ArrowDown, ArrowUp, ExternalLink, HeartHandshake, Plus, RotateCcw, Save, Trash2 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Eye, EyeOff, ExternalLink, HeartHandshake, RotateCcw, Save } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useRepositories } from '@/data/RepositoriesProvider';
 import { DEFAULT_SECTIONS, LANDING_LIMITS, SECTION_KEYS, sectionImagePaths } from '@/data/repositories';
-import type { FooterLink, LandingSections, PhoneScreen, SectionItem, SectionKey, SignSlide, SiteIconKey, SocialLink } from '@/data/types';
-import { SITE_ICONS } from '@/lib/site';
+import type { AudienceCard, FooterLink, Highlight, LandingSections, PhoneScreen, SectionItem, SectionKey, SignSlide, SocialLink, Sponsor } from '@/data/types';
+import { oneInEvery } from '@/lib/site';
 import { safeLinkHref, socialError, socialHref } from '@/lib/social';
 import { useResource } from '@/lib/useResource';
-import { Badge, Button, Card, PageHeader, SelectField, SkeletonRows, Switch, TextArea, TextField, useFeedback } from '@/ui';
+import { Badge, Button, Card, PageHeader, SkeletonRows, Switch, TextArea, TextField, useFeedback } from '@/ui';
+import { AudienceEditor, HighlightsEditor, ItemsEditor, SponsorsEditor, StringListEditor, type EditableItem, type Errors } from './ContentEditors';
 import { LinksEditor, ScreensEditor, SignDecksEditor } from './LandingMediaEditors';
+import { SectionPreview } from './SectionPreview';
 import { SocialsEditor } from './SocialsEditor';
 
-const MAX_ITEMS = 9;
+type FieldKind =
+  | 'text'
+  | 'textarea'
+  | 'switch'
+  | 'items'
+  | 'number'
+  | 'signDecks'
+  | 'screens'
+  | 'socials'
+  | 'links'
+  | 'stringList'
+  | 'highlights'
+  | 'audience'
+  | 'sponsors';
 
-type FieldKind = 'text' | 'textarea' | 'switch' | 'items' | 'number' | 'signDecks' | 'screens' | 'socials' | 'links';
-type FieldSpec = { field: string; label: string; kind: FieldKind; hint?: string; required?: boolean; rows?: number };
+type FieldSpec = {
+  field: string;
+  label: string;
+  kind: FieldKind;
+  hint?: string;
+  required?: boolean;
+  rows?: number;
+  /** items: tarjetas que se pueden destacar (`feature`) o con etiquetas (`tagged`). */
+  variant?: 'feature' | 'tagged';
+  /** stringList: nombre de cada elemento, si es texto largo y cuántos caben. */
+  itemLabel?: string;
+  multiline?: boolean;
+  max?: number;
+};
+
+type SectionSpec = { label: string; description: string; fields: FieldSpec[]; publicPath?: string };
 
 /** Qué se puede editar de cada sección (en el orden en que aparecen en la landing). */
-const SPECS: Record<SectionKey, { label: string; description: string; fields: FieldSpec[] }> = {
+const SPECS: Record<SectionKey, SectionSpec> = {
   hero: {
     label: 'Portada',
     description: 'Lo primero que se ve: etiqueta, título, texto y botones.',
@@ -39,13 +68,28 @@ const SPECS: Record<SectionKey, { label: string; description: string; fields: Fi
       { field: 'title', label: 'Nombre de la sección', kind: 'text', required: true, hint: 'No se ve en pantalla: lo anuncia el lector de pantalla.' },
     ],
   },
-  features: {
-    label: 'Características',
-    description: 'Tarjetas con lo que ofrece SeñaPlay.',
+  problem: {
+    label: 'El problema',
+    description: 'Por qué existe SeñaPlay: contexto, cifras destacadas y preguntas clave.',
     fields: [
       { field: 'visible', label: 'Mostrar la sección', kind: 'switch' },
+      { field: 'badge', label: 'Etiqueta', kind: 'text', hint: 'Texto corto sobre el título. Vacío = sin etiqueta.' },
       { field: 'title', label: 'Título', kind: 'text', required: true },
-      { field: 'items', label: 'Tarjetas', kind: 'items' },
+      { field: 'paragraphs', label: 'Texto', kind: 'stringList', itemLabel: 'Párrafo', multiline: true, max: LANDING_LIMITS.paragraphs, required: true },
+      { field: 'citation', label: 'Referencia', kind: 'text', hint: 'Opcional. Se muestra en letra pequeña bajo el texto. Ej: Minte et al. (2025).' },
+      { field: 'highlights', label: 'Cifras destacadas', kind: 'highlights' },
+      { field: 'questions', label: 'Tarjetas de preguntas', kind: 'items' },
+    ],
+  },
+  features: {
+    label: 'La solución',
+    description: 'Qué ofrece SeñaPlay. Las tarjetas destacadas van grandes y el resto como etiquetas.',
+    fields: [
+      { field: 'visible', label: 'Mostrar la sección', kind: 'switch' },
+      { field: 'badge', label: 'Etiqueta', kind: 'text', hint: 'Texto corto sobre el título. Vacío = sin etiqueta.' },
+      { field: 'title', label: 'Título', kind: 'text', required: true },
+      { field: 'intro', label: 'Introducción', kind: 'textarea', rows: 3, hint: 'Opcional.' },
+      { field: 'items', label: 'Tarjetas', kind: 'items', variant: 'feature' },
     ],
   },
   accessibility: {
@@ -68,13 +112,37 @@ const SPECS: Record<SectionKey, { label: string; description: string; fields: Fi
       { field: 'screens', label: 'Capturas', kind: 'screens' },
     ],
   },
+  territory: {
+    label: 'Territorio',
+    description: 'Dónde se sitúa el proyecto y a quién beneficia, directa e indirectamente.',
+    fields: [
+      { field: 'visible', label: 'Mostrar la sección', kind: 'switch' },
+      { field: 'badge', label: 'Etiqueta', kind: 'text', hint: 'Texto corto sobre el título. Vacío = sin etiqueta.' },
+      { field: 'title', label: 'Título', kind: 'text', required: true },
+      { field: 'place', label: 'Territorio', kind: 'audience' },
+      { field: 'direct', label: 'Beneficiarios directos', kind: 'audience' },
+      { field: 'bridge', label: 'Texto de la flecha', kind: 'text', hint: 'Une ambas tarjetas. Opcional.' },
+      { field: 'indirect', label: 'Beneficiarios indirectos', kind: 'audience' },
+    ],
+  },
   publications: {
-    label: 'Publicaciones',
-    description: 'Título e introducción. Las publicaciones se gestionan en Sitio web → Publicaciones.',
+    label: 'Avances',
+    description: 'Título e introducción de las publicaciones (en el menú se llama «Avances»). Las publicaciones se gestionan en Sitio web → Publicaciones.',
     fields: [
       { field: 'visible', label: 'Mostrar la sección (si hay publicaciones visibles)', kind: 'switch' },
       { field: 'title', label: 'Título', kind: 'text', required: true },
       { field: 'intro', label: 'Introducción', kind: 'textarea', rows: 2, hint: 'Opcional.' },
+    ],
+  },
+  funding: {
+    label: 'Financiamiento',
+    description: 'Fuente de los fondos del proyecto e instituciones que lo respaldan.',
+    fields: [
+      { field: 'visible', label: 'Mostrar la sección', kind: 'switch' },
+      { field: 'title', label: 'Título', kind: 'text', required: true },
+      { field: 'lead', label: 'Inicio en negrita', kind: 'text', hint: 'Opcional. Ej: Fuente de financiamiento.' },
+      { field: 'text', label: 'Texto', kind: 'textarea', required: true, rows: 4 },
+      { field: 'sponsors', label: 'Instituciones', kind: 'sponsors' },
     ],
   },
   download: {
@@ -86,123 +154,237 @@ const SPECS: Record<SectionKey, { label: string; description: string; fields: Fi
       { field: 'text', label: 'Texto', kind: 'textarea', required: true, rows: 2 },
     ],
   },
+  privacy: {
+    label: 'Privacidad',
+    description: 'Resumen en la landing y política completa en /privacidad. Siempre visible: Google Play exige una política pública.',
+    publicPath: '/privacidad',
+    fields: [
+      { field: 'badge', label: 'Etiqueta', kind: 'text', hint: 'Texto corto sobre el título. Vacío = sin etiqueta.' },
+      { field: 'title', label: 'Título', kind: 'text', required: true },
+      { field: 'intro', label: 'Introducción', kind: 'textarea', required: true, rows: 3 },
+      { field: 'laws', label: 'Leyes', kind: 'stringList', itemLabel: 'Ley', max: LANDING_LIMITS.laws },
+      { field: 'items', label: 'Tarjetas del resumen', kind: 'items', variant: 'tagged' },
+      {
+        field: 'body',
+        label: 'Texto completo (/privacidad)',
+        kind: 'textarea',
+        required: true,
+        rows: 14,
+        hint: 'Separa los párrafos con una línea en blanco. Empieza un párrafo con «## » para que sea un subtítulo.',
+      },
+    ],
+  },
   footer: {
     label: 'Pie de página',
     description: 'Marca, redes, enlaces y contacto al final de la landing. Las columnas vacías no se muestran.',
     fields: [
       { field: 'text', label: 'Frase de la marca', kind: 'text', required: true, hint: 'Aparece bajo el logo.' },
-      { field: 'note', label: 'Texto junto al ©', kind: 'text', hint: 'Opcional.' },
+      { field: 'note', label: 'Texto junto al ©', kind: 'text', hint: 'Opcional. Ej: la línea de financiamiento.' },
       { field: 'email', label: 'Correo de contacto', kind: 'text', hint: 'Opcional.' },
-      { field: 'location', label: 'Ubicación', kind: 'text', hint: 'Opcional. Ej: Santiago, Chile.' },
+      { field: 'location', label: 'Ubicación', kind: 'text', hint: 'Opcional. Ej: Talca, Chile.' },
       { field: 'socials', label: 'Redes de SeñaPlay', kind: 'socials' },
       { field: 'links', label: 'Enlaces propios', kind: 'links', hint: 'Columna «Enlaces»: sitio de la universidad, políticas, etc.' },
     ],
   },
 };
 
-const ICON_OPTIONS = (Object.keys(SITE_ICONS) as SiteIconKey[]).map((value) => ({ value, label: SITE_ICONS[value].label }));
+const REQUIRED = 'Campo obligatorio.';
 
-type Errors = Record<string, string>;
-
-/** Recorta espacios de todos los textos antes de guardar. */
+/** Recorta espacios de todos los textos y quita los vacíos de las listas de texto (etiquetas). */
 function clean<T>(value: T): T {
   if (typeof value === 'string') return value.trim() as T;
-  if (Array.isArray(value)) return value.map(clean) as T;
+  if (Array.isArray(value)) return value.map(clean).filter((entry) => entry !== '') as T;
   if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([key, inner]) => [key, clean(inner)])) as T;
   return value;
 }
 
+const blank = (value: unknown) => !String(value ?? '').trim();
+
+function validateItems(field: string, items: SectionItem[], mustHaveOne: boolean, errors: Errors) {
+  if (mustHaveOne && !items.length) errors[field] = 'Agrega al menos un elemento o desactiva la sección.';
+  items.forEach((item, index) => {
+    if (blank(item.title)) errors[`${field}.${index}.title`] = REQUIRED;
+    if (blank(item.text)) errors[`${field}.${index}.text`] = REQUIRED;
+  });
+}
+
+function validateHighlights(highlights: Highlight[], errors: Errors) {
+  highlights.forEach((item, index) => {
+    if (blank(item.value)) errors[`highlights.${index}.value`] = REQUIRED;
+    if (blank(item.label)) errors[`highlights.${index}.label`] = REQUIRED;
+    if (item.total === null) return;
+    if (!Number.isInteger(item.total) || item.total <= 0) errors[`highlights.${index}.total`] = 'Usa un número entero positivo o déjalo vacío.';
+    else if (!oneInEvery(item.value, item.total)) errors[`highlights.${index}.total`] = 'Para calcular «1 de cada N», la cifra debe ser un número menor que el total.';
+  });
+}
+
 function validate(key: SectionKey, section: Record<string, unknown>): Errors {
   const errors: Errors = {};
+  // Las secciones sin interruptor (privacidad, portada…) siempre se muestran.
+  const shown = section.visible !== false;
   SPECS[key].fields.forEach(({ field, kind, required }) => {
+    const value = section[field];
     if (kind === 'items') {
-      const items = section.items as SectionItem[];
-      if (section.visible && !items.length) errors.items = 'Agrega al menos un elemento o desactiva la sección.';
-      items.forEach((item, index) => {
-        if (!item.title.trim()) errors[`items.${index}.title`] = 'Campo obligatorio.';
-        if (!item.text.trim()) errors[`items.${index}.text`] = 'Campo obligatorio.';
+      validateItems(field, value as SectionItem[], shown, errors);
+    } else if (kind === 'stringList') {
+      const values = value as string[];
+      if (required && shown && !values.length) errors[field] = 'Agrega al menos uno o desactiva la sección.';
+      values.forEach((entry, index) => {
+        if (blank(entry)) errors[`${field}.${index}`] = REQUIRED;
+      });
+    } else if (kind === 'highlights') {
+      validateHighlights(value as Highlight[], errors);
+    } else if (kind === 'audience') {
+      if (blank((value as AudienceCard).title)) errors[`${field}.title`] = REQUIRED;
+    } else if (kind === 'sponsors') {
+      (value as Sponsor[]).forEach((sponsor, index) => {
+        if (blank(sponsor.name)) errors[`sponsors.${index}.name`] = REQUIRED;
+        if (!blank(sponsor.url) && !safeLinkHref(sponsor.url)) errors[`sponsors.${index}.url`] = 'Usa una dirección https://…';
       });
     } else if (kind === 'number') {
-      const value = Number(section[field]);
+      const number = Number(value);
       const { min, max } = LANDING_LIMITS.interval;
-      if (!Number.isInteger(value) || value < min || value > max) errors[field] = `Usa un número entero entre ${min} y ${max}.`;
+      if (!Number.isInteger(number) || number < min || number > max) errors[field] = `Usa un número entero entre ${min} y ${max}.`;
     } else if (kind === 'signDecks') {
-      (section[field] as SignSlide[][]).forEach((deck, deckIndex) =>
+      (value as SignSlide[][]).forEach((deck, deckIndex) =>
         deck.forEach((slide, slideIndex) => {
-          if (!slide.label.trim()) errors[`signDecks.${deckIndex}.${slideIndex}`] = 'Escribe la letra o palabra.';
+          if (blank(slide.label)) errors[`signDecks.${deckIndex}.${slideIndex}`] = 'Escribe la letra o palabra.';
         }),
       );
     } else if (kind === 'socials') {
-      (section[field] as SocialLink[]).forEach((link, index) => {
+      (value as SocialLink[]).forEach((link, index) => {
         const problem = socialError(link);
         if (problem) errors[`social-${index}`] = problem;
       });
     } else if (kind === 'links') {
-      (section[field] as FooterLink[]).forEach((link, index) => {
-        if (!link.label.trim()) errors[`links.${index}.label`] = 'Campo obligatorio.';
+      (value as FooterLink[]).forEach((link, index) => {
+        if (blank(link.label)) errors[`links.${index}.label`] = REQUIRED;
         if (!safeLinkHref(link.url)) errors[`links.${index}.url`] = 'Usa https://…, mailto:… o #seccion.';
       });
-    } else if (required && !String(section[field] ?? '').trim()) {
-      errors[field] = 'Campo obligatorio.';
+    } else if (required && blank(value)) {
+      errors[field] = REQUIRED;
     }
   });
-  if (key === 'footer' && String(section.email ?? '').trim() && !socialHref({ network: 'email', url: String(section.email) })) {
+  if (key === 'footer' && !blank(section.email) && !socialHref({ network: 'email', url: String(section.email) })) {
     errors.email = 'Escribe un correo válido.';
   }
   return errors;
 }
 
-function ItemsEditor({ items, errors, onChange }: { items: SectionItem[]; errors: Errors; onChange: (items: SectionItem[]) => void }) {
-  const update = (index: number, patch: Partial<SectionItem>) => onChange(items.map((item, i) => (i === index ? { ...item, ...patch } : item)));
-  const move = (index: number, delta: number) => {
-    const next = [...items];
-    [next[index], next[index + delta]] = [next[index + delta], next[index]];
-    onChange(next);
-  };
-
+/** Bloque con título para los editores de listas. */
+function FieldGroup({ label, hint, children }: Readonly<{ label: string; hint?: string; children: ReactNode }>) {
   return (
     <div className="stack-sm">
-      {items.map((item, index) => {
-        const Icon = SITE_ICONS[item.icon].icon;
-        const name = item.title.trim() || `Elemento ${index + 1}`;
-        return (
-          <Card key={index} className="item-editor stack-sm">
-            <div className="row-between">
-              <strong className="row" style={{ gap: 8 }}>
-                <Icon size={18} aria-hidden color="var(--color-primary)" /> {index + 1}. {name}
-              </strong>
-              <div className="row" style={{ gap: 2 }}>
-                <Button variant="ghost" size="sm" icon={ArrowUp} aria-label={`Subir ${name}`} disabled={index === 0} onClick={() => move(index, -1)} />
-                <Button variant="ghost" size="sm" icon={ArrowDown} aria-label={`Bajar ${name}`} disabled={index === items.length - 1} onClick={() => move(index, 1)} />
-                <Button variant="ghost" size="sm" icon={Trash2} aria-label={`Quitar ${name}`} onClick={() => onChange(items.filter((_, i) => i !== index))} />
-              </div>
-            </div>
-            <div className="grid-2">
-              <TextField label="Título *" value={item.title} error={errors[`items.${index}.title`]} onChange={(e) => update(index, { title: e.target.value })} />
-              <SelectField label="Ícono" options={ICON_OPTIONS} value={item.icon} onChange={(e) => update(index, { icon: e.target.value as SiteIconKey })} />
-            </div>
-            <TextArea label="Texto *" rows={2} value={item.text} error={errors[`items.${index}.text`]} onChange={(e) => update(index, { text: e.target.value })} />
-          </Card>
-        );
-      })}
-      {errors.items ? (
-        <span className="text-danger text-small" role="alert">
-          {errors.items}
-        </span>
-      ) : null}
-      <div>
-        <Button
-          variant="secondary"
-          size="sm"
-          icon={Plus}
-          disabled={items.length >= MAX_ITEMS}
-          onClick={() => onChange([...items, { icon: 'sparkles', title: '', text: '' }])}
-        >
-          {items.length >= MAX_ITEMS ? `Máximo ${MAX_ITEMS} elementos` : 'Agregar elemento'}
-        </Button>
+      <div className="stack-sm" style={{ gap: 0 }}>
+        <h3 style={{ fontSize: 16 }}>{label}</h3>
+        {hint ? <span className="text-small text-secondary">{hint}</span> : null}
       </div>
+      {children}
     </div>
   );
+}
+
+/** Un campo del formulario según su tipo. */
+function FieldEditor({
+  spec,
+  draft,
+  errors,
+  set,
+}: Readonly<{ spec: FieldSpec; draft: Record<string, unknown>; errors: Errors; set: (field: string, value: unknown) => void }>) {
+  const { field, label, kind, hint, required, rows } = spec;
+  const value = draft[field];
+  const fullLabel = required ? `${label} *` : label;
+  switch (kind) {
+    case 'switch':
+      return <Switch label={label} checked={Boolean(value)} onChange={(next) => set(field, next)} />;
+    case 'items':
+      return (
+        <FieldGroup label={label} hint={hint}>
+          <ItemsEditor field={field} items={value as EditableItem[]} variant={spec.variant} errors={errors} onChange={(next) => set(field, next)} />
+        </FieldGroup>
+      );
+    case 'stringList':
+      return (
+        <FieldGroup label={fullLabel} hint={hint}>
+          <StringListEditor
+            field={field}
+            values={value as string[]}
+            itemLabel={spec.itemLabel || 'Elemento'}
+            multiline={spec.multiline}
+            max={spec.max || LANDING_LIMITS.items}
+            errors={errors}
+            onChange={(next) => set(field, next)}
+          />
+        </FieldGroup>
+      );
+    case 'highlights':
+      return (
+        <FieldGroup label={label} hint={hint}>
+          <HighlightsEditor highlights={value as Highlight[]} errors={errors} onChange={(next) => set(field, next)} />
+        </FieldGroup>
+      );
+    case 'audience':
+      return (
+        <FieldGroup label={label} hint={hint}>
+          <AudienceEditor field={field} card={value as AudienceCard} errors={errors} onChange={(next) => set(field, next)} />
+        </FieldGroup>
+      );
+    case 'sponsors':
+      return (
+        <FieldGroup label={label} hint={hint}>
+          <SponsorsEditor sponsors={value as Sponsor[]} errors={errors} onChange={(next) => set(field, next)} />
+        </FieldGroup>
+      );
+    case 'number': {
+      const { min, max } = LANDING_LIMITS.interval;
+      return (
+        <div style={{ maxWidth: 320 }}>
+          <TextField
+            label={fullLabel}
+            type="number"
+            inputMode="numeric"
+            min={min}
+            max={max}
+            hint={hint || `Entre ${min} y ${max} segundos.`}
+            value={String(value ?? '')}
+            error={errors[field]}
+            onChange={(e) => set(field, e.target.value === '' ? '' : Number(e.target.value))}
+          />
+        </div>
+      );
+    }
+    case 'socials':
+      return (
+        <SocialsEditor
+          description="Se muestran en el pie de página, con su animación al pasar el mouse."
+          value={value as SocialLink[]}
+          errors={errors}
+          onChange={(next) => set(field, next)}
+        />
+      );
+    case 'signDecks':
+      return (
+        <FieldGroup label={label} hint={hint}>
+          <SignDecksEditor decks={value as SignSlide[][]} errors={errors} onChange={(next) => set(field, next)} />
+        </FieldGroup>
+      );
+    case 'screens':
+      return (
+        <FieldGroup label={label} hint={hint}>
+          <ScreensEditor screens={value as PhoneScreen[]} onChange={(next) => set(field, next)} />
+        </FieldGroup>
+      );
+    case 'links':
+      return (
+        <FieldGroup label={label} hint={hint}>
+          <LinksEditor links={value as FooterLink[]} errors={errors} onChange={(next) => set(field, next)} />
+        </FieldGroup>
+      );
+    case 'textarea':
+      return <TextArea label={fullLabel} hint={hint} rows={rows} value={String(value ?? '')} error={errors[field]} onChange={(e) => set(field, e.target.value)} />;
+    case 'text':
+      return <TextField label={fullLabel} hint={hint} value={String(value ?? '')} error={errors[field]} onChange={(e) => set(field, e.target.value)} />;
+  }
 }
 
 /** Formulario de una sección: guarda solo esa clave de site_content, tras confirmar. */
@@ -280,69 +462,15 @@ function SectionForm({
       <div className="stack-sm" style={{ gap: 4 }}>
         <h2 style={{ fontSize: 20 }}>{spec.label}</h2>
         <p className="text-secondary text-small">{spec.description}</p>
+        {spec.publicPath ? (
+          <a className="text-small" href={spec.publicPath} target="_blank" rel="noopener noreferrer">
+            Ver {spec.publicPath} <ExternalLink size={13} aria-label="(se abre en otra pestaña)" />
+          </a>
+        ) : null}
       </div>
-      {spec.fields.map(({ field, label, kind, hint, required, rows }) => {
-        const fullLabel = required ? `${label} *` : label;
-        if (kind === 'switch') {
-          return <Switch key={field} label={label} checked={Boolean(draft[field])} onChange={(value) => set(field, value)} />;
-        }
-        if (kind === 'items') {
-          return (
-            <div key={field} className="stack-sm">
-              <h3 style={{ fontSize: 16 }}>{label}</h3>
-              <ItemsEditor items={draft.items as SectionItem[]} errors={errors} onChange={(items) => set('items', items)} />
-            </div>
-          );
-        }
-        if (kind === 'number') {
-          const { min, max } = LANDING_LIMITS.interval;
-          return (
-            <div key={field} style={{ maxWidth: 320 }}>
-              <TextField
-                label={fullLabel}
-                type="number"
-                inputMode="numeric"
-                min={min}
-                max={max}
-                hint={hint || `Entre ${min} y ${max} segundos.`}
-                value={String(draft[field] ?? '')}
-                error={errors[field]}
-                onChange={(e) => set(field, e.target.value === '' ? '' : Number(e.target.value))}
-              />
-            </div>
-          );
-        }
-        if (kind === 'socials') {
-          return (
-            <SocialsEditor
-              key={field}
-              description="Se muestran en el pie de página, con su animación al pasar el mouse."
-              value={draft[field] as SocialLink[]}
-              errors={errors}
-              onChange={(value) => set(field, value)}
-            />
-          );
-        }
-        if (kind === 'signDecks' || kind === 'screens' || kind === 'links') {
-          return (
-            <div key={field} className="stack-sm">
-              <div className="stack-sm" style={{ gap: 0 }}>
-                <h3 style={{ fontSize: 16 }}>{label}</h3>
-                {hint ? <span className="text-small text-secondary">{hint}</span> : null}
-              </div>
-              {kind === 'signDecks' ? <SignDecksEditor decks={draft[field] as SignSlide[][]} errors={errors} onChange={(value) => set(field, value)} /> : null}
-              {kind === 'screens' ? <ScreensEditor screens={draft[field] as PhoneScreen[]} onChange={(value) => set(field, value)} /> : null}
-              {kind === 'links' ? <LinksEditor links={draft[field] as FooterLink[]} errors={errors} onChange={(value) => set(field, value)} /> : null}
-            </div>
-          );
-        }
-        const common = { label: fullLabel, hint, value: String(draft[field] ?? ''), error: errors[field] };
-        return kind === 'textarea' ? (
-          <TextArea key={field} {...common} rows={rows} onChange={(e) => set(field, e.target.value)} />
-        ) : (
-          <TextField key={field} {...common} onChange={(e) => set(field, e.target.value)} />
-        );
-      })}
+      {spec.fields.map((fieldSpec) => (
+        <FieldEditor key={fieldSpec.field} spec={fieldSpec} draft={draft} errors={errors} set={set} />
+      ))}
       <div className="row-between">
         <Button variant="ghost" size="sm" icon={RotateCcw} disabled={isDefault} onClick={() => onDraft(structuredClone(DEFAULT_SECTIONS[sectionKey]))}>
           Usar el texto original
@@ -370,12 +498,13 @@ function SectionForm({
   );
 }
 
-/** Sitio web → Secciones: edita los textos de cada sección de la landing. */
+/** Sitio web → Secciones: edita los textos de cada sección de la landing, con vista previa en vivo. */
 export function SectionsPage() {
   const { site } = useRepositories();
   const saved = useResource(() => site.getSections(), [site]);
   const [drafts, setDrafts] = useState<LandingSections | null>(null);
   const [active, setActive] = useState<SectionKey>('hero');
+  const [showPreview, setShowPreview] = useState(true);
 
   // Solo al cargar: al publicar una sección no se pisan los borradores de las demás.
   useEffect(() => {
@@ -391,11 +520,16 @@ export function SectionsPage() {
     <>
       <PageHeader
         title="Secciones de la landing"
-        subtitle="Edita los textos de cada sección y elige cuáles se muestran. Cada sección se publica por separado."
+        subtitle="Edita los textos de cada sección y elige cuáles se muestran. La vista previa cambia mientras escribes; cada sección se publica por separado."
         actions={
-          <a className="btn btn--secondary btn--sm" href="/" target="_blank" rel="noopener noreferrer">
-            <ExternalLink size={16} aria-hidden /> Ver la landing
-          </a>
+          <div className="row" style={{ gap: 8 }}>
+            <Button variant="secondary" size="sm" icon={showPreview ? EyeOff : Eye} aria-pressed={showPreview} onClick={() => setShowPreview((value) => !value)}>
+              {showPreview ? 'Ocultar vista previa' : 'Mostrar vista previa'}
+            </Button>
+            <a className="btn btn--secondary btn--sm" href="/" target="_blank" rel="noopener noreferrer">
+              <ExternalLink size={16} aria-hidden /> Ver la landing
+            </a>
+          </div>
         }
       />
       {saved.loading || !drafts || !saved.data ? (
@@ -424,13 +558,20 @@ export function SectionsPage() {
               </Badge>
             </div>
           ) : null}
-          <SectionForm
-            sectionKey={active}
-            draft={drafts[active] as Record<string, unknown>}
-            saved={saved.data[active] as Record<string, unknown>}
-            onDraft={(value) => setDrafts((prev) => (prev ? { ...prev, [active]: value } : prev))}
-            onSaved={(value) => saved.setData((prev) => (prev ? { ...prev, [active]: value } : prev))}
-          />
+          <div className={showPreview ? 'sections-workspace' : undefined}>
+            <SectionForm
+              sectionKey={active}
+              draft={drafts[active] as Record<string, unknown>}
+              saved={saved.data[active] as Record<string, unknown>}
+              onDraft={(value) => setDrafts((prev) => (prev ? { ...prev, [active]: value } : prev))}
+              onSaved={(value) => saved.setData((prev) => (prev ? { ...prev, [active]: value } : prev))}
+            />
+            {showPreview ? (
+              <div className="sections-workspace__preview">
+                <SectionPreview sectionKey={active} label={SPECS[active].label} value={drafts[active]} />
+              </div>
+            ) : null}
+          </div>
         </>
       )}
     </>

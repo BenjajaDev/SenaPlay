@@ -1,8 +1,7 @@
 import { Menu, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/ui';
-
-type NavLink = { href: string; label: string };
+import type { NavLink } from './landingNav';
 
 /**
  * Menú de la landing para pantallas angostas (bajo 860 px los enlaces de la

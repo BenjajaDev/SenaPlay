@@ -5,9 +5,8 @@ import { brandIcon } from '@/lib/brand';
 import { CLUB_SORDOS_TALCA } from '@/lib/collaborators';
 import { keyed } from '@/lib/listKeys';
 import { SOCIAL_NETWORKS, SocialIcon, safeLinkHref, socialHref } from '@/lib/social';
+import type { NavLink } from './landingNav';
 import { PartnerMark } from './PartnerMark';
-
-type NavLink = { href: string; label: string };
 
 /**
  * Pie de página de la landing (editable en Secciones → Pie de página): marca
